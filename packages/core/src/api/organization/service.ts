@@ -60,45 +60,54 @@ export class OrganizationService {
       };
     }
 
-    const org = await db
-      .insertInto("organization")
-      .values({
-        name: "personal",
-        type: "personal",
-        stripe_customer_id: null,
-        access_enabled: false,
-        monthly_included_credits: settings.ORGANIZATION.DEFAULT_MONTHLY_CREDITS,
-        credits_balance: this.computeProratedCredits(
-          settings.ORGANIZATION.DEFAULT_MONTHLY_CREDITS,
-        ),
-        created_at: new Date(),
-      })
-      .returningAll()
-      .executeTakeFirstOrThrow();
+    let org: Organization | undefined;
 
-    const stripeService = new StripeService();
-    const stripeCustomer = await stripeService.createCustomer(
-      org,
-    );
+    await db.transaction().execute(async (trx) => {
+      org = await trx
+        .insertInto("organization")
+        .values({
+          name: "personal",
+          type: "personal",
+          stripe_customer_id: null,
+          access_enabled: false,
+          monthly_included_credits:
+            settings.ORGANIZATION.DEFAULT_MONTHLY_CREDITS,
+          credits_balance: this.computeProratedCredits(
+            settings.ORGANIZATION.DEFAULT_MONTHLY_CREDITS,
+          ),
+          created_at: new Date(),
+        })
+        .returningAll()
+        .executeTakeFirstOrThrow();
 
-    await db
-      .updateTable("organization")
-      .set({
-        stripe_customer_id: stripeCustomer.id,
-      })
-      .where("id", "=", org.id)
-      .execute();
+      const stripeService = new StripeService();
+      const stripeCustomer = await stripeService.createCustomer(
+        org,
+      );
 
-    await db
-      .insertInto("organization_member")
-      .values({
-        organization_id: org.id,
-        user_id: userId,
-        role: "admin",
-        created_at: new Date(),
-      })
-      .returningAll()
-      .executeTakeFirstOrThrow();
+      await trx
+        .updateTable("organization")
+        .set({
+          stripe_customer_id: stripeCustomer.id,
+        })
+        .where("id", "=", org.id)
+        .execute();
+
+      await trx
+        .insertInto("organization_member")
+        .values({
+          organization_id: org.id,
+          user_id: userId,
+          role: "admin",
+          created_at: new Date(),
+        })
+        .returningAll()
+        .executeTakeFirstOrThrow();
+    });
+
+    if (!org) {
+      throw new Error("Failed to create organization");
+    }
 
     return {
       organization: org,
@@ -185,7 +194,15 @@ export class OrganizationService {
     page: number,
     limit: number,
     search?: string,
-  ): Promise<{ results: Organization[]; total: number }> {
+  ): Promise<{
+    results: {
+      id: number;
+      name: string;
+      type: "personal" | "team";
+      role: "admin" | "member";
+    }[];
+    total: number;
+  }> {
     let countQuery = db
       .selectFrom("organization")
       .innerJoin(
@@ -203,7 +220,12 @@ export class OrganizationService {
         "organization_member.organization_id",
         "organization.id",
       )
-      .selectAll("organization")
+      .select([
+        "organization.id",
+        "organization.name",
+        "organization.type",
+        "organization_member.role",
+      ])
       .where("organization_member.user_id", "=", userId);
 
     if (search) {

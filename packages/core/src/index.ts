@@ -3,6 +3,6 @@ import api from "./api/index.ts";
 
 initKyselyDb();
 
-const port = 3000;
+const port = 4000;
 api.listen({ port });
 console.info(`Server is running on port http://localhost:${port}`);

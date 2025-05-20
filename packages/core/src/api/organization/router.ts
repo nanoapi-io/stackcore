@@ -6,7 +6,6 @@ import {
   createOrganizationPayloadSchema,
   type CreateOrganizationResponse,
   type GetMembersResponse,
-  type GetOrganizationsResponse,
   updateMemberRoleSchema,
   updateOrganizationSchema,
 } from "./types.ts";
@@ -78,7 +77,7 @@ router.get("/", authMiddleware, async (ctx) => {
   );
 
   ctx.response.status = Status.OK;
-  ctx.response.body = response as GetOrganizationsResponse;
+  ctx.response.body = response;
 });
 
 // Update an organization

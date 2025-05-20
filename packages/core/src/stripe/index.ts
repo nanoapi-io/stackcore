@@ -6,13 +6,13 @@ import type { Organization } from "../db/types.ts";
 import { Status } from "@oak/oak";
 
 export function getStripe() {
-  // if (settings.STRIPE.USE_MOCK) {
-  //   return new stripe(settings.STRIPE.SECRET_KEY, {
-  //     protocol: "http",
-  //     host: "localhost",
-  //     port: 12111,
-  //   });
-  // }
+  if (settings.STRIPE.USE_MOCK) {
+    return new stripe(settings.STRIPE.SECRET_KEY, {
+      protocol: "http",
+      host: "localhost",
+      port: 12111,
+    });
+  }
   return new stripe(settings.STRIPE.SECRET_KEY);
 }
 

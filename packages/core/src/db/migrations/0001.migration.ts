@@ -19,16 +19,10 @@ export async function up(db: Kysely<any>): Promise<void> {
   await db.schema
     .createTable("organization")
     .addColumn("id", "serial", (col) => col.primaryKey())
-    .addColumn(
-      "uuid",
-      "varchar(255)",
-      (col) => col.defaultTo(sql`gen_random_uuid()`),
-    )
     .addColumn("name", "varchar(255)", (col) => col.notNull())
     .addColumn("type", "varchar(255)", (col) => col.notNull())
+    .addColumn("access_enabled", "boolean", (col) => col.notNull())
     .addColumn("stripe_customer_id", "varchar(255)")
-    .addColumn("stripe_autopay_enabled", "boolean", (col) => col.notNull())
-    .addColumn("stripe_has_unpaid_invoices", "boolean", (col) => col.notNull())
     .addColumn("monthly_included_credits", "integer", (col) => col.notNull())
     .addColumn("credits_balance", "integer", (col) => col.notNull())
     .addColumn(

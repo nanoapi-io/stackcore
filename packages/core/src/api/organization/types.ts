@@ -11,11 +11,6 @@ export type CreateOrganizationPayload = z.infer<
 
 export type CreateOrganizationResponse = Organization;
 
-export type GetOrganizationsResponse = {
-  results: Organization[];
-  total: number;
-};
-
 export const createInvitationSchema = z.object({
   email: z.string().email(),
 });

@@ -48,7 +48,7 @@ router.post("/verifyOtp", async (ctx) => {
   );
 
   if (error) {
-    ctx.response.status = Status.Unauthorized;
+    ctx.response.status = Status.BadRequest;
     ctx.response.body = { error };
     return;
   }

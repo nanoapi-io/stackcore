@@ -2,7 +2,7 @@
   "name": "@stackcore/core",
   "exports": "./src/index.ts",
   "tasks": {
-    "dev": "deno run -A --watch src/main.ts",
+    "dev": "deno run --env-file=../../.env -A --watch src/index.ts",
     "migrate": "deno run -A src/db/migrator.ts"
   },
   "imports": {

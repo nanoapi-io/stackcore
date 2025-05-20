@@ -40,34 +40,36 @@ export class AuthService {
       .where("email", "=", email)
       .executeTakeFirst();
 
-    if (existingUser) {
-      // Update existing user with new OTP
-      await db
-        .updateTable("user")
-        .set({
-          otp,
-          otp_expires_at: expiresAt,
-        })
-        .where("email", "=", email)
-        .execute();
-    } else {
-      // Create new user with OTP
-      const newUser = await db
-        .insertInto("user")
-        .values({
-          email,
-          otp,
-          otp_expires_at: expiresAt,
-          created_at: new Date(),
-          last_login_at: new Date(),
-        })
-        .returningAll()
-        .executeTakeFirstOrThrow();
+    await db.transaction().execute(async (trx) => {
+      if (existingUser) {
+        // Update existing user with new OTP
+        await trx
+          .updateTable("user")
+          .set({
+            otp,
+            otp_expires_at: expiresAt,
+          })
+          .where("email", "=", email)
+          .execute();
+      } else {
+        // Create new user with OTP
+        const newUser = await trx
+          .insertInto("user")
+          .values({
+            email,
+            otp,
+            otp_expires_at: expiresAt,
+            created_at: new Date(),
+            last_login_at: new Date(),
+          })
+          .returningAll()
+          .executeTakeFirstOrThrow();
 
-      // Create personal organization for new user
-      const orgService = new OrganizationService();
-      await orgService.createPersonalOrganization(newUser.id);
-    }
+        // Create personal organization for new user
+        const orgService = new OrganizationService();
+        await orgService.createPersonalOrganization(newUser.id);
+      }
+    });
 
     // Send OTP to user via email
     sendOtpEmail(email, otp);

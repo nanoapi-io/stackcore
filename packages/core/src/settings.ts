@@ -27,7 +27,7 @@ export default {
   STRIPE: {
     SECRET_KEY: getEnv("STRIPE_API_KEY", "sk_test_secret"),
     WEBHOOK_SECRET: getEnv("STRIPE_WEBHOOK_SECRET", "whsec_secret"),
-    USE_MOCK: Boolean(getEnv("STRIPE_USE_MOCK", "false")),
+    USE_MOCK: getEnv("STRIPE_USE_MOCK", "false") === "true",
     CREDIT_USAGE_METER_EVENT_NAME: getEnv(
       "STRIPE_CREDIT_USAGE_METER_EVENT_NAME",
       "credits-usage",

@@ -4,10 +4,10 @@ import {
   type CreatePortalSessionResponse,
 } from "./types.ts";
 import { BillingService } from "./service.ts";
-
+import { authMiddleware } from "../auth/middleware.ts";
 const router = new Router();
 
-router.post("/portal", async (ctx) => {
+router.post("/portal", authMiddleware, async (ctx) => {
   const body = await ctx.request.body.json();
 
   const parsedBody = createPortalSessionRequestSchema.safeParse(body);
