@@ -4,6 +4,7 @@ import { db, destroyKyselyDb, initKyselyDb } from "../../db/database.ts";
 import { resetTables } from "../../testHelpers/db.ts";
 import { OrganizationService } from "./service.ts";
 import { createTestUserAndToken } from "../../testHelpers/auth.ts";
+import { BASIC_PLAN, MONTHLY_BILLING_CYCLE } from "../../db/types.ts";
 
 // POST / (create organization)
 Deno.test("create a team organization", async () => {
@@ -41,6 +42,8 @@ Deno.test("create a team organization", async () => {
 
     assertEquals(org.name, "Test Team");
     assertEquals(org.isTeam, true);
+    assertEquals(org.plan, BASIC_PLAN);
+    assertEquals(org.billing_cycle, MONTHLY_BILLING_CYCLE);
 
     // Verify creator is an admin
     const member = await db
@@ -122,6 +125,11 @@ Deno.test("get user organizations", async () => {
       assertEquals(responseBody.results[i].name, `Org ${i}`);
       assertEquals(responseBody.results[i].isTeam, true);
       assertEquals(responseBody.results[i].role, "admin");
+      assertEquals(responseBody.results[i].plan, BASIC_PLAN);
+      assertEquals(
+        responseBody.results[i].billing_cycle,
+        MONTHLY_BILLING_CYCLE,
+      );
     }
   } finally {
     await resetTables();
@@ -165,6 +173,11 @@ Deno.test("get user organizations, pagination", async () => {
       assertEquals(responseBody.results[i].name, `Org ${i + 5}`);
       assertEquals(responseBody.results[i].isTeam, true);
       assertEquals(responseBody.results[i].role, "admin");
+      assertEquals(responseBody.results[i].plan, BASIC_PLAN);
+      assertEquals(
+        responseBody.results[i].billing_cycle,
+        MONTHLY_BILLING_CYCLE,
+      );
     }
   } finally {
     await resetTables();
@@ -207,6 +220,11 @@ Deno.test("get user organizations, search by name", async () => {
     assertEquals(responseBody.total, 1);
     assertEquals(responseBody.results.length, 1);
     assertEquals(responseBody.results[0].name, "Test Org 0");
+    assertEquals(responseBody.results[0].plan, BASIC_PLAN);
+    assertEquals(
+      responseBody.results[0].billing_cycle,
+      MONTHLY_BILLING_CYCLE,
+    );
   } finally {
     await resetTables();
     await destroyKyselyDb();

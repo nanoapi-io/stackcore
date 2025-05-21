@@ -34,6 +34,11 @@ export async function up(db: Kysely<any>): Promise<void> {
       (col) => col.check(sql`plan IN ('BASIC', 'PRO', 'PREMIUM', 'CUSTOM')`),
     )
     .addColumn(
+      "billing_cycle",
+      "varchar(255)",
+      (col) => col.check(sql`billing_cycle IN ('MONTHLY', 'YEARLY')`),
+    )
+    .addColumn(
       "deactivated",
       "boolean",
       (col) => col.notNull().defaultTo(false),

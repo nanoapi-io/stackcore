@@ -1,5 +1,14 @@
 import { db } from "../../db/database.ts";
-import { ADMIN_ROLE, type MEMBER_ROLE } from "../../db/types.ts";
+import {
+  ADMIN_ROLE,
+  BASIC_PLAN,
+  CUSTOM_PLAN,
+  type MEMBER_ROLE,
+  MONTHLY_BILLING_CYCLE,
+  PREMIUM_PLAN,
+  PRO_PLAN,
+  YEARLY_BILLING_CYCLE,
+} from "../../db/types.ts";
 import { sendInvitationEmail } from "../../email/index.ts";
 import settings from "../../settings.ts";
 import { StripeService } from "../../stripe/index.ts";
@@ -58,6 +67,8 @@ export class OrganizationService {
           name,
           isTeam: true,
           stripe_customer_id: null,
+          plan: BASIC_PLAN,
+          billing_cycle: MONTHLY_BILLING_CYCLE,
           access_enabled: false,
           created_at: new Date(),
           deactivated: false,
@@ -78,23 +89,24 @@ export class OrganizationService {
 
       // Create Stripe customer
       const stripeService = new StripeService();
-      const customer = await stripeService.createCustomer(org);
-
-      // Update organization with Stripe customer ID
-      const updatedOrg = await trx
-        .updateTable("organization")
-        .set({ stripe_customer_id: customer.id })
-        .where("id", "=", org.id)
-        .returningAll()
-        .executeTakeFirstOrThrow();
-
+      const customer = await stripeService.createCustomer(
+        org.id,
+        org.name,
+      );
       await stripeService.createSubscription(
-        updatedOrg,
+        customer.id,
         "BASIC",
         "MONTHLY",
       );
 
-      return org;
+      // Update organization with Stripe customer ID
+      await trx
+        .updateTable("organization")
+        .set({
+          stripe_customer_id: customer.id,
+        })
+        .where("id", "=", org.id)
+        .execute();
     });
 
     return {};
@@ -114,6 +126,12 @@ export class OrganizationService {
       name: string;
       isTeam: boolean;
       role: typeof ADMIN_ROLE | typeof MEMBER_ROLE;
+      plan:
+        | typeof BASIC_PLAN
+        | typeof PRO_PLAN
+        | typeof PREMIUM_PLAN
+        | typeof CUSTOM_PLAN;
+      billing_cycle: typeof MONTHLY_BILLING_CYCLE | typeof YEARLY_BILLING_CYCLE;
     }[];
     total: number;
   }> {
@@ -153,6 +171,8 @@ export class OrganizationService {
         "organization.name",
         "organization.isTeam",
         "organization_member.role",
+        "organization.plan",
+        "organization.billing_cycle",
       ])
       .where("organization_member.user_id", "=", userId)
       .where("organization.deactivated", "=", false)
@@ -252,13 +272,13 @@ export class OrganizationService {
     }
 
     // Check if it's a personal organization
-    const orgCheck = await db
+    const org = await db
       .selectFrom("organization")
-      .select("isTeam")
       .where("id", "=", organizationId)
-      .executeTakeFirst();
+      .selectAll()
+      .executeTakeFirstOrThrow();
 
-    if (!orgCheck?.isTeam) {
+    if (!org.isTeam) {
       return { error: cannotDeletePersonalOrganizationError };
     }
 
@@ -275,6 +295,12 @@ export class OrganizationService {
         .deleteFrom("organization")
         .where("id", "=", organizationId)
         .execute();
+
+      // Cancel Stripe subscription
+      if (org.stripe_customer_id) {
+        const stripeService = new StripeService();
+        await stripeService.cancelSubscription(org.stripe_customer_id);
+      }
     });
 
     return {};

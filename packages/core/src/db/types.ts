@@ -34,6 +34,9 @@ export const PRO_PLAN = "PRO";
 export const PREMIUM_PLAN = "PREMIUM";
 export const CUSTOM_PLAN = "CUSTOM";
 
+export const MONTHLY_BILLING_CYCLE = "MONTHLY";
+export const YEARLY_BILLING_CYCLE = "YEARLY";
+
 export interface OrganizationTable {
   id: Generated<number>;
   name: string;
@@ -44,8 +47,10 @@ export interface OrganizationTable {
     | typeof BASIC_PLAN
     | typeof PRO_PLAN
     | typeof PREMIUM_PLAN
-    | typeof CUSTOM_PLAN
-    | null;
+    | typeof CUSTOM_PLAN;
+  billing_cycle:
+    | typeof MONTHLY_BILLING_CYCLE
+    | typeof YEARLY_BILLING_CYCLE;
   deactivated: boolean;
   created_at: ColumnType<Date>;
 }

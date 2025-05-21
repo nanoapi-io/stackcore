@@ -1,6 +1,11 @@
 import { create, getNumericDate, verify } from "djwt";
 import { db } from "../../db/database.ts";
-import { ADMIN_ROLE, type User } from "../../db/types.ts";
+import {
+  ADMIN_ROLE,
+  BASIC_PLAN,
+  MONTHLY_BILLING_CYCLE,
+  type User,
+} from "../../db/types.ts";
 import settings from "../../settings.ts";
 import { sendOtpEmail } from "../../email/index.ts";
 import { StripeService } from "../../stripe/index.ts";
@@ -73,6 +78,8 @@ export class AuthService {
             isTeam: false,
             access_enabled: false,
             stripe_customer_id: null,
+            plan: BASIC_PLAN,
+            billing_cycle: MONTHLY_BILLING_CYCLE,
             created_at: new Date(),
             deactivated: false,
           })
@@ -91,23 +98,22 @@ export class AuthService {
 
         const stripeService = new StripeService();
         const customer = await stripeService.createCustomer(
-          personalOrganization,
+          personalOrganization.id,
+          personalOrganization.name,
+        );
+        await stripeService.createSubscription(
+          customer.id,
+          "BASIC",
+          "MONTHLY",
         );
 
-        const updatedOrganization = await trx
+        await trx
           .updateTable("organization")
           .set({
             stripe_customer_id: customer.id,
           })
           .where("id", "=", personalOrganization.id)
-          .returningAll()
-          .executeTakeFirstOrThrow();
-
-        await stripeService.createSubscription(
-          updatedOrganization,
-          "BASIC",
-          "MONTHLY",
-        );
+          .execute();
       });
     }
 

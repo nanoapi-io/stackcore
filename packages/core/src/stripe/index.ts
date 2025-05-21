@@ -23,10 +23,14 @@ export class StripeService {
     this.stripe = getStripe();
   }
 
-  public async createCustomer(organization: Organization) {
+  public async createCustomer(
+    organizationId: number,
+    organizationName: string,
+  ) {
     const customer = await this.stripe.customers.create({
       metadata: {
-        organization_id: organization.id,
+        organization_id: organizationId,
+        organization_name: organizationName,
       },
     });
 
@@ -34,14 +38,10 @@ export class StripeService {
   }
 
   public async createSubscription(
-    organization: Organization,
+    stripeCustomerId: string,
     product: "BASIC" | "PRO" | "PREMIUM",
     licensePeriod: "MONTHLY" | "YEARLY",
   ) {
-    if (!organization.stripe_customer_id) {
-      throw new Error("Stripe customer ID is not set");
-    }
-
     const licensePriceId =
       settings.STRIPE.PRODUCTS[product].LICENSE_PRICE_ID[licensePeriod];
 
@@ -49,7 +49,7 @@ export class StripeService {
       settings.STRIPE.PRODUCTS[product].MONTHLY_METER_PRICE_ID;
 
     await this.stripe.subscriptions.create({
-      customer: organization.stripe_customer_id,
+      customer: stripeCustomerId,
       items: [
         {
           price: licensePriceId,
@@ -96,14 +96,10 @@ export class StripeService {
   }
 
   public async cancelSubscription(
-    organization: Organization,
+    stripeCustomerId: string,
   ) {
-    if (!organization.stripe_customer_id) {
-      throw new Error("Stripe customer ID is not set");
-    }
-
     const subscriptions = await this.stripe.subscriptions.list({
-      customer: organization.stripe_customer_id,
+      customer: stripeCustomerId,
       limit: 1,
     });
 
