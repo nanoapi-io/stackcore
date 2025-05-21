@@ -33,6 +33,88 @@ export class StripeService {
     return customer;
   }
 
+  public async createSubscription(
+    organization: Organization,
+    product: "BASIC" | "PRO" | "PREMIUM",
+    licensePeriod: "MONTHLY" | "YEARLY",
+  ) {
+    if (!organization.stripe_customer_id) {
+      throw new Error("Stripe customer ID is not set");
+    }
+
+    const licensePriceId =
+      settings.STRIPE.PRODUCTS[product].LICENSE_PRICE_ID[licensePeriod];
+
+    const meterPriceId =
+      settings.STRIPE.PRODUCTS[product].MONTHLY_METER_PRICE_ID;
+
+    await this.stripe.subscriptions.create({
+      customer: organization.stripe_customer_id,
+      items: [
+        {
+          price: licensePriceId,
+        },
+        {
+          price: meterPriceId,
+        },
+      ],
+    });
+  }
+
+  public async switchSubscription(
+    organization: Organization,
+    product: "BASIC" | "PRO" | "PREMIUM",
+    licensePeriod: "MONTHLY" | "YEARLY",
+  ) {
+    if (!organization.stripe_customer_id) {
+      throw new Error("Stripe customer ID is not set");
+    }
+
+    const subscriptions = await this.stripe.subscriptions.list({
+      customer: organization.stripe_customer_id,
+      limit: 1,
+    });
+
+    const subscription = subscriptions.data[0];
+
+    const licensePriceId =
+      settings.STRIPE.PRODUCTS[product].LICENSE_PRICE_ID[licensePeriod];
+
+    const meterPriceId =
+      settings.STRIPE.PRODUCTS[product].MONTHLY_METER_PRICE_ID;
+
+    await this.stripe.subscriptions.update(subscription.id, {
+      items: [
+        {
+          price: licensePriceId,
+        },
+        {
+          price: meterPriceId,
+        },
+      ],
+    });
+  }
+
+  public async cancelSubscription(
+    organization: Organization,
+  ) {
+    if (!organization.stripe_customer_id) {
+      throw new Error("Stripe customer ID is not set");
+    }
+
+    const subscriptions = await this.stripe.subscriptions.list({
+      customer: organization.stripe_customer_id,
+      limit: 1,
+    });
+
+    const subscription = subscriptions.data[0];
+
+    await this.stripe.subscriptions.cancel(subscription.id, {
+      invoice_now: true,
+      prorate: false,
+    });
+  }
+
   public async sendUsageEvent(
     organization: Organization,
     amount: number,
@@ -42,7 +124,7 @@ export class StripeService {
     }
 
     await this.stripe.billing.meterEvents.create({
-      event_name: settings.STRIPE.CREDIT_USAGE_METER_EVENT_NAME,
+      event_name: settings.STRIPE.METER.CREDIT_USAGE_EVENT_NAME,
       payload: {
         stripe_customer_id: organization.stripe_customer_id,
         value: amount.toString(),
@@ -50,7 +132,41 @@ export class StripeService {
     });
   }
 
-  public async createBillingPortalSession(
+  public async updateSubscription(
+    organization: Organization,
+    returnUrl: string,
+  ) {
+    if (!organization.stripe_customer_id) {
+      throw new Error("Stripe customer ID is not set");
+    }
+
+    const subscriptions = await this.stripe.subscriptions.list({
+      customer: organization.stripe_customer_id,
+      limit: 1,
+    });
+
+    const subscription = subscriptions.data[0];
+
+    try {
+      const session = await this.stripe.billingPortal.sessions.create({
+        customer: organization.stripe_customer_id,
+        // flow_data: {
+        //   type: "subscription_update",
+        //   subscription_update: {
+        //     subscription: subscription.id,
+        //   },
+        // },
+        return_url: returnUrl,
+      });
+
+      return session;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  public async updatePaymentMethod(
     organization: Organization,
     returnUrl: string,
   ) {
@@ -60,6 +176,9 @@ export class StripeService {
 
     const session = await this.stripe.billingPortal.sessions.create({
       customer: organization.stripe_customer_id,
+      flow_data: {
+        type: "payment_method_update",
+      },
       return_url: returnUrl,
     });
 

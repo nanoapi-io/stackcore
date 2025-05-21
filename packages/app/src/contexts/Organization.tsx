@@ -2,11 +2,14 @@ import { createContext, useContext, useState } from "react";
 import { toast } from "../components/shadcn/hooks/use-toast.tsx";
 import { useCoreApi } from "./CoreApi.tsx";
 
+export const ADMIN_ROLE = "admin";
+export const MEMBER_ROLE = "member";
+
 export type Organization = {
   id: number;
+  isTeam: boolean;
   name: string;
-  type: "personal" | "team";
-  role: "admin" | "member";
+  role: typeof ADMIN_ROLE | typeof MEMBER_ROLE;
 };
 
 type OrganizationContextType = {
@@ -71,10 +74,10 @@ export function OrganizationProvider(
     }
 
     const personalOrganizations = organizations.filter(
-      (organization) => organization.type === "personal",
+      (organization) => !organization.isTeam,
     ).sort((a, b) => a.name.localeCompare(b.name));
     const teamOrganizations = organizations.filter(
-      (organization) => organization.type === "team",
+      (organization) => organization.isTeam,
     ).sort((a, b) => a.name.localeCompare(b.name));
 
     return [...personalOrganizations, ...teamOrganizations];

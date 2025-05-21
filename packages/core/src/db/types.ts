@@ -21,6 +21,7 @@ export interface UserTable {
   otp: string | null;
   otp_expires_at: ColumnType<Date | null>;
   last_login_at: ColumnType<Date | null>;
+  deactivated: boolean;
   created_at: ColumnType<Date>;
 }
 
@@ -28,14 +29,24 @@ export type User = Selectable<UserTable>;
 export type NewUser = Insertable<UserTable>;
 export type UserUpdate = Updateable<UserTable>;
 
+export const BASIC_PLAN = "BASIC";
+export const PRO_PLAN = "PRO";
+export const PREMIUM_PLAN = "PREMIUM";
+export const CUSTOM_PLAN = "CUSTOM";
+
 export interface OrganizationTable {
   id: Generated<number>;
   name: string;
-  type: "personal" | "team";
+  isTeam: boolean;
   access_enabled: boolean;
   stripe_customer_id: string | null;
-  monthly_included_credits: number;
-  credits_balance: number;
+  plan:
+    | typeof BASIC_PLAN
+    | typeof PRO_PLAN
+    | typeof PREMIUM_PLAN
+    | typeof CUSTOM_PLAN
+    | null;
+  deactivated: boolean;
   created_at: ColumnType<Date>;
 }
 
@@ -43,9 +54,12 @@ export type Organization = Selectable<OrganizationTable>;
 export type NewOrganization = Insertable<OrganizationTable>;
 export type OrganizationUpdate = Updateable<OrganizationTable>;
 
+export const ADMIN_ROLE = "admin";
+export const MEMBER_ROLE = "member";
+
 export interface OrganizationMemberTable {
   id: Generated<number>;
-  role: "admin" | "member";
+  role: typeof ADMIN_ROLE | typeof MEMBER_ROLE;
   organization_id: number;
   user_id: number;
   created_at: ColumnType<Date>;

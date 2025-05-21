@@ -5,8 +5,8 @@ import { resetTables } from "../../testHelpers/db.ts";
 import { createTestUserAndToken } from "../../testHelpers/auth.ts";
 import { OrganizationService } from "../organization/service.ts";
 import { ProjectService } from "./service.ts";
-import type { Organization, Project } from "../../db/types.ts";
 
+// --- CREATE PROJECT TESTS ---
 Deno.test("create a project", async () => {
   initKyselyDb();
   await resetTables();
@@ -16,13 +16,19 @@ Deno.test("create a project", async () => {
 
     // Create an organization first
     const orgService = new OrganizationService();
-    const { organization } = await orgService.createTeamOrganization(
+    await orgService.createTeamOrganization(
       "Test Organization",
       userId,
-    ) as { organization: Organization };
+    );
+    // Fetch the organization from the DB
+    const organization = await db
+      .selectFrom("organization")
+      .selectAll()
+      .where("name", "=", "Test Organization")
+      .executeTakeFirstOrThrow();
 
-    // Create a project
-    const response = await api.handle(
+    // Create a project via API
+    const createResponse = await api.handle(
       new Request("http://localhost:3000/projects", {
         method: "POST",
         body: JSON.stringify({
@@ -37,27 +43,20 @@ Deno.test("create a project", async () => {
         },
       }),
     );
+    assertEquals(createResponse?.status, 201);
 
-    assertEquals(response?.status, 201);
-
-    const responseBody = await response?.json();
-    assertEquals(responseBody.name, "Test Project");
-    assertEquals(responseBody.organization_id, organization.id);
-    assertEquals(responseBody.provider, "github");
-    assertEquals(responseBody.provider_id, "123456");
-
-    // Verify project exists in database
+    // Get the project from the database for its ID
     const project = await db
       .selectFrom("project")
       .selectAll()
-      .where("id", "=", responseBody.id)
-      .executeTakeFirst();
+      .where("name", "=", "Test Project")
+      .where("organization_id", "=", organization.id)
+      .executeTakeFirstOrThrow();
 
-    assertNotEquals(project, undefined);
-    assertEquals(project?.name, "Test Project");
-    assertEquals(project?.organization_id, organization.id);
-    assertEquals(project?.provider, "github");
-    assertEquals(project?.provider_id, "123456");
+    assertEquals(project.name, "Test Project");
+    assertEquals(project.organization_id, organization.id);
+    assertEquals(project.provider, "github");
+    assertEquals(project.provider_id, "123456");
   } finally {
     await resetTables();
     await destroyKyselyDb();
@@ -73,10 +72,16 @@ Deno.test("create a project with a duplicate name should fail", async () => {
 
     // Create an organization first
     const orgService = new OrganizationService();
-    const { organization } = await orgService.createTeamOrganization(
+    await orgService.createTeamOrganization(
       "Test Organization",
       userId,
-    ) as { organization: Organization };
+    );
+    // Fetch the organization from the DB
+    const organization = await db
+      .selectFrom("organization")
+      .selectAll()
+      .where("name", "=", "Test Organization")
+      .executeTakeFirstOrThrow();
 
     // Create a project service
     const projectService = new ProjectService();
@@ -124,10 +129,16 @@ Deno.test("create a project - non-member of organization", async () => {
     const { userId } = await createTestUserAndToken();
 
     const orgService = new OrganizationService();
-    const { organization } = await orgService.createTeamOrganization(
+    await orgService.createTeamOrganization(
       "Test Organization",
       userId,
-    ) as { organization: Organization };
+    );
+    // Fetch the organization from the DB
+    const organization = await db
+      .selectFrom("organization")
+      .selectAll()
+      .where("name", "=", "Test Organization")
+      .executeTakeFirstOrThrow();
 
     // Create second user (not a member of the organization)
     const { token: nonMemberToken } = await createTestUserAndToken();
@@ -158,6 +169,48 @@ Deno.test("create a project - non-member of organization", async () => {
   }
 });
 
+Deno.test("create project - invalid input validation", async () => {
+  initKyselyDb();
+  await resetTables();
+
+  try {
+    const { token } = await createTestUserAndToken();
+
+    // Test with invalid JSON
+    const response = await api.handle(
+      new Request("http://localhost:3000/projects", {
+        method: "POST",
+        body: "{}",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+      }),
+    );
+    assertEquals(response?.status, 400);
+
+    // Test with missing required fields
+    const response2 = await api.handle(
+      new Request("http://localhost:3000/projects", {
+        method: "POST",
+        body: JSON.stringify({
+          name: "Test Project",
+          // missing organizationId
+        }),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+      }),
+    );
+    assertEquals(response2?.status, 400);
+  } finally {
+    await resetTables();
+    await destroyKyselyDb();
+  }
+});
+
+// --- GET PROJECTS TESTS ---
 Deno.test("get user projects", async () => {
   initKyselyDb();
   await resetTables();
@@ -167,10 +220,16 @@ Deno.test("get user projects", async () => {
 
     // Create an organization first
     const orgService = new OrganizationService();
-    const { organization } = await orgService.createTeamOrganization(
+    await orgService.createTeamOrganization(
       "Test Organization",
       userId,
-    ) as { organization: Organization };
+    );
+    // Fetch the organization from the DB
+    const organization = await db
+      .selectFrom("organization")
+      .selectAll()
+      .where("name", "=", "Test Organization")
+      .executeTakeFirstOrThrow();
 
     // Create projects for the user
     const projectService = new ProjectService();
@@ -220,10 +279,16 @@ Deno.test("get user projects, pagination", async () => {
 
     // Create an organization first
     const orgService = new OrganizationService();
-    const { organization } = await orgService.createTeamOrganization(
+    await orgService.createTeamOrganization(
       "Test Organization",
       userId,
-    ) as { organization: Organization };
+    );
+    // Fetch the organization from the DB
+    const organization = await db
+      .selectFrom("organization")
+      .selectAll()
+      .where("name", "=", "Test Organization")
+      .executeTakeFirstOrThrow();
 
     // Create projects for the user
     const projectService = new ProjectService();
@@ -273,10 +338,16 @@ Deno.test("get user projects, search by name", async () => {
 
     // Create an organization first
     const orgService = new OrganizationService();
-    const { organization } = await orgService.createTeamOrganization(
+    await orgService.createTeamOrganization(
       "Test Organization",
       userId,
-    ) as { organization: Organization };
+    );
+    // Fetch the organization from the DB
+    const organization = await db
+      .selectFrom("organization")
+      .selectAll()
+      .where("name", "=", "Test Organization")
+      .executeTakeFirstOrThrow();
 
     // Create projects for the user
     const projectService = new ProjectService();
@@ -315,6 +386,61 @@ Deno.test("get user projects, search by name", async () => {
   }
 });
 
+Deno.test("get projects - invalid pagination parameters", async () => {
+  initKyselyDb();
+  await resetTables();
+
+  try {
+    const { token } = await createTestUserAndToken();
+
+    // Test with invalid page number
+    const response = await api.handle(
+      new Request(
+        "http://localhost:3000/projects?page=invalid&limit=5",
+        {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+        },
+      ),
+    );
+    assertEquals(response?.status, 400);
+
+    // Test with invalid limit
+    const response2 = await api.handle(
+      new Request(
+        "http://localhost:3000/projects?page=1&limit=invalid",
+        {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+        },
+      ),
+    );
+    assertEquals(response2?.status, 400);
+
+    // Test with invalid organizationId
+    const response3 = await api.handle(
+      new Request(
+        "http://localhost:3000/projects?page=1&limit=5&organizationId=invalid",
+        {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+        },
+      ),
+    );
+    assertEquals(response3?.status, 400);
+  } finally {
+    await resetTables();
+    await destroyKyselyDb();
+  }
+});
+
+// --- UPDATE PROJECT TESTS ---
 Deno.test("update a project", async () => {
   initKyselyDb();
   await resetTables();
@@ -324,22 +450,44 @@ Deno.test("update a project", async () => {
 
     // Create an organization first
     const orgService = new OrganizationService();
-    const { organization } = await orgService.createTeamOrganization(
+    await orgService.createTeamOrganization(
       "Test Organization",
       userId,
-    ) as { organization: Organization };
+    );
+    // Fetch the organization from the DB
+    const organization = await db
+      .selectFrom("organization")
+      .selectAll()
+      .where("name", "=", "Test Organization")
+      .executeTakeFirstOrThrow();
 
-    // Create a project
-    const projectService = new ProjectService();
-    const { project } = await projectService.createProject(
-      userId,
-      "Original Project Name",
-      organization.id,
-      "github",
-      "123456",
-    ) as { project: Project };
+    // Create a project via API
+    const createResponse = await api.handle(
+      new Request("http://localhost:3000/projects", {
+        method: "POST",
+        body: JSON.stringify({
+          name: "Original Project Name",
+          organizationId: organization.id,
+          provider: "github",
+          providerId: "123456",
+        }),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+      }),
+    );
+    assertEquals(createResponse?.status, 201);
 
-    // Update project name
+    // Get the project from the database for its ID
+    const project = await db
+      .selectFrom("project")
+      .selectAll()
+      .where("name", "=", "Original Project Name")
+      .where("organization_id", "=", organization.id)
+      .executeTakeFirstOrThrow();
+
+    // Update project name via API
     const response = await api.handle(
       new Request(
         `http://localhost:3000/projects/${project.id}`,
@@ -360,9 +508,7 @@ Deno.test("update a project", async () => {
 
     assertEquals(response?.status, 200);
     const responseBody = await response?.json();
-    assertEquals(responseBody.name, "Updated Project Name");
-    assertEquals(responseBody.provider, "gitlab");
-    assertEquals(responseBody.provider_id, "654321");
+    assertEquals(responseBody.message, "Project updated successfully");
 
     // Verify project was updated in database
     const updatedProject = await db
@@ -386,29 +532,52 @@ Deno.test("update a project - non-member", async () => {
 
   try {
     // Create first user with organization and project
-    const { userId } = await createTestUserAndToken();
+    const { userId, token } = await createTestUserAndToken();
 
     const orgService = new OrganizationService();
-    const { organization } = await orgService.createTeamOrganization(
+    await orgService.createTeamOrganization(
       "Test Organization",
       userId,
-    ) as { organization: Organization };
+    );
+    // Fetch the organization from the DB
+    const organizationNM = await db
+      .selectFrom("organization")
+      .selectAll()
+      .where("name", "=", "Test Organization")
+      .executeTakeFirstOrThrow();
 
-    const projectService = new ProjectService();
-    const { project } = await projectService.createProject(
-      userId,
-      "Test Project",
-      organization.id,
-      null,
-      null,
-    ) as { project: Project };
+    // Create a project as the first user
+    const createResponseNM = await api.handle(
+      new Request("http://localhost:3000/projects", {
+        method: "POST",
+        body: JSON.stringify({
+          name: "Test Project",
+          organizationId: organizationNM.id,
+          provider: null,
+          providerId: null,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+      }),
+    );
+    assertEquals(createResponseNM?.status, 201);
+
+    // Get the project from the database for its ID
+    const projectNM = await db
+      .selectFrom("project")
+      .selectAll()
+      .where("name", "=", "Test Project")
+      .where("organization_id", "=", organizationNM.id)
+      .executeTakeFirstOrThrow();
 
     // Create second user (not a member of the organization)
-    const { token: nonMemberToken } = await createTestUserAndToken();
+    const { token: nonMemberTokenNM } = await createTestUserAndToken();
 
-    const response = await api.handle(
+    const responseNM = await api.handle(
       new Request(
-        `http://localhost:3000/projects/${project.id}`,
+        `http://localhost:3000/projects/${projectNM.id}`,
         {
           method: "PATCH",
           body: JSON.stringify({
@@ -416,7 +585,76 @@ Deno.test("update a project - non-member", async () => {
           }),
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${nonMemberToken}`,
+            "Authorization": `Bearer ${nonMemberTokenNM}`,
+          },
+        },
+      ),
+    );
+
+    assertEquals(responseNM?.status, 400);
+    const responseBodyNM = await responseNM?.json();
+    assertEquals(responseBodyNM.error, "project_not_found");
+  } finally {
+    await resetTables();
+    await destroyKyselyDb();
+  }
+});
+
+Deno.test("update project - duplicate name in same organization", async () => {
+  initKyselyDb();
+  await resetTables();
+
+  try {
+    const { userId, token } = await createTestUserAndToken();
+
+    // Create an organization first
+    const orgService = new OrganizationService();
+    await orgService.createTeamOrganization(
+      "Test Organization",
+      userId,
+    );
+    const organization = await db
+      .selectFrom("organization")
+      .selectAll()
+      .where("name", "=", "Test Organization")
+      .executeTakeFirstOrThrow();
+
+    // Create two projects
+    const projectService = new ProjectService();
+    await projectService.createProject(
+      userId,
+      "Project 1",
+      organization.id,
+      null,
+      null,
+    );
+    await projectService.createProject(
+      userId,
+      "Project 2",
+      organization.id,
+      null,
+      null,
+    );
+
+    // Get the second project
+    const project2 = await db
+      .selectFrom("project")
+      .selectAll()
+      .where("name", "=", "Project 2")
+      .executeTakeFirstOrThrow();
+
+    // Try to update Project 2 to have the same name as Project 1
+    const response = await api.handle(
+      new Request(
+        `http://localhost:3000/projects/${project2.id}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            name: "Project 1",
+          }),
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
           },
         },
       ),
@@ -424,13 +662,14 @@ Deno.test("update a project - non-member", async () => {
 
     assertEquals(response?.status, 400);
     const responseBody = await response?.json();
-    assertEquals(responseBody.error, "project_not_found");
+    assertEquals(responseBody.error, "project_already_exists");
   } finally {
     await resetTables();
     await destroyKyselyDb();
   }
 });
 
+// --- DELETE PROJECT TESTS ---
 Deno.test("delete a project", async () => {
   initKyselyDb();
   await resetTables();
@@ -440,22 +679,44 @@ Deno.test("delete a project", async () => {
 
     // Create an organization first
     const orgService = new OrganizationService();
-    const { organization } = await orgService.createTeamOrganization(
+    await orgService.createTeamOrganization(
       "Test Organization",
       userId,
-    ) as { organization: Organization };
+    );
+    // Fetch the organization from the DB
+    const organization = await db
+      .selectFrom("organization")
+      .selectAll()
+      .where("name", "=", "Test Organization")
+      .executeTakeFirstOrThrow();
 
-    // Create a project
-    const projectService = new ProjectService();
-    const { project } = await projectService.createProject(
-      userId,
-      "Test Project",
-      organization.id,
-      null,
-      null,
-    ) as { project: Project };
+    // Create a project via API
+    const createResponse = await api.handle(
+      new Request("http://localhost:3000/projects", {
+        method: "POST",
+        body: JSON.stringify({
+          name: "Test Project",
+          organizationId: organization.id,
+          provider: null,
+          providerId: null,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+      }),
+    );
+    assertEquals(createResponse?.status, 201);
 
-    // Delete project
+    // Get the project from the database for its ID
+    const project = await db
+      .selectFrom("project")
+      .selectAll()
+      .where("name", "=", "Test Project")
+      .where("organization_id", "=", organization.id)
+      .executeTakeFirstOrThrow();
+
+    // --- DELETE ---
     const response = await api.handle(
       new Request(
         `http://localhost:3000/projects/${project.id}`,
@@ -470,7 +731,7 @@ Deno.test("delete a project", async () => {
 
     assertEquals(response?.status, 204);
 
-    // Verify project was deleted from database
+    // Verify project was actually deleted
     const deletedProject = await db
       .selectFrom("project")
       .selectAll()
@@ -490,50 +751,73 @@ Deno.test("delete a project - non-member", async () => {
 
   try {
     // Create first user with organization and project
-    const { userId } = await createTestUserAndToken();
+    const { userId, token } = await createTestUserAndToken();
 
     const orgService = new OrganizationService();
-    const { organization } = await orgService.createTeamOrganization(
+    await orgService.createTeamOrganization(
       "Test Organization",
       userId,
-    ) as { organization: Organization };
+    );
+    // Fetch the organization from the DB
+    const organizationNM = await db
+      .selectFrom("organization")
+      .selectAll()
+      .where("name", "=", "Test Organization")
+      .executeTakeFirstOrThrow();
 
-    const projectService = new ProjectService();
-    const { project } = await projectService.createProject(
-      userId,
-      "Test Project",
-      organization.id,
-      null,
-      null,
-    ) as { project: Project };
+    // Create a project as the first user
+    const createResponseNM = await api.handle(
+      new Request("http://localhost:3000/projects", {
+        method: "POST",
+        body: JSON.stringify({
+          name: "Test Project",
+          organizationId: organizationNM.id,
+          provider: null,
+          providerId: null,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+      }),
+    );
+    assertEquals(createResponseNM?.status, 201);
+
+    // Get the project from the database for its ID
+    const projectNM = await db
+      .selectFrom("project")
+      .selectAll()
+      .where("name", "=", "Test Project")
+      .where("organization_id", "=", organizationNM.id)
+      .executeTakeFirstOrThrow();
 
     // Create second user (not a member of the organization)
-    const { token: nonMemberToken } = await createTestUserAndToken();
+    const { token: nonMemberTokenNM } = await createTestUserAndToken();
 
-    const response = await api.handle(
+    const responseNM = await api.handle(
       new Request(
-        `http://localhost:3000/projects/${project.id}`,
+        `http://localhost:3000/projects/${projectNM.id}`,
         {
           method: "DELETE",
           headers: {
-            "Authorization": `Bearer ${nonMemberToken}`,
+            "Authorization": `Bearer ${nonMemberTokenNM}`,
           },
         },
       ),
     );
 
-    assertEquals(response?.status, 400);
-    const responseBody = await response?.json();
-    assertEquals(responseBody.error, "project_not_found");
+    assertEquals(responseNM?.status, 400);
+    const responseBodyNM = await responseNM?.json();
+    assertEquals(responseBodyNM.error, "project_not_found");
 
     // Verify project still exists
-    const existingProject = await db
+    const existingProjectNM = await db
       .selectFrom("project")
       .selectAll()
-      .where("id", "=", project.id)
+      .where("id", "=", projectNM.id)
       .executeTakeFirst();
 
-    assertNotEquals(existingProject, undefined);
+    assertNotEquals(existingProjectNM, undefined);
   } finally {
     await resetTables();
     await destroyKyselyDb();

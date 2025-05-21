@@ -36,7 +36,7 @@ Deno.test("request otp for new user", async () => {
   await resetTables();
 
   try {
-    const email = `test-${Date.now()}@example.com`;
+    const email = `test-${crypto.randomUUID()}@example.com`;
 
     let user = await db
       .selectFrom("user")
@@ -84,13 +84,12 @@ Deno.test("request otp for new user", async () => {
       )
       .selectAll("organization")
       .where("organization_member.user_id", "=", (user as User).id)
-      .where("organization.type", "=", "personal")
       .executeTakeFirst();
 
     // Personal organization should exist
     assertNotEquals(personalOrg, undefined);
-    assertEquals(personalOrg?.name, "personal");
-    assertEquals(personalOrg?.type, "personal");
+    assertEquals(personalOrg?.name, "Personal");
+    assertEquals(personalOrg?.isTeam, false);
     assertEquals(
       (personalOrg?.stripe_customer_id as string).startsWith("cus_"),
       true,
@@ -106,7 +105,7 @@ Deno.test("request otp for existing user", async () => {
   await resetTables();
 
   try {
-    const email = `test-${Date.now()}@example.com`;
+    const email = `test-${crypto.randomUUID()}@example.com`;
 
     const authService = new AuthService();
     const otp = await authService.requestOtp(email);
@@ -153,7 +152,7 @@ Deno.test("verify otp", async () => {
   await resetTables();
 
   try {
-    const email = `test-${Date.now()}@example.com`;
+    const email = `test-${crypto.randomUUID()}@example.com`;
 
     const authService = new AuthService();
     const otp = await authService.requestOtp(email);

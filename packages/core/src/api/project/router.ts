@@ -3,7 +3,6 @@ import { ProjectService } from "./service.ts";
 import { authMiddleware } from "../auth/middleware.ts";
 import {
   createProjectPayloadSchema,
-  type CreateProjectResponse,
   type GetProjectsResponse,
   updateProjectSchema,
 } from "./types.ts";
@@ -25,7 +24,7 @@ router.post("/", authMiddleware, async (ctx) => {
   }
 
   const userId = ctx.state.session.userId;
-  const { project, error } = await projectService.createProject(
+  const { error } = await projectService.createProject(
     userId,
     parsedBody.data.name,
     parsedBody.data.organizationId,
@@ -40,7 +39,7 @@ router.post("/", authMiddleware, async (ctx) => {
   }
 
   ctx.response.status = Status.Created;
-  ctx.response.body = project as CreateProjectResponse;
+  ctx.response.body = { message: "Project created successfully" };
 });
 
 // Get all projects for an organization
@@ -119,7 +118,7 @@ router.patch("/:projectId", authMiddleware, async (ctx) => {
   }
 
   const userId = ctx.state.session.userId;
-  const { project, error } = await projectService.updateProject(
+  const { error } = await projectService.updateProject(
     userId,
     parsedParams.data.projectId,
     {
@@ -136,7 +135,7 @@ router.patch("/:projectId", authMiddleware, async (ctx) => {
   }
 
   ctx.response.status = Status.OK;
-  ctx.response.body = project;
+  ctx.response.body = { message: "Project updated successfully" };
 });
 
 // Delete a project

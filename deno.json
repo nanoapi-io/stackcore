@@ -12,7 +12,8 @@
     "test": "STRIPE_USE_MOCK=true deno test -A",
     "db:docker": "docker container rm stackcore-pg --force || true && docker run --name stackcore-pg -e POSTGRES_PASSWORD=password -e POSTGRES_USER=user -e POSTGRES_DB=core -p 5432:5432 -d postgres:latest",
     "db:migrate": "deno task --config ./packages/core/deno.json migrate -A",
-    "stripe:create-prices": "deno run -A --env-file=.env ./packages/core/src/stripe/scripts/createPricesForProduct.ts",
+    "stripe:create-meter": "deno run -A --env-file=.env ./packages/core/src/stripe/scripts/createMeter.ts",
+    "stripe:create-products": "deno run -A --env-file=.env ./packages/core/src/stripe/scripts/createProducts.ts",
     "stripe:cli": "docker run --rm -it --env-file=.env stripe/stripe-cli:latest",
     "stripe:forward": "deno task stripe:cli listen --forward-to http://localhost:3000/billing/webhook",
     "stripe:mock": "docker run --rm -it -p 12111-12112:12111-12112 stripe/stripe-mock:latest"

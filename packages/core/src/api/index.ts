@@ -18,10 +18,10 @@ api.use((ctx, next) => {
     "GET, POST, PUT, PATCH, DELETE, OPTIONS",
   );
 
-  //   if (ctx.request.method === "OPTIONS") {
-  //     ctx.response.status = 204;
-  //     return;
-  //   }
+  if (ctx.request.method === "OPTIONS") {
+    ctx.response.status = 204;
+    return;
+  }
 
   return next();
 });

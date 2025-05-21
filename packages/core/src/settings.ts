@@ -11,7 +11,7 @@ function getEnv(key: string, defaultValue: string) {
 export default {
   SECRET_KEY: getEnv("SECRET_KEY", "secret"),
   OTP: {
-    EXPIRY_MINUTES: parseInt(getEnv("OTP_EXPIRY_MINUTES", "10")),
+    EXPIRY_MINUTES: parseInt(getEnv("OTP_EXPIRY_MINUTES", "5")),
   },
   JWT: {
     EXPIRY_DAYS: parseInt(getEnv("JWT_EXPIRY_DAYS", "7")),
@@ -28,10 +28,62 @@ export default {
     SECRET_KEY: getEnv("STRIPE_API_KEY", "sk_test_secret"),
     WEBHOOK_SECRET: getEnv("STRIPE_WEBHOOK_SECRET", "whsec_secret"),
     USE_MOCK: getEnv("STRIPE_USE_MOCK", "false") === "true",
-    CREDIT_USAGE_METER_EVENT_NAME: getEnv(
-      "STRIPE_CREDIT_USAGE_METER_EVENT_NAME",
-      "credits-usage",
-    ),
+    METER: {
+      CREDIT_USAGE_EVENT_NAME: getEnv(
+        "STRIPE_METER_CREDIT_USAGE_EVENT_NAME",
+        "credits-usage",
+      ),
+    },
+    PRODUCTS: {
+      BASIC: {
+        LICENSE_PRICE_ID: {
+          MONTHLY: getEnv(
+            "STRIPE_PRODUCT_BASIC_LICENSE_MONTHLY_PRICE_ID",
+            "price_basic_license_monthly",
+          ),
+          YEARLY: getEnv(
+            "STRIPE_PRODUCT_BASIC_LICENSE_YEARLY_PRICE_ID",
+            "price_basic_license_yearly",
+          ),
+        },
+        MONTHLY_METER_PRICE_ID: getEnv(
+          "STRIPE_PRODUCT_BASIC_MONTHLY_METER_CREDIT_USAGE_PRICE_ID",
+          "price_basic_monthly_meter_credit_usage",
+        ),
+      },
+      PRO: {
+        LICENSE_PRICE_ID: {
+          MONTHLY: getEnv(
+            "STRIPE_PRODUCT_PRO_LICENSE_MONTHLY_PRICE_ID",
+            "price_pro_license_monthly",
+          ),
+          YEARLY: getEnv(
+            "STRIPE_PRODUCT_PRO_LICENSE_YEARLY_PRICE_ID",
+            "price_pro_license_yearly",
+          ),
+        },
+        MONTHLY_METER_PRICE_ID: getEnv(
+          "STRIPE_PRODUCT_PRO_MONTHLY_METER_CREDIT_USAGE_PRICE_ID",
+          "price_pro_monthly_meter_credit_usage",
+        ),
+      },
+      PREMIUM: {
+        LICENSE_PRICE_ID: {
+          MONTHLY: getEnv(
+            "STRIPE_PRODUCT_PREMIUM_LICENSE_MONTHLY_PRICE_ID",
+            "price_premium_license_monthly",
+          ),
+          YEARLY: getEnv(
+            "STRIPE_PRODUCT_PREMIUM_LICENSE_YEARLY_PRICE_ID",
+            "price_premium_license_yearly",
+          ),
+        },
+        MONTHLY_METER_PRICE_ID: getEnv(
+          "STRIPE_PRODUCT_PREMIUM_MONTHLY_METER_CREDIT_USAGE_PRICE_ID",
+          "price_premium_monthly_meter_credit_usage",
+        ),
+      },
+    },
   },
   FRONTEND: {
     URL: getEnv("FRONTEND_URL", "http://localhost:3000"),

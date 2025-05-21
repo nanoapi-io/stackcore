@@ -16,25 +16,30 @@ export class ProjectService {
     provider: "github" | "gitlab" | null,
     providerId: string | null,
   ): Promise<{
-    project?: Project;
     error?: string;
   }> {
     // Check if user is a member of the organization
-    const member = await db
+    const isMember = await db
       .selectFrom("organization_member")
-      .selectAll()
+      .innerJoin(
+        "organization",
+        "organization.id",
+        "organization_member.organization_id",
+      )
+      .select("user_id")
       .where("user_id", "=", userId)
       .where("organization_id", "=", organizationId)
+      .where("organization.deactivated", "=", false)
       .executeTakeFirst();
 
-    if (!member) {
+    if (!isMember) {
       return { error: notAMemberOfOrganizationError };
     }
 
-    // Check if project with the same name exists in the organization
+    // Check if project with same name exists
     const existingProject = await db
       .selectFrom("project")
-      .selectAll()
+      .select("id")
       .where("name", "=", name)
       .where("organization_id", "=", organizationId)
       .executeTakeFirst();
@@ -44,7 +49,7 @@ export class ProjectService {
     }
 
     // Create the project
-    const project = await db
+    await db
       .insertInto("project")
       .values({
         name,
@@ -53,10 +58,9 @@ export class ProjectService {
         provider_id: providerId || null,
         created_at: new Date(),
       })
-      .returningAll()
-      .executeTakeFirstOrThrow();
+      .execute();
 
-    return { project };
+    return {};
   }
 
   /**
@@ -73,7 +77,27 @@ export class ProjectService {
     total?: number;
     error?: string;
   }> {
-    let countQuery = db
+    // First check if user has access to the organization
+    if (organizationId) {
+      const hasAccess = await db
+        .selectFrom("organization_member")
+        .innerJoin(
+          "organization",
+          "organization.id",
+          "organization_member.organization_id",
+        )
+        .where("user_id", "=", userId)
+        .where("organization_id", "=", organizationId)
+        .where("organization.deactivated", "=", false)
+        .executeTakeFirst();
+
+      if (!hasAccess) {
+        return { error: notAMemberOfOrganizationError };
+      }
+    }
+
+    // Get total count of accessible projects
+    const totalResult = await db
       .selectFrom("project")
       .innerJoin(
         "organization_member",
@@ -81,9 +105,29 @@ export class ProjectService {
         "project.organization_id",
       )
       .select(({ fn }) => [fn.countAll().as("total")])
-      .where("organization_member.user_id", "=", userId);
+      .where("organization_member.user_id", "=", userId)
+      .where((eb) => {
+        if (organizationId) {
+          return eb.and([
+            eb("project.organization_id", "=", organizationId),
+          ]);
+        }
+        return eb.and([]);
+      })
+      .where((eb) => {
+        if (search) {
+          return eb.and([
+            eb("project.name", "like", `%${search}%`),
+          ]);
+        }
+        return eb.and([]);
+      })
+      .executeTakeFirst();
 
-    let baseQuery = db
+    const total = Number(totalResult?.total) || 0;
+
+    // Get paginated projects
+    const projects = await db
       .selectFrom("project")
       .selectAll()
       .innerJoin(
@@ -91,37 +135,27 @@ export class ProjectService {
         "organization_member.organization_id",
         "project.organization_id",
       )
-      .where("organization_member.user_id", "=", userId);
-
-    if (organizationId) {
-      baseQuery = baseQuery.where(
-        "project.organization_id",
-        "=",
-        organizationId,
-      );
-      countQuery = countQuery.where(
-        "project.organization_id",
-        "=",
-        organizationId,
-      );
-    }
-
-    if (search) {
-      baseQuery = baseQuery.where("project.name", "like", `%${search}%`);
-      countQuery = countQuery.where("project.name", "like", `%${search}%`);
-    }
-
-    baseQuery = baseQuery
+      .where("organization_member.user_id", "=", userId)
+      .where((eb) => {
+        if (organizationId) {
+          return eb.and([
+            eb("project.organization_id", "=", organizationId),
+          ]);
+        }
+        return eb.and([]);
+      })
+      .where((eb) => {
+        if (search) {
+          return eb.and([
+            eb("project.name", "like", `%${search}%`),
+          ]);
+        }
+        return eb.and([]);
+      })
       .orderBy("name", "asc")
       .limit(limit)
-      .offset((page - 1) * limit);
-
-    const [projects, totalResult] = await Promise.all([
-      baseQuery.execute(),
-      countQuery.executeTakeFirst(),
-    ]);
-
-    const total = Number(totalResult?.total) || 0;
+      .offset((page - 1) * limit)
+      .execute();
 
     return {
       results: projects,
@@ -141,13 +175,16 @@ export class ProjectService {
       providerId?: string | null;
     },
   ): Promise<{
-    project?: Project;
     error?: string;
   }> {
-    // Check if project exists
+    // First check if project exists and user has access
     const project = await db
       .selectFrom("project")
-      .selectAll()
+      .innerJoin(
+        "organization",
+        "organization.id",
+        "project.organization_id",
+      )
       .innerJoin(
         "organization_member",
         "organization_member.organization_id",
@@ -155,29 +192,45 @@ export class ProjectService {
       )
       .where("organization_member.user_id", "=", userId)
       .where("project.id", "=", projectId)
+      .where("organization.deactivated", "=", false)
+      .select([
+        "project.name",
+        "project.provider",
+        "project.provider_id",
+        "project.organization_id",
+      ])
       .executeTakeFirst();
 
     if (!project) {
       return { error: projectNotFoundError };
     }
 
+    // If name is being updated, check for duplicates
+    if (updates.name && updates.name !== project.name) {
+      const existingProject = await db
+        .selectFrom("project")
+        .select("id")
+        .where("name", "=", updates.name)
+        .where("organization_id", "=", project.organization_id)
+        .executeTakeFirst();
+
+      if (existingProject) {
+        return { error: projectAlreadyExistsErrorCode };
+      }
+    }
+
     // Update the project
-    const updatedProject = await db
+    await db
       .updateTable("project")
       .set({
-        name: updates.name !== undefined ? updates.name : project.name,
-        provider: updates.provider !== undefined
-          ? updates.provider
-          : project.provider,
-        provider_id: updates.providerId !== undefined
-          ? updates.providerId
-          : project.provider_id,
+        name: updates.name ?? project.name,
+        provider: updates.provider ?? project.provider,
+        provider_id: updates.providerId ?? project.provider_id,
       })
       .where("id", "=", projectId)
-      .returningAll()
-      .executeTakeFirstOrThrow();
+      .execute();
 
-    return { project: updatedProject };
+    return {};
   }
 
   /**
@@ -187,10 +240,14 @@ export class ProjectService {
     userId: number,
     projectId: number,
   ): Promise<{ error?: string }> {
-    // Check if project exists
+    // First check if project exists and user has access
     const project = await db
       .selectFrom("project")
-      .selectAll()
+      .innerJoin(
+        "organization",
+        "organization.id",
+        "project.organization_id",
+      )
       .innerJoin(
         "organization_member",
         "organization_member.organization_id",
@@ -198,6 +255,7 @@ export class ProjectService {
       )
       .where("organization_member.user_id", "=", userId)
       .where("project.id", "=", projectId)
+      .where("organization.deactivated", "=", false)
       .executeTakeFirst();
 
     if (!project) {

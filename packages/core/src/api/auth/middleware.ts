@@ -1,7 +1,6 @@
 import { type RouterContext, type RouterMiddleware, Status } from "@oak/oak";
 import { AuthService } from "./service.ts";
 
-// Authentication middleware
 export const authMiddleware: RouterMiddleware<string> = async (
   ctx: RouterContext<string>,
   next,

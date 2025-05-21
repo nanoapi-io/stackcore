@@ -4,8 +4,6 @@ import { authMiddleware } from "../auth/middleware.ts";
 import {
   createInvitationSchema,
   createOrganizationPayloadSchema,
-  type CreateOrganizationResponse,
-  type GetMembersResponse,
   updateMemberRoleSchema,
   updateOrganizationSchema,
 } from "./types.ts";
@@ -27,7 +25,7 @@ router.post("/", authMiddleware, async (ctx) => {
   }
 
   const userId = ctx.state.session.userId;
-  const { organization, error } = await organizationService
+  const { error } = await organizationService
     .createTeamOrganization(
       parsedBody.data.name,
       userId,
@@ -40,7 +38,7 @@ router.post("/", authMiddleware, async (ctx) => {
   }
 
   ctx.response.status = Status.Created;
-  ctx.response.body = organization as CreateOrganizationResponse;
+  ctx.response.body = { message: "Team organization created successfully" };
 });
 
 // Get all organizations for current user
@@ -80,7 +78,7 @@ router.get("/", authMiddleware, async (ctx) => {
   ctx.response.body = response;
 });
 
-// Update an organization
+// Update a organization
 router.patch("/:organizationId", authMiddleware, async (ctx) => {
   const paramSchema = z.object({
     organizationId: z.string().refine((val) => !isNaN(Number(val)), {
@@ -209,10 +207,10 @@ router.post("/invitation/claim/:uuid", authMiddleware, async (ctx) => {
     return;
   }
 
-  const { success, error } = await organizationService
+  const { error } = await organizationService
     .claimInvitation(parsedParams.data.uuid, ctx.state.session.userId);
 
-  if (!success) {
+  if (error) {
     ctx.response.status = Status.BadRequest;
     ctx.response.body = { error };
     return;
@@ -266,18 +264,14 @@ router.get("/:organizationId/members", authMiddleware, async (ctx) => {
     parsedSearchParams.data.search,
   );
 
-  if (response.error) {
+  if ("error" in response) {
     ctx.response.status = Status.BadRequest;
     ctx.response.body = { error: response.error };
     return;
   }
 
-  if (!response.results || !response.total) {
-    throw new Error("Failed to fetch members");
-  }
-
   ctx.response.status = Status.OK;
-  ctx.response.body = response as GetMembersResponse;
+  ctx.response.body = response;
 });
 
 router.patch(

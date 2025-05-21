@@ -2,12 +2,14 @@ import { useNavigate, useParams } from "react-router";
 import LoggedInLayout from "../../layout/loggedIn.tsx";
 import { useEffect, useState } from "react";
 import {
+  ADMIN_ROLE,
   type Organization,
   useOrganization,
 } from "../../contexts/Organization.tsx";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from "../../components/shadcn/Card.tsx";
@@ -27,7 +29,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -36,7 +37,7 @@ import {
 import { Input } from "../../components/shadcn/Input.tsx";
 import { useCoreApi } from "../../contexts/CoreApi.tsx";
 import { toast } from "../../components/shadcn/hooks/use-toast.tsx";
-import { CreditCard, Edit, Loader, Minus, Trash } from "lucide-react";
+import { CalendarCog, CreditCard, Edit, Loader, Trash } from "lucide-react";
 import { Badge } from "../../components/shadcn/Badge.tsx";
 import {
   Table,
@@ -47,11 +48,11 @@ import {
   TableRow,
 } from "../../components/shadcn/Table.tsx";
 import {
-  ColumnDef,
+  type ColumnDef,
   flexRender,
   getCoreRowModel,
   getPaginationRowModel,
-  PaginationState,
+  type PaginationState,
   useReactTable,
 } from "@tanstack/react-table";
 import { DataTablePagination } from "../../components/shadcn/Datatablepagination.tsx";
@@ -96,11 +97,41 @@ export default function OrganizationPage() {
     setOrganization(organization);
   }, [organizations, organizationId]);
 
-  async function goToBillingPortal() {
+  async function goToPortalToUpdatePaymentMethod() {
     setIsBusy(true);
     try {
       const response = await coreApi.handleRequest(
-        "/billing/portal",
+        "/billing/portal/payment-method",
+        "POST",
+        {
+          organizationId: organization?.id,
+          returnUrl: globalThis.location.href,
+        },
+      );
+
+      if (!response.ok || response.status !== 200) {
+        throw new Error("Failed to go to billing portal");
+      }
+
+      const data = await response.json();
+      globalThis.location.href = data.url;
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "Failed to go to billing portal",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBusy(false);
+    }
+  }
+
+  async function goToPortalToUpdateSubscription() {
+    setIsBusy(true);
+    try {
+      const response = await coreApi.handleRequest(
+        "/billing/portal/subscription",
         "POST",
         {
           organizationId: organization?.id,
@@ -133,12 +164,12 @@ export default function OrganizationPage() {
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center space-x-1">
               <span>Organization: {organization?.name}</span>
-              {organization?.type === "team" && (
+              {organization?.isTeam && (
                 <Badge variant="outline" className="ml-2">Team</Badge>
               )}
             </CardTitle>
             {(organization && organization.role === "admin" &&
-              organization.type === "team") && (
+              organization.isTeam) && (
               <DeleteOrganizationDialog
                 organization={organization}
               />
@@ -146,24 +177,40 @@ export default function OrganizationPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <p>{organization?.type}</p>
-          <p>{organization?.role}</p>
-          <Button onClick={goToBillingPortal} disabled={isBusy}>
-            {isBusy ? <Loader className="animate-spin" /> : <CreditCard />}
-            Manage Plan
-          </Button>
-        </CardContent>
-        <Separator className="my-3" />
-        <CardHeader>
-          <CardTitle>
-            Members:
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {organization && (
-            <OrganizationMembersTable organization={organization} />
+          {organization?.role === ADMIN_ROLE && (
+            <div className="flex space-x-2">
+              <Button
+                onClick={goToPortalToUpdatePaymentMethod}
+                disabled={isBusy}
+              >
+                {isBusy ? <Loader className="animate-spin" /> : <CreditCard />}
+                Update payment method
+              </Button>
+              <Button
+                onClick={goToPortalToUpdateSubscription}
+                disabled={isBusy}
+              >
+                {isBusy ? <Loader className="animate-spin" /> : <CalendarCog />}
+                Manage Plan
+              </Button>
+            </div>
           )}
         </CardContent>
+        {organization?.isTeam && (
+          <>
+            <Separator className="my-3" />
+            <CardHeader>
+              <CardTitle>
+                Members:
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {organization && (
+                <OrganizationMembersTable organization={organization} />
+              )}
+            </CardContent>
+          </>
+        )}
       </Card>
     </LoggedInLayout>
   );
@@ -229,7 +276,7 @@ function OrganizationMembersTable(
 
   useEffect(() => {
     getMembers(pagination);
-  }, []);
+  }, [props.organization]);
 
   const columns: ColumnDef<Member>[] = [
     {

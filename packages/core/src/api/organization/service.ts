@@ -1,5 +1,5 @@
 import { db } from "../../db/database.ts";
-import type { Organization } from "../../db/types.ts";
+import { ADMIN_ROLE, type MEMBER_ROLE } from "../../db/types.ts";
 import { sendInvitationEmail } from "../../email/index.ts";
 import settings from "../../settings.ts";
 import { StripeService } from "../../stripe/index.ts";
@@ -8,112 +8,20 @@ export const organizationAlreadyExistsErrorCode = "organization_already_exists";
 export const organizationNotFoundError = "organization_not_found";
 export const notAMemberOfOrganizationError = "not_a_member_of_organization";
 export const notAnAdminOfOrganizationError = "not_an_admin_of_organization";
+export const cannotDeletePersonalOrganizationError =
+  "cannot_delete_personal_organization";
+export const alreadyAMemberOfOrganizationError =
+  "already_a_member_of_organization";
+export const cannotCreateInvitationForPersonalOrganizationError =
+  "cannot_create_invitation_for_personal_organization";
+export const invitationNotFoundError = "invitation_not_found";
 export const memberNotFoundError = "member_not_found";
 export const cannotRemoveSelfFromOrganizationError =
   "cannot_remove_self_from_organization";
+export const cannotUpdateSelfFromOrganizationError =
+  "cannot_update_self_from_organization";
 
 export class OrganizationService {
-  /**
-   * Compute the prorated credits for a given month
-   * Needed for users who sign up in the middle of the month
-   * example: 1000 credits for 1 month, user signs up on day 15
-   * prorated credits = (1000 / 30) * 15 = 500
-   */
-  private computeProratedCredits(
-    monthlyTotal: number,
-  ) {
-    const numberOfDaysThisMonth = new Date().getDate();
-    const numberOfDaysSinceStart = new Date().getDate();
-
-    const proratedCredits = (monthlyTotal / numberOfDaysThisMonth) *
-      numberOfDaysSinceStart;
-
-    const roundedProratedCredits = Math.round(proratedCredits);
-
-    return roundedProratedCredits;
-  }
-
-  /**
-   * Create a personal organization for a user
-   */
-  public async createPersonalOrganization(
-    userId: number,
-  ): Promise<{
-    organization?: Organization;
-    error?: typeof organizationAlreadyExistsErrorCode;
-  }> {
-    const existingOrg = await db
-      .selectFrom("organization")
-      .innerJoin(
-        "organization_member",
-        "organization_member.organization_id",
-        "organization.id",
-      )
-      .selectAll("organization")
-      .where("organization_member.user_id", "=", userId)
-      .where("organization.type", "=", "personal")
-      .executeTakeFirst();
-
-    if (existingOrg) {
-      return {
-        error: organizationAlreadyExistsErrorCode,
-      };
-    }
-
-    let org: Organization | undefined;
-
-    await db.transaction().execute(async (trx) => {
-      org = await trx
-        .insertInto("organization")
-        .values({
-          name: "personal",
-          type: "personal",
-          stripe_customer_id: null,
-          access_enabled: false,
-          monthly_included_credits:
-            settings.ORGANIZATION.DEFAULT_MONTHLY_CREDITS,
-          credits_balance: this.computeProratedCredits(
-            settings.ORGANIZATION.DEFAULT_MONTHLY_CREDITS,
-          ),
-          created_at: new Date(),
-        })
-        .returningAll()
-        .executeTakeFirstOrThrow();
-
-      const stripeService = new StripeService();
-      const stripeCustomer = await stripeService.createCustomer(
-        org,
-      );
-
-      await trx
-        .updateTable("organization")
-        .set({
-          stripe_customer_id: stripeCustomer.id,
-        })
-        .where("id", "=", org.id)
-        .execute();
-
-      await trx
-        .insertInto("organization_member")
-        .values({
-          organization_id: org.id,
-          user_id: userId,
-          role: "admin",
-          created_at: new Date(),
-        })
-        .returningAll()
-        .executeTakeFirstOrThrow();
-    });
-
-    if (!org) {
-      throw new Error("Failed to create organization");
-    }
-
-    return {
-      organization: org,
-    };
-  }
-
   /**
    * Create a new organization
    */
@@ -121,9 +29,9 @@ export class OrganizationService {
     name: string,
     userId: number,
   ): Promise<{
-    organization?: Organization;
     error?: typeof organizationAlreadyExistsErrorCode;
   }> {
+    // First check if user is a member of any organization with this name
     const existingOrg = await db
       .selectFrom("organization")
       .innerJoin(
@@ -131,59 +39,65 @@ export class OrganizationService {
         "organization_member.organization_id",
         "organization.id",
       )
-      .selectAll("organization")
+      .select("organization.id")
       .where("organization_member.user_id", "=", userId)
       .where("organization.name", "=", name)
-      .where("organization.type", "=", "team")
+      .where("organization.isTeam", "=", true)
       .executeTakeFirst();
 
     if (existingOrg) {
-      return {
-        error: organizationAlreadyExistsErrorCode,
-      };
+      return { error: organizationAlreadyExistsErrorCode };
     }
 
-    const org = await db
-      .insertInto("organization")
-      .values({
-        name,
-        type: "team",
-        stripe_customer_id: null,
-        access_enabled: false,
-        monthly_included_credits: settings.ORGANIZATION.DEFAULT_MONTHLY_CREDITS,
-        credits_balance: this.computeProratedCredits(
-          settings.ORGANIZATION.DEFAULT_MONTHLY_CREDITS,
-        ),
-        created_at: new Date(),
-      })
-      .returningAll()
-      .executeTakeFirstOrThrow();
-    const stripeService = new StripeService();
-    const stripeCustomer = await stripeService.createCustomer(
-      org,
-    );
+    // Create organization and member in a transaction
+    await db.transaction().execute(async (trx) => {
+      // Create the organization
+      const org = await trx
+        .insertInto("organization")
+        .values({
+          name,
+          isTeam: true,
+          stripe_customer_id: null,
+          access_enabled: false,
+          created_at: new Date(),
+          deactivated: false,
+        })
+        .returningAll()
+        .executeTakeFirstOrThrow();
 
-    await db
-      .updateTable("organization")
-      .set({
-        stripe_customer_id: stripeCustomer.id,
-      })
-      .where("id", "=", org.id)
-      .execute();
+      // Add the user as an admin
+      await trx
+        .insertInto("organization_member")
+        .values({
+          role: ADMIN_ROLE,
+          organization_id: org.id,
+          user_id: userId,
+          created_at: new Date(),
+        })
+        .execute();
 
-    await db
-      .insertInto("organization_member")
-      .values({
-        organization_id: org.id,
-        user_id: userId,
-        role: "admin",
-        created_at: new Date(),
-      })
-      .executeTakeFirst();
+      // Create Stripe customer
+      const stripeService = new StripeService();
+      const customer = await stripeService.createCustomer(org);
 
-    return {
-      organization: org,
-    };
+      // Update organization with Stripe customer ID
+      const updatedOrg = await trx
+        .updateTable("organization")
+        .set({ stripe_customer_id: customer.id })
+        .where("id", "=", org.id)
+        .returningAll()
+        .executeTakeFirstOrThrow();
+
+      await stripeService.createSubscription(
+        updatedOrg,
+        "BASIC",
+        "MONTHLY",
+      );
+
+      return org;
+    });
+
+    return {};
   }
 
   /**
@@ -198,55 +112,65 @@ export class OrganizationService {
     results: {
       id: number;
       name: string;
-      type: "personal" | "team";
-      role: "admin" | "member";
+      isTeam: boolean;
+      role: typeof ADMIN_ROLE | typeof MEMBER_ROLE;
     }[];
     total: number;
   }> {
-    let countQuery = db
-      .selectFrom("organization")
+    // Get total count of organizations
+    const totalResult = await db
+      .selectFrom("organization_member")
       .innerJoin(
-        "organization_member",
-        "organization_member.organization_id",
+        "organization",
         "organization.id",
+        "organization_member.organization_id",
       )
       .select(({ fn }) => [fn.countAll().as("total")])
-      .where("organization_member.user_id", "=", userId);
+      .where("organization_member.user_id", "=", userId)
+      .where("organization.deactivated", "=", false)
+      .where((eb) => {
+        if (search) {
+          return eb.and([
+            eb("organization.name", "like", `%${search}%`),
+          ]);
+        }
+        return eb.and([]);
+      })
+      .executeTakeFirst();
 
-    let baseQuery = db
-      .selectFrom("organization")
+    const total = Number(totalResult?.total) || 0;
+
+    // Get paginated organizations
+    const organizations = await db
+      .selectFrom("organization_member")
       .innerJoin(
-        "organization_member",
-        "organization_member.organization_id",
+        "organization",
         "organization.id",
+        "organization_member.organization_id",
       )
       .select([
         "organization.id",
         "organization.name",
-        "organization.type",
+        "organization.isTeam",
         "organization_member.role",
       ])
-      .where("organization_member.user_id", "=", userId);
-
-    if (search) {
-      baseQuery = baseQuery.where("organization.name", "like", `%${search}%`);
-      countQuery = countQuery.where("organization.name", "like", `%${search}%`);
-    }
-
-    baseQuery = baseQuery
+      .where("organization_member.user_id", "=", userId)
+      .where("organization.deactivated", "=", false)
+      .where((eb) => {
+        if (search) {
+          return eb.and([
+            eb("organization.name", "like", `%${search}%`),
+          ]);
+        }
+        return eb.and([]);
+      })
       .orderBy("organization.name", "asc")
       .limit(limit)
-      .offset((page - 1) * limit);
-
-    const [orgs, totalResult] = await Promise.all([
-      baseQuery.execute(),
-      countQuery.executeTakeFirst(),
-    ]);
-
-    const total = Number(totalResult?.total) || 0;
+      .offset((page - 1) * limit)
+      .execute();
 
     return {
-      results: orgs,
+      results: organizations,
       total,
     };
   }
@@ -258,46 +182,37 @@ export class OrganizationService {
     userId: number,
     organizationId: number,
     name: string,
-  ): Promise<{ organization?: Organization; error?: string }> {
-    // Check if organization exists
-    const organization = await db
-      .selectFrom("organization")
-      .selectAll()
-      .where("id", "=", organizationId)
-      .where("type", "=", "team")
+  ): Promise<{ error?: string }> {
+    // First check if user is a member of the organization and organization
+    const memberCheck = await db
+      .selectFrom("organization_member")
+      .innerJoin(
+        "organization",
+        "organization.id",
+        "organization_member.organization_id",
+      )
+      .select(["organization_member.role"])
+      .where("organization_member.user_id", "=", userId)
+      .where("organization_member.organization_id", "=", organizationId)
+      .where("organization.deactivated", "=", false)
       .executeTakeFirst();
 
-    if (!organization) {
+    if (!memberCheck) {
       return { error: organizationNotFoundError };
     }
 
-    // Check if user is an admin of the organization
-    const member = await db
-      .selectFrom("organization_member")
-      .selectAll()
-      .where("user_id", "=", userId)
-      .where("organization_id", "=", organizationId)
-      .executeTakeFirst();
-
-    if (!member) {
-      return { error: notAMemberOfOrganizationError };
-    }
-
-    if (member.role !== "admin") {
+    if (memberCheck.role !== ADMIN_ROLE) {
       return { error: notAnAdminOfOrganizationError };
     }
 
     // Update organization name
-    const updatedOrg = await db
+    await db
       .updateTable("organization")
       .set({ name })
       .where("id", "=", organizationId)
-      .returningAll()
-      .executeTakeFirstOrThrow();
+      .execute();
 
-    return {
-      organization: updatedOrg,
-    };
+    return {};
   }
 
   /**
@@ -306,40 +221,61 @@ export class OrganizationService {
   public async deleteOrganization(
     userId: number,
     organizationId: number,
-  ): Promise<{ error?: string }> {
-    // Check if organization exists
-    const organization = await db
-      .selectFrom("organization")
-      .selectAll()
-      .where("id", "=", organizationId)
-      .where("type", "=", "team")
+  ): Promise<
+    {
+      error?:
+        | typeof organizationNotFoundError
+        | typeof cannotDeletePersonalOrganizationError
+        | typeof notAnAdminOfOrganizationError;
+    }
+  > {
+    // First check if user is a member of the organization
+    const memberCheck = await db
+      .selectFrom("organization_member")
+      .innerJoin(
+        "organization",
+        "organization.id",
+        "organization_member.organization_id",
+      )
+      .select(["organization_member.role"])
+      .where("organization_member.user_id", "=", userId)
+      .where("organization_member.organization_id", "=", organizationId)
+      .where("organization.deactivated", "=", false)
       .executeTakeFirst();
 
-    if (!organization) {
+    if (!memberCheck) {
       return { error: organizationNotFoundError };
     }
 
-    // Check if user is an admin of the organization
-    const member = await db
-      .selectFrom("organization_member")
-      .selectAll()
-      .where("user_id", "=", userId)
-      .where("organization_id", "=", organizationId)
-      .executeTakeFirst();
-
-    if (!member) {
-      return { error: notAMemberOfOrganizationError };
-    }
-
-    if (member.role !== "admin") {
+    if (memberCheck.role !== ADMIN_ROLE) {
       return { error: notAnAdminOfOrganizationError };
     }
 
-    // Delete organization
-    await db
-      .deleteFrom("organization")
+    // Check if it's a personal organization
+    const orgCheck = await db
+      .selectFrom("organization")
+      .select("isTeam")
       .where("id", "=", organizationId)
-      .execute();
+      .executeTakeFirst();
+
+    if (!orgCheck?.isTeam) {
+      return { error: cannotDeletePersonalOrganizationError };
+    }
+
+    // Delete organization members and organization in a transaction
+    await db.transaction().execute(async (trx) => {
+      // First delete all organization members
+      await trx
+        .deleteFrom("organization_member")
+        .where("organization_id", "=", organizationId)
+        .execute();
+
+      // Then delete the organization
+      await trx
+        .deleteFrom("organization")
+        .where("id", "=", organizationId)
+        .execute();
+    });
 
     return {};
   }
@@ -352,44 +288,41 @@ export class OrganizationService {
     organizationId: number,
     email: string,
   ): Promise<{ error?: string }> {
-    // Check if organization exists
-    const organization = await db
+    // First check if user is a member of the organization
+    const orgCheck = await db
       .selectFrom("organization")
-      .select(["id", "name"])
-      .where("id", "=", organizationId)
-      .where("type", "=", "team")
+      .innerJoin(
+        "organization_member",
+        "organization_member.organization_id",
+        "organization.id",
+      )
+      .select([
+        "organization.name",
+        "organization.isTeam",
+        "organization_member.role as user_role",
+      ])
+      .where("organization_member.user_id", "=", userId)
+      .where("organization_member.organization_id", "=", organizationId)
+      .where("organization.deactivated", "=", false)
       .executeTakeFirst();
 
-    if (!organization) {
-      return {
-        error: organizationNotFoundError,
-      };
+    if (!orgCheck) {
+      return { error: organizationNotFoundError };
     }
 
-    // Check if user has permission to invite users to this organization
-    const member = await db
-      .selectFrom("organization_member")
-      .where("user_id", "=", userId)
-      .where("organization_id", "=", organizationId)
-      .selectAll()
-      .executeTakeFirst();
-
-    if (!member) {
-      return {
-        error: notAMemberOfOrganizationError,
-      };
+    if (!orgCheck?.isTeam) {
+      return { error: cannotCreateInvitationForPersonalOrganizationError };
     }
 
-    if (member.role !== "admin") {
-      return {
-        error: notAnAdminOfOrganizationError,
-      };
+    if (orgCheck.user_role !== ADMIN_ROLE) {
+      return { error: notAnAdminOfOrganizationError };
     }
 
+    // Calculate invitation expiry date based on settings
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + settings.INVITATION.EXPIRY_DAYS);
 
-    // Create invitation
+    // Create the invitation record in the database
     const invitation = await db
       .insertInto("organization_invitation")
       .values({
@@ -400,10 +333,10 @@ export class OrganizationService {
       .returningAll()
       .executeTakeFirstOrThrow();
 
-    // Send invitation email
+    // Send the invitation email to the specified address
     sendInvitationEmail(
       email,
-      organization.name,
+      orgCheck.name,
       invitation.uuid,
     );
 
@@ -416,19 +349,36 @@ export class OrganizationService {
   public async claimInvitation(
     uuid: string,
     userId: number,
-  ): Promise<{ success: boolean; error?: string }> {
-    // Get invitation
+  ): Promise<{ error?: string }> {
+    // First get the invitation
     const invitation = await db
       .selectFrom("organization_invitation")
-      .selectAll()
+      .select([
+        "id",
+        "uuid",
+        "organization_id",
+        "expires_at",
+        "created_at",
+      ])
       .where("uuid", "=", uuid)
       .executeTakeFirst();
 
     if (!invitation) {
-      return { success: false, error: "Invitation not found" };
+      return { error: invitationNotFoundError };
     }
 
-    // Check if user is already a member of the organization
+    // Check if organization is deactivated
+    const orgCheck = await db
+      .selectFrom("organization")
+      .select("deactivated")
+      .where("id", "=", invitation.organization_id)
+      .executeTakeFirst();
+
+    if (orgCheck?.deactivated) {
+      return { error: organizationNotFoundError };
+    }
+
+    // Check if user is already a member
     const existingMember = await db
       .selectFrom("organization_member")
       .select("id")
@@ -437,30 +387,30 @@ export class OrganizationService {
       .executeTakeFirst();
 
     if (existingMember) {
-      return {
-        success: false,
-        error: "User is already a member of this organization",
-      };
+      return { error: alreadyAMemberOfOrganizationError };
     }
 
-    // Add user to organization
-    await db
-      .insertInto("organization_member")
-      .values({
-        user_id: userId,
-        organization_id: invitation.organization_id,
-        role: "member",
-        created_at: new Date(),
-      })
-      .execute();
+    // Add user to organization and delete invitation in a transaction
+    await db.transaction().execute(async (trx) => {
+      // Add user to organization as a member
+      await trx
+        .insertInto("organization_member")
+        .values({
+          user_id: userId,
+          organization_id: invitation.organization_id,
+          role: "member",
+          created_at: new Date(),
+        })
+        .execute();
 
-    // Delete the invitation
-    await db
-      .deleteFrom("organization_invitation")
-      .where("uuid", "=", uuid)
-      .execute();
+      // Delete the used invitation
+      await trx
+        .deleteFrom("organization_invitation")
+        .where("uuid", "=", uuid)
+        .execute();
+    });
 
-    return { success: true };
+    return {};
   }
 
   /**
@@ -474,78 +424,75 @@ export class OrganizationService {
     search?: string,
   ): Promise<
     {
-      results?: { id: number; email: string; role: string }[];
-      total?: number;
-      error?: string;
+      results: {
+        id: number;
+        user_id: number;
+        email: string;
+        role: typeof ADMIN_ROLE | typeof MEMBER_ROLE;
+      }[];
+      total: number;
+    } | {
+      error: string;
     }
   > {
-    // Check if organization exists
-    const organization = await db
-      .selectFrom("organization")
-      .selectAll()
-      .where("id", "=", organizationId)
-      .where("type", "=", "team")
+    // First check if user is a member of the organization
+    const organizationCheck = await db
+      .selectFrom("organization_member")
+      .innerJoin(
+        "organization",
+        "organization.id",
+        "organization_member.organization_id",
+      )
+      .where("user_id", "=", userId)
+      .where("organization_id", "=", organizationId)
+      .where("organization.deactivated", "=", false)
       .executeTakeFirst();
 
-    if (!organization) {
+    if (!organizationCheck) {
       return { error: organizationNotFoundError };
     }
 
-    // Check if user is a member of the organization
-    const userMembership = await db
+    // Get total count of members
+    const totalResult = await db
       .selectFrom("organization_member")
-      .selectAll()
-      .where("user_id", "=", userId)
-      .where("organization_id", "=", organizationId)
+      .innerJoin("user", "user.id", "organization_member.user_id")
+      .select(({ fn }) => [fn.countAll().as("total")])
+      .where("organization_member.organization_id", "=", organizationId)
+      .where((eb) => {
+        if (search) {
+          return eb.and([
+            eb("user.email", "like", `%${search}%`),
+          ]);
+        }
+        return eb.and([]);
+      })
       .executeTakeFirst();
 
-    if (!userMembership) {
-      return { error: notAMemberOfOrganizationError };
-    }
+    const total = Number(totalResult?.total) || 0;
 
-    // Get members with pagination and search
-    let baseQuery = db
+    // Get paginated members
+    const members = await db
       .selectFrom("organization_member")
       .innerJoin("user", "user.id", "organization_member.user_id")
       .select([
         "organization_member.id",
+        "user.id as user_id",
         "user.email",
         "organization_member.role",
       ])
-      .where("organization_member.organization_id", "=", organizationId);
-
-    let countQuery = db
-      .selectFrom("organization_member")
-      .innerJoin("user", "user.id", "organization_member.user_id")
-      .select(db.fn.count("organization_member.id").as("total"))
-      .where("organization_member.organization_id", "=", organizationId);
-
-    // Apply search if provided
-    if (search) {
-      baseQuery = baseQuery.where((eb) =>
-        eb.or([
-          eb("user.email", "like", `%${search}%`),
-        ])
-      );
-
-      countQuery = countQuery.where((eb) =>
-        eb.or([
-          eb("user.email", "like", `%${search}%`),
-        ])
-      );
-    }
-
-    baseQuery = baseQuery
+      .where("organization_member.organization_id", "=", organizationId)
+      .where((eb) => {
+        if (search) {
+          return eb.and([
+            eb("user.email", "like", `%${search}%`),
+          ]);
+        }
+        return eb.and([]);
+      })
       .orderBy("organization_member.created_at", "desc")
       .limit(limit)
-      .offset((page - 1) * limit);
-
-    const [members, totalResult] = await Promise.all([
-      baseQuery.execute(),
-      countQuery.executeTakeFirst(),
-    ]);
-
-    const total = Number(totalResult?.total) || 0;
+      .offset((page - 1) * limit)
+      .execute();
 
     return {
       results: members,
@@ -560,34 +507,44 @@ export class OrganizationService {
     userId: number,
     organizationId: number,
     memberId: number,
-    role: "admin" | "member",
+    role: typeof ADMIN_ROLE | typeof MEMBER_ROLE,
   ): Promise<{ error?: string }> {
-    // Check if organization exists
-    const organization = await db
-      .selectFrom("organization")
-      .selectAll()
-      .where("id", "=", organizationId)
-      .where("type", "=", "team")
+    // First check if user is an admin of the organization
+    const adminCheck = await db
+      .selectFrom("organization_member")
+      .innerJoin(
+        "organization",
+        "organization.id",
+        "organization_member.organization_id",
+      )
+      .select("role")
+      .where("user_id", "=", userId)
+      .where("organization_id", "=", organizationId)
+      .where("organization.deactivated", "=", false)
       .executeTakeFirst();
 
-    if (!organization) {
+    if (!adminCheck) {
       return { error: organizationNotFoundError };
     }
 
-    // Check if user is an admin of the organization
-    const member = await db
+    if (adminCheck.role !== ADMIN_ROLE) {
+      return { error: notAnAdminOfOrganizationError };
+    }
+
+    // Check if member exists and get their user ID
+    const memberCheck = await db
       .selectFrom("organization_member")
-      .selectAll()
-      .where("user_id", "=", userId)
+      .select("user_id")
+      .where("id", "=", memberId)
       .where("organization_id", "=", organizationId)
       .executeTakeFirst();
 
-    if (!member) {
-      return { error: notAMemberOfOrganizationError };
+    if (!memberCheck) {
+      return { error: memberNotFoundError };
     }
 
-    if (member.role !== "admin") {
-      return { error: notAMemberOfOrganizationError };
+    if (memberCheck.user_id === userId) {
+      return { error: cannotUpdateSelfFromOrganizationError };
     }
 
     // Update member role
@@ -595,7 +552,8 @@ export class OrganizationService {
       .updateTable("organization_member")
       .set({ role })
       .where("id", "=", memberId)
-      .execute();
+      .where("organization_id", "=", organizationId)
+      .executeTakeFirstOrThrow();
 
     return {};
   }
@@ -608,46 +566,41 @@ export class OrganizationService {
     organizationId: number,
     memberId: number,
   ): Promise<{ error?: string }> {
-    // Check if organization exists
-    const organization = await db
-      .selectFrom("organization")
-      .selectAll()
-      .where("id", "=", organizationId)
-      .where("type", "=", "team")
+    // First check if user is an admin of the organization
+    const adminCheck = await db
+      .selectFrom("organization_member")
+      .innerJoin(
+        "organization",
+        "organization.id",
+        "organization_member.organization_id",
+      )
+      .select("role")
+      .where("user_id", "=", userId)
+      .where("organization_id", "=", organizationId)
+      .where("organization.deactivated", "=", false)
       .executeTakeFirst();
 
-    if (!organization) {
+    if (!adminCheck) {
       return { error: organizationNotFoundError };
     }
 
-    // Check if user is an admin of the organization
-    const member = await db
-      .selectFrom("organization_member")
-      .selectAll()
-      .where("user_id", "=", userId)
-      .where("organization_id", "=", organizationId)
-      .executeTakeFirst();
-
-    if (!member) {
-      return { error: notAMemberOfOrganizationError };
-    }
-
-    if (member.role !== "admin") {
+    if (adminCheck.role !== ADMIN_ROLE) {
       return { error: notAnAdminOfOrganizationError };
     }
 
-    // Check if user is trying to remove themselves
-    const memberToRemove = await db
+    // Check if member exists and get their user ID
+    const memberCheck = await db
       .selectFrom("organization_member")
-      .selectAll()
+      .select("user_id")
       .where("id", "=", memberId)
+      .where("organization_id", "=", organizationId)
       .executeTakeFirst();
 
-    if (!memberToRemove) {
+    if (!memberCheck) {
       return { error: memberNotFoundError };
     }
 
-    if (memberToRemove.user_id === userId) {
+    if (memberCheck.user_id === userId) {
       return { error: cannotRemoveSelfFromOrganizationError };
     }
 
@@ -655,7 +608,8 @@ export class OrganizationService {
     await db
       .deleteFrom("organization_member")
       .where("id", "=", memberId)
-      .execute();
+      .where("organization_id", "=", organizationId)
+      .executeTakeFirstOrThrow();
 
     return {};
   }

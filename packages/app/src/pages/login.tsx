@@ -12,7 +12,6 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "../components/shadcn/InputOTP.tsx";
-import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { toast } from "../components/shadcn/hooks/use-toast.tsx";
 import { ChevronLeft, Loader } from "lucide-react";
 import LoggedOutLayout from "../layout/loggedOut.tsx";

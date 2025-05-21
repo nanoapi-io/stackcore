@@ -12,8 +12,6 @@ export type CreateProjectPayload = z.infer<
   typeof createProjectPayloadSchema
 >;
 
-export type CreateProjectResponse = Project;
-
 export type GetProjectsResponse = {
   results: Project[];
   total: number;

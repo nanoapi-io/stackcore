@@ -133,7 +133,7 @@ export default function LoggedInLayout(
                           className="w-full"
                         >
                           {organization.name}
-                          {organization.type === "team" && (
+                          {organization.isTeam && (
                             <Badge variant="outline">Team</Badge>
                           )}
                           <Check
@@ -145,17 +145,17 @@ export default function LoggedInLayout(
                             )}
                           />
                         </CommandItem>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setOpen(false);
-                          }}
-                        >
-                          <Link to={`/organizations/${organization.id}`}>
-                            <Settings size={16} />
-                          </Link>
-                        </Button>
+                        <Link to={`/organizations/${organization.id}`}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setOpen(false);
+                            }}
+                          >
+                            <Settings />
+                          </Button>
+                        </Link>
                       </div>
                     ))}
                   </CommandGroup>

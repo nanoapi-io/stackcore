@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { Organization } from "../../db/types.ts";
 
 export const createOrganizationPayloadSchema = z.object({
   name: z.string(),
@@ -8,8 +7,6 @@ export const createOrganizationPayloadSchema = z.object({
 export type CreateOrganizationPayload = z.infer<
   typeof createOrganizationPayloadSchema
 >;
-
-export type CreateOrganizationResponse = Organization;
 
 export const createInvitationSchema = z.object({
   email: z.string().email(),
@@ -30,12 +27,3 @@ export const updateMemberRoleSchema = z.object({
 });
 
 export type UpdateMemberRolePayload = z.infer<typeof updateMemberRoleSchema>;
-
-export type GetMembersResponse = {
-  results: {
-    id: number;
-    email: string;
-    role: string;
-  }[];
-  total: number;
-};

@@ -1,9 +1,9 @@
 import { create, getNumericDate, verify } from "djwt";
 import { db } from "../../db/database.ts";
-import type { User } from "../../db/types.ts";
+import { ADMIN_ROLE, type User } from "../../db/types.ts";
 import settings from "../../settings.ts";
 import { sendOtpEmail } from "../../email/index.ts";
-import { OrganizationService } from "../organization/service.ts";
+import { StripeService } from "../../stripe/index.ts";
 
 export const secretCryptoKey = await crypto.subtle.importKey(
   "raw",
@@ -40,19 +40,19 @@ export class AuthService {
       .where("email", "=", email)
       .executeTakeFirst();
 
-    await db.transaction().execute(async (trx) => {
-      if (existingUser) {
-        // Update existing user with new OTP
-        await trx
-          .updateTable("user")
-          .set({
-            otp,
-            otp_expires_at: expiresAt,
-          })
-          .where("email", "=", email)
-          .execute();
-      } else {
-        // Create new user with OTP
+    if (existingUser) {
+      // Update existing user with new OTP
+      await db
+        .updateTable("user")
+        .set({
+          otp,
+          otp_expires_at: expiresAt,
+        })
+        .where("email", "=", email)
+        .execute();
+    } else {
+      // everything in a transaction, so if something fails we do not end up in a broken state
+      await db.transaction().execute(async (trx) => {
         const newUser = await trx
           .insertInto("user")
           .values({
@@ -61,15 +61,55 @@ export class AuthService {
             otp_expires_at: expiresAt,
             created_at: new Date(),
             last_login_at: new Date(),
+            deactivated: false,
           })
           .returningAll()
           .executeTakeFirstOrThrow();
 
-        // Create personal organization for new user
-        const orgService = new OrganizationService();
-        await orgService.createPersonalOrganization(newUser.id);
-      }
-    });
+        const personalOrganization = await trx
+          .insertInto("organization")
+          .values({
+            name: "Personal",
+            isTeam: false,
+            access_enabled: false,
+            stripe_customer_id: null,
+            created_at: new Date(),
+            deactivated: false,
+          })
+          .returningAll()
+          .executeTakeFirstOrThrow();
+
+        await trx
+          .insertInto("organization_member")
+          .values({
+            role: ADMIN_ROLE,
+            organization_id: personalOrganization.id,
+            user_id: newUser.id,
+            created_at: new Date(),
+          })
+          .executeTakeFirstOrThrow();
+
+        const stripeService = new StripeService();
+        const customer = await stripeService.createCustomer(
+          personalOrganization,
+        );
+
+        const updatedOrganization = await trx
+          .updateTable("organization")
+          .set({
+            stripe_customer_id: customer.id,
+          })
+          .where("id", "=", personalOrganization.id)
+          .returningAll()
+          .executeTakeFirstOrThrow();
+
+        await stripeService.createSubscription(
+          updatedOrganization,
+          "BASIC",
+          "MONTHLY",
+        );
+      });
+    }
 
     // Send OTP to user via email
     sendOtpEmail(email, otp);
@@ -102,21 +142,20 @@ export class AuthService {
       return { error: invalidOtpErrorCode };
     }
 
-    if (user.otp_expires_at && user.otp_expires_at < now) {
+    if (!user.otp_expires_at || user.otp_expires_at < now) {
       return { error: otpExpiredErrorCode };
     }
 
-    // Update user record - clear OTP and update last login
     await db
       .updateTable("user")
       .set({
         otp: null,
         otp_expires_at: null,
+        last_login_at: new Date(),
       })
       .where("id", "=", user.id)
       .execute();
 
-    // Create JWT token
     const token = await this.generateToken(user);
 
     return { token };
