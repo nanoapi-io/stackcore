@@ -3,8 +3,14 @@ import LoggedInLayout from "../../layout/loggedIn.tsx";
 import { useEffect, useState } from "react";
 import {
   ADMIN_ROLE,
+  BASIC_PLAN,
+  CUSTOM_PLAN,
+  MONTHLY_BILLING_CYCLE,
   type Organization,
+  PREMIUM_PLAN,
+  PRO_PLAN,
   useOrganization,
+  YEARLY_BILLING_CYCLE,
 } from "../../contexts/Organization.tsx";
 import {
   Card,
@@ -77,7 +83,7 @@ export default function OrganizationPage() {
 
   const { organizationId } = useParams<{ organizationId: string }>();
 
-  const { organizations } = useOrganization();
+  const { organizations, refreshOrganizations } = useOrganization();
 
   const [organization, setOrganization] = useState<Organization | null>(null);
 
@@ -127,36 +133,6 @@ export default function OrganizationPage() {
     }
   }
 
-  async function goToPortalToUpdateSubscription() {
-    setIsBusy(true);
-    try {
-      const response = await coreApi.handleRequest(
-        "/billing/portal/subscription",
-        "POST",
-        {
-          organizationId: organization?.id,
-          returnUrl: globalThis.location.href,
-        },
-      );
-
-      if (!response.ok || response.status !== 200) {
-        throw new Error("Failed to go to billing portal");
-      }
-
-      const data = await response.json();
-      globalThis.location.href = data.url;
-    } catch (error) {
-      console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to go to billing portal",
-        variant: "destructive",
-      });
-    } finally {
-      setIsBusy(false);
-    }
-  }
-
   return (
     <LoggedInLayout>
       <Card className="w-full max-w-7xl mx-auto mt-5 mb-5">
@@ -176,7 +152,22 @@ export default function OrganizationPage() {
             )}
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col space-y-4">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Plan</TableHead>
+                <TableHead>Billing Cycle</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell>{organization?.plan}</TableCell>
+                <TableCell>{organization?.billing_cycle}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+
           {organization?.role === ADMIN_ROLE && (
             <div className="flex space-x-2">
               <Button
@@ -186,13 +177,13 @@ export default function OrganizationPage() {
                 {isBusy ? <Loader className="animate-spin" /> : <CreditCard />}
                 Update payment method
               </Button>
-              <Button
-                onClick={goToPortalToUpdateSubscription}
-                disabled={isBusy}
-              >
-                {isBusy ? <Loader className="animate-spin" /> : <CalendarCog />}
-                Manage Plan
-              </Button>
+              <ChangePlanDialog
+                organization={organization}
+                onChanged={() => {
+                  refreshOrganizations();
+                }}
+                disable={isBusy}
+              />
             </div>
           )}
         </CardContent>
@@ -632,6 +623,187 @@ function EditMemberDialog(
             </div>
           </form>
         </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ChangePlanDialog(
+  props: {
+    organization: Organization;
+    onChanged: () => void;
+    disable: boolean;
+  },
+) {
+  const [isBusy, setIsBusy] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  const coreApi = useCoreApi();
+
+  async function onSubmit(
+    newPlan: typeof BASIC_PLAN | typeof PRO_PLAN | typeof PREMIUM_PLAN,
+    newBillingCycle: typeof MONTHLY_BILLING_CYCLE | typeof YEARLY_BILLING_CYCLE,
+  ) {
+    setIsBusy(true);
+    try {
+      const response = await coreApi.handleRequest(
+        `/organizations/${props.organization.id}/changePlan`,
+        "POST",
+        {
+          plan: newPlan,
+          billing_cycle: newBillingCycle,
+        },
+      );
+
+      if (!response.ok || response.status !== 200) {
+        throw new Error("Failed to edit member");
+      }
+
+      toast({
+        title: "Plan updated",
+        description: "Plan updated successfully",
+      });
+      props.onChanged();
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "Failed to change plan",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBusy(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button disabled={props.disable}>
+          <CalendarCog />
+          Change plan
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-7xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center space-x-2">
+            <div>Current plan:</div>
+            <Badge variant="outline">
+              {props.organization.plan} {props.organization.billing_cycle}
+            </Badge>
+          </DialogTitle>
+        </DialogHeader>
+
+        {props.organization.plan === CUSTOM_PLAN
+          ? (
+            <div>
+              <p>
+                Your plan is custom. Please contact us to change your plan.
+              </p>
+              <a
+                href="mailto:support@nanoapi.io"
+                className="font-bold hover:underline"
+              >
+                support@nanoapi.io
+              </a>
+            </div>
+          )
+          : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[{
+                name: "Basic",
+                description: "Great to try out the platform",
+                monthlyPrice: "0.00",
+                yearlyPrice: "0.00",
+                includedCredits: 1000,
+                overage: "0.50",
+                plan: BASIC_PLAN as typeof BASIC_PLAN,
+              }, {
+                name: "Pro",
+                description: "Great for small teams",
+                monthlyPrice: "10.00",
+                yearlyPrice: "100.00",
+                includedCredits: 10000,
+                overage: "0.25",
+                plan: PRO_PLAN as typeof PRO_PLAN,
+              }, {
+                name: "Premium",
+                description: "Great for medium teams",
+                monthlyPrice: "50.00",
+                yearlyPrice: "500.00",
+                includedCredits: 100000,
+                overage: "0.10",
+                plan: PREMIUM_PLAN as typeof PREMIUM_PLAN,
+              }].map((plan) => {
+                return (
+                  <Card key={plan.plan}>
+                    <CardHeader>
+                      <CardTitle>{plan.name}</CardTitle>
+                      <CardDescription>
+                        <div className="flex flex-col gap-2">
+                          <div>{plan.description}</div>
+                          <div>
+                            Includes {plan.includedCredits} credits, after that
+                            {" "}
+                            {plan.overage} USD per credit, charged monthly
+                          </div>
+                        </div>
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex space-x-2">
+                      <Button
+                        variant="secondary"
+                        disabled={props.disable ||
+                          (props.organization.plan === plan.plan &&
+                            props.organization.billing_cycle ===
+                              MONTHLY_BILLING_CYCLE)}
+                        onClick={() => {
+                          onSubmit(plan.plan, MONTHLY_BILLING_CYCLE);
+                        }}
+                      >
+                        {plan.monthlyPrice} USD/month
+                      </Button>
+                      <Button
+                        disabled={props.disable ||
+                          (props.organization.plan === plan.plan &&
+                            props.organization.billing_cycle ===
+                              YEARLY_BILLING_CYCLE)}
+                        onClick={() => {
+                          onSubmit(plan.plan, YEARLY_BILLING_CYCLE);
+                        }}
+                      >
+                        {plan.yearlyPrice} USD/year
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Enterprise</CardTitle>
+                  <CardDescription>
+                    <div className="flex flex-col gap-2">
+                      <div>
+                        Custom plan for large teams, please contact us to
+                        discuss your needs.
+                      </div>
+                      <div>
+                        Please contact us to discuss your needs.
+                      </div>
+                    </div>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex space-x-2">
+                  <a
+                    href="mailto:support@nanoapi.io"
+                    className="font-bold hover:underline"
+                  >
+                    support@nanoapi.io
+                  </a>
+                </CardContent>
+              </Card>
+            </div>
+          )}
       </DialogContent>
     </Dialog>
   );

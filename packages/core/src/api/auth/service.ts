@@ -1,14 +1,15 @@
 import { create, getNumericDate, verify } from "djwt";
 import { db } from "../../db/database.ts";
-import {
-  ADMIN_ROLE,
-  BASIC_PLAN,
-  MONTHLY_BILLING_CYCLE,
-  type User,
-} from "../../db/types.ts";
 import settings from "../../settings.ts";
 import { sendOtpEmail } from "../../email/index.ts";
 import { StripeService } from "../../stripe/index.ts";
+import {
+  BASIC_PRODUCT,
+  MONTHLY_BILLING_CYCLE,
+} from "../../db/models/organization.ts";
+import { ADMIN_ROLE } from "../../db/models/organizationMember.ts";
+import type { User } from "../../db/models/user.ts";
+import { type Session, sessionSchema } from "./types.ts";
 
 export const secretCryptoKey = await crypto.subtle.importKey(
   "raw",
@@ -76,12 +77,12 @@ export class AuthService {
           .values({
             name: "Personal",
             isTeam: false,
-            access_enabled: false,
             stripe_customer_id: null,
-            plan: BASIC_PLAN,
-            billing_cycle: MONTHLY_BILLING_CYCLE,
-            created_at: new Date(),
+            stripe_product: BASIC_PRODUCT,
+            stripe_billing_cycle: MONTHLY_BILLING_CYCLE,
+            access_enabled: false,
             deactivated: false,
+            created_at: new Date(),
           })
           .returningAll()
           .executeTakeFirstOrThrow();
@@ -103,8 +104,8 @@ export class AuthService {
         );
         await stripeService.createSubscription(
           customer.id,
-          "BASIC",
-          "MONTHLY",
+          BASIC_PRODUCT,
+          MONTHLY_BILLING_CYCLE,
         );
 
         await trx
@@ -182,7 +183,7 @@ export class AuthService {
         userId: user.id,
         email: user.email,
         exp: exp,
-      },
+      } as Session & { exp: number },
       secretCryptoKey,
     );
   }
@@ -192,15 +193,22 @@ export class AuthService {
    */
   public async verifyToken(
     token: string,
-  ): Promise<{ userId: number; email: string } | null> {
+  ): Promise<{ userId: number; email: string } | false> {
     try {
       const payload = await verify(token, secretCryptoKey);
-      return {
-        userId: payload.userId as number,
-        email: payload.email as string,
-      };
+
+      const parsedPayload = sessionSchema.safeParse({
+        userId: payload.userId,
+        email: payload.email,
+      });
+
+      if (!parsedPayload.success) {
+        return false;
+      }
+
+      return parsedPayload.data;
     } catch {
-      return null;
+      return false;
     }
   }
 }

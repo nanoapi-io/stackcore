@@ -1,12 +1,7 @@
 import { Router, Status } from "@oak/oak";
 import { AuthService } from "./service.ts";
-import {
-  type CurrentUserResponse,
-  requestOtpSchema,
-  type VerifyOtpResponse,
-  verifyOtpSchema,
-} from "./types.ts";
-import { authMiddleware } from "./middleware.ts";
+import { requestOtpSchema, verifyOtpSchema } from "./types.ts";
+import { authMiddleware, getSession } from "./middleware.ts";
 
 const router = new Router();
 
@@ -56,12 +51,14 @@ router.post("/verifyOtp", async (ctx) => {
   if (!token) throw new Error("No response from auth service");
 
   ctx.response.status = Status.OK;
-  ctx.response.body = { token } as VerifyOtpResponse;
+  ctx.response.body = { token };
 });
 
 // Get info about the current user
 router.get("/me", authMiddleware, (ctx) => {
-  ctx.response.body = { email: ctx.state.session.email } as CurrentUserResponse;
+  const session = getSession(ctx);
+
+  ctx.response.body = { email: session.email };
 });
 
 export default router;

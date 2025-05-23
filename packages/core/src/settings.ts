@@ -1,3 +1,12 @@
+import {
+  BASIC_PRODUCT,
+  MONTHLY_BILLING_CYCLE,
+  PREMIUM_PRODUCT,
+  PRO_PRODUCT,
+  StripeProduct,
+  YEARLY_BILLING_CYCLE,
+} from "./db/models/organization.ts";
+
 function getEnv(key: string, defaultValue: string) {
   const value = Deno.env.get(key);
 
@@ -35,13 +44,13 @@ export default {
       ),
     },
     PRODUCTS: {
-      BASIC: {
+      [BASIC_PRODUCT as StripeProduct]: {
         LICENSE_PRICE_ID: {
-          MONTHLY: getEnv(
+          [MONTHLY_BILLING_CYCLE]: getEnv(
             "STRIPE_PRODUCT_BASIC_LICENSE_MONTHLY_PRICE_ID",
             "price_basic_license_monthly",
           ),
-          YEARLY: getEnv(
+          [YEARLY_BILLING_CYCLE]: getEnv(
             "STRIPE_PRODUCT_BASIC_LICENSE_YEARLY_PRICE_ID",
             "price_basic_license_yearly",
           ),
@@ -51,13 +60,13 @@ export default {
           "price_basic_monthly_meter_credit_usage",
         ),
       },
-      PRO: {
+      [PRO_PRODUCT as StripeProduct]: {
         LICENSE_PRICE_ID: {
-          MONTHLY: getEnv(
+          [MONTHLY_BILLING_CYCLE]: getEnv(
             "STRIPE_PRODUCT_PRO_LICENSE_MONTHLY_PRICE_ID",
             "price_pro_license_monthly",
           ),
-          YEARLY: getEnv(
+          [YEARLY_BILLING_CYCLE]: getEnv(
             "STRIPE_PRODUCT_PRO_LICENSE_YEARLY_PRICE_ID",
             "price_pro_license_yearly",
           ),
@@ -67,13 +76,13 @@ export default {
           "price_pro_monthly_meter_credit_usage",
         ),
       },
-      PREMIUM: {
+      [PREMIUM_PRODUCT as StripeProduct]: {
         LICENSE_PRICE_ID: {
-          MONTHLY: getEnv(
+          [MONTHLY_BILLING_CYCLE]: getEnv(
             "STRIPE_PRODUCT_PREMIUM_LICENSE_MONTHLY_PRICE_ID",
             "price_premium_license_monthly",
           ),
-          YEARLY: getEnv(
+          [YEARLY_BILLING_CYCLE]: getEnv(
             "STRIPE_PRODUCT_PREMIUM_LICENSE_YEARLY_PRICE_ID",
             "price_premium_license_yearly",
           ),

@@ -29,14 +29,15 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn("access_enabled", "boolean", (col) => col.notNull())
     .addColumn("stripe_customer_id", "varchar(255)")
     .addColumn(
-      "plan",
+      "stripe_product",
       "varchar(255)",
-      (col) => col.check(sql`plan IN ('BASIC', 'PRO', 'PREMIUM', 'CUSTOM')`),
+      (col) =>
+        col.check(sql`stripe_product IN ('BASIC', 'PRO', 'PREMIUM', 'CUSTOM')`),
     )
     .addColumn(
-      "billing_cycle",
+      "stripe_billing_cycle",
       "varchar(255)",
-      (col) => col.check(sql`billing_cycle IN ('MONTHLY', 'YEARLY')`),
+      (col) => col.check(sql`stripe_billing_cycle IN ('MONTHLY', 'YEARLY')`),
     )
     .addColumn(
       "deactivated",

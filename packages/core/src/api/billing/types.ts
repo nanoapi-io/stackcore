@@ -5,6 +5,6 @@ export const createPortalSessionRequestSchema = z.object({
   returnUrl: z.string(),
 });
 
-export interface CreatePortalSessionResponse {
-  url: string;
-}
+export type CreatePortalSessionRequest = z.infer<
+  typeof createPortalSessionRequestSchema
+>;

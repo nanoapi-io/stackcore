@@ -1,9 +1,9 @@
 import stripe from "stripe";
 import settings from "../settings.ts";
-import type { Body } from "@oak/oak/body";
-import { db } from "../db/database.ts";
-import type { Organization } from "../db/types.ts";
-import { Status } from "@oak/oak";
+import type {
+  StripeBillingCycle,
+  StripeProduct,
+} from "../db/models/organization.ts";
 
 export function getStripe() {
   if (settings.STRIPE.USE_MOCK) {
@@ -39,64 +39,45 @@ export class StripeService {
 
   public async createSubscription(
     stripeCustomerId: string,
-    product: "BASIC" | "PRO" | "PREMIUM",
-    licensePeriod: "MONTHLY" | "YEARLY",
+    product: StripeProduct,
+    licensePeriod: StripeBillingCycle,
   ) {
-    const licensePriceId =
-      settings.STRIPE.PRODUCTS[product].LICENSE_PRICE_ID[licensePeriod];
+    const licensePriceId = settings.STRIPE.PRODUCTS[product]
+      .LICENSE_PRICE_ID[licensePeriod];
 
     const meterPriceId =
       settings.STRIPE.PRODUCTS[product].MONTHLY_METER_PRICE_ID;
 
-    await this.stripe.subscriptions.create({
+    const subscription = await this.stripe.subscriptions.create({
       customer: stripeCustomerId,
       items: [
         {
           price: licensePriceId,
+          metadata: {
+            product: product,
+            type: "license",
+            billing_cycle: licensePeriod,
+          },
         },
         {
           price: meterPriceId,
+          metadata: {
+            product: product,
+            type: "usage",
+            billing_cycle: licensePeriod,
+          },
         },
       ],
     });
+
+    return subscription;
   }
 
   public async switchSubscription(
-    organization: Organization,
-    product: "BASIC" | "PRO" | "PREMIUM",
-    licensePeriod: "MONTHLY" | "YEARLY",
-  ) {
-    if (!organization.stripe_customer_id) {
-      throw new Error("Stripe customer ID is not set");
-    }
-
-    const subscriptions = await this.stripe.subscriptions.list({
-      customer: organization.stripe_customer_id,
-      limit: 1,
-    });
-
-    const subscription = subscriptions.data[0];
-
-    const licensePriceId =
-      settings.STRIPE.PRODUCTS[product].LICENSE_PRICE_ID[licensePeriod];
-
-    const meterPriceId =
-      settings.STRIPE.PRODUCTS[product].MONTHLY_METER_PRICE_ID;
-
-    await this.stripe.subscriptions.update(subscription.id, {
-      items: [
-        {
-          price: licensePriceId,
-        },
-        {
-          price: meterPriceId,
-        },
-      ],
-    });
-  }
-
-  public async cancelSubscription(
     stripeCustomerId: string,
+    product: StripeProduct,
+    licensePeriod: StripeBillingCycle,
+    switchMethod: "upgrade" | "downgrade",
   ) {
     const subscriptions = await this.stripe.subscriptions.list({
       customer: stripeCustomerId,
@@ -105,73 +86,122 @@ export class StripeService {
 
     const subscription = subscriptions.data[0];
 
-    await this.stripe.subscriptions.cancel(subscription.id, {
-      invoice_now: true,
-      prorate: false,
+    const currentLicensePriceId = subscription.items.data.find((item) => {
+      item.metadata.type === "license";
+    })?.price.id;
+
+    if (!currentLicensePriceId) {
+      throw new Error(
+        "Current license price ID is not set in stripe metadata",
+      );
+    }
+
+    const currentMeterPriceId = subscription.items.data.find((item) => {
+      item.metadata.type === "usage";
+    })?.price.id;
+
+    if (!currentMeterPriceId) {
+      throw new Error(
+        "Current meter price ID is not set in stripe metadata",
+      );
+    }
+
+    const newLicensePriceId =
+      settings.STRIPE.PRODUCTS[product].LICENSE_PRICE_ID[licensePeriod];
+
+    const newMeterPriceId =
+      settings.STRIPE.PRODUCTS[product].MONTHLY_METER_PRICE_ID;
+
+    if (switchMethod === "upgrade") {
+      await this.stripe.subscriptions.update(subscription.id, {
+        items: [
+          {
+            id: currentLicensePriceId,
+            price: newLicensePriceId,
+            metadata: {
+              product: product,
+              type: "license",
+              billing_cycle: licensePeriod,
+            },
+          },
+          {
+            id: currentMeterPriceId,
+            price: newMeterPriceId,
+            metadata: {
+              product: product,
+              type: "usage",
+              billing_cycle: licensePeriod,
+            },
+          },
+        ],
+        // Do not prorate the new price, instead we start new billing cycle immediately
+        proration_behavior: "none",
+        // Change the billing cycle to the new period
+        // This will create an invoice immediately for the old subscription
+        // and will create a new subscription with the new price from now
+        billing_cycle_anchor: "now",
+      });
+    } else if (switchMethod === "downgrade") {
+      await this.stripe.subscriptions.update(subscription.id, {
+        cancel_at_period_end: true,
+        metadata: {
+          new_product_when_canceled: product,
+          new_billing_cycle_when_canceled: licensePeriod,
+        },
+      });
+    } else {
+      throw new Error("Invalid switch method", { cause: switchMethod });
+    }
+  }
+
+  public async cancelSubscription(stripeCustomerId: string) {
+    const subscriptions = await this.stripe.subscriptions.list({
+      customer: stripeCustomerId,
+      limit: 1,
+    });
+
+    const subscription = subscriptions.data[0];
+
+    if (!subscription) {
+      throw new Error("Subscription not found");
+    }
+
+    await this.stripe.subscriptions.update(subscription.id, {
+      cancel_at_period_end: true,
+      metadata: {
+        new_product_when_canceled: null,
+        new_billing_cycle_when_canceled: null,
+      },
     });
   }
 
   public async sendUsageEvent(
-    organization: Organization,
+    stripeCustomerId: string,
     amount: number,
   ) {
-    if (!organization.stripe_customer_id) {
+    if (!stripeCustomerId) {
       throw new Error("Stripe customer ID is not set");
     }
 
     await this.stripe.billing.meterEvents.create({
       event_name: settings.STRIPE.METER.CREDIT_USAGE_EVENT_NAME,
       payload: {
-        stripe_customer_id: organization.stripe_customer_id,
+        stripe_customer_id: stripeCustomerId,
         value: amount.toString(),
       },
     });
   }
 
-  public async updateSubscription(
-    organization: Organization,
-    returnUrl: string,
-  ) {
-    if (!organization.stripe_customer_id) {
-      throw new Error("Stripe customer ID is not set");
-    }
-
-    const subscriptions = await this.stripe.subscriptions.list({
-      customer: organization.stripe_customer_id,
-      limit: 1,
-    });
-
-    const subscription = subscriptions.data[0];
-
-    try {
-      const session = await this.stripe.billingPortal.sessions.create({
-        customer: organization.stripe_customer_id,
-        // flow_data: {
-        //   type: "subscription_update",
-        //   subscription_update: {
-        //     subscription: subscription.id,
-        //   },
-        // },
-        return_url: returnUrl,
-      });
-
-      return session;
-    } catch (error) {
-      console.error(error);
-      throw error;
-    }
-  }
-
   public async updatePaymentMethod(
-    organization: Organization,
+    stripeCustomerId: string,
     returnUrl: string,
   ) {
-    if (!organization.stripe_customer_id) {
+    if (!stripeCustomerId) {
       throw new Error("Stripe customer ID is not set");
     }
 
     const session = await this.stripe.billingPortal.sessions.create({
-      customer: organization.stripe_customer_id,
+      customer: stripeCustomerId,
       flow_data: {
         type: "payment_method_update",
       },
@@ -181,75 +211,13 @@ export class StripeService {
     return session;
   }
 
-  public async handleWebhook(body: Body, signature?: string) {
-    let event: stripe.Event;
+  public getWebhookEvent(bodyText: string, signature: string) {
+    const event = this.stripe.webhooks.constructEvent(
+      bodyText,
+      signature,
+      settings.STRIPE.WEBHOOK_SECRET,
+    );
 
-    if (signature) {
-      try {
-        event = this.stripe.webhooks.constructEvent(
-          await body.text(),
-          signature,
-          settings.STRIPE.WEBHOOK_SECRET,
-        );
-      } catch (error) {
-        if (error instanceof stripe.errors.StripeSignatureVerificationError) {
-          console.warn("Invalid signature received", error);
-          return {
-            status: Status.Forbidden,
-            body: "Invalid signature",
-          };
-        }
-
-        throw error;
-      }
-    } else {
-      event = await body.json() as stripe.Event;
-    }
-
-    switch (event.type) {
-      case "customer.subscription.updated":
-      case "customer.subscription.created":
-        await this.handleCustomerSubscriptionCreatedOrUpdatedEvent(
-          event,
-        );
-        break;
-      default:
-        console.info(`Unhandled event type ${event.type}`);
-    }
-
-    return {
-      status: 200,
-      body: "Event received",
-    };
-  }
-
-  private async handleCustomerSubscriptionCreatedOrUpdatedEvent(
-    event:
-      | stripe.CustomerSubscriptionUpdatedEvent
-      | stripe.CustomerSubscriptionCreatedEvent,
-  ) {
-    const stripeCustomerId = event.data.object.id;
-
-    let accessEnabled = false;
-
-    switch (event.data.object.status) {
-      case "active":
-      case "trialing":
-        accessEnabled = true;
-        break;
-      case "incomplete":
-      case "incomplete_expired":
-      case "past_due":
-      case "unpaid":
-        accessEnabled = false;
-        break;
-    }
-
-    await db.updateTable("organization")
-      .set({
-        access_enabled: accessEnabled,
-      })
-      .where("stripe_customer_id", "=", stripeCustomerId)
-      .executeTakeFirstOrThrow();
+    return event;
   }
 }

@@ -5,11 +5,25 @@ import { useCoreApi } from "./CoreApi.tsx";
 export const ADMIN_ROLE = "admin";
 export const MEMBER_ROLE = "member";
 
+export const BASIC_PLAN = "BASIC";
+export const PRO_PLAN = "PRO";
+export const PREMIUM_PLAN = "PREMIUM";
+export const CUSTOM_PLAN = "CUSTOM";
+
+export const MONTHLY_BILLING_CYCLE = "MONTHLY";
+export const YEARLY_BILLING_CYCLE = "YEARLY";
+
 export type Organization = {
   id: number;
   isTeam: boolean;
   name: string;
   role: typeof ADMIN_ROLE | typeof MEMBER_ROLE;
+  plan:
+    | typeof BASIC_PLAN
+    | typeof PRO_PLAN
+    | typeof PREMIUM_PLAN
+    | typeof CUSTOM_PLAN;
+  billing_cycle: typeof MONTHLY_BILLING_CYCLE | typeof YEARLY_BILLING_CYCLE;
 };
 
 type OrganizationContextType = {

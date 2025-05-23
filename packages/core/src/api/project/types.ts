@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { Project } from "../../db/types.ts";
 
 export const createProjectPayloadSchema = z.object({
   name: z.string(),
@@ -11,11 +10,6 @@ export const createProjectPayloadSchema = z.object({
 export type CreateProjectPayload = z.infer<
   typeof createProjectPayloadSchema
 >;
-
-export type GetProjectsResponse = {
-  results: Project[];
-  total: number;
-};
 
 export const updateProjectSchema = z.object({
   name: z.string().optional(),

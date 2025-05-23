@@ -6,10 +6,10 @@ import { resetTables } from "../../testHelpers/db.ts";
 import { getNumericDate, verify } from "djwt";
 import settings from "../../settings.ts";
 import {
-  BASIC_PLAN,
+  BASIC_PRODUCT,
   MONTHLY_BILLING_CYCLE,
-  type User,
-} from "../../db/types.ts";
+} from "../../db/models/organization.ts";
+import type { User } from "../../db/models/user.ts";
 
 Deno.test("request otp, invalid email", async () => {
   initKyselyDb();
@@ -94,8 +94,8 @@ Deno.test("request otp for new user", async () => {
     assertNotEquals(personalOrg, undefined);
     assertEquals(personalOrg?.name, "Personal");
     assertEquals(personalOrg?.isTeam, false);
-    assertEquals(personalOrg?.plan, BASIC_PLAN);
-    assertEquals(personalOrg?.billing_cycle, MONTHLY_BILLING_CYCLE);
+    assertEquals(personalOrg?.stripe_product, BASIC_PRODUCT);
+    assertEquals(personalOrg?.stripe_billing_cycle, MONTHLY_BILLING_CYCLE);
     assertEquals(
       (personalOrg?.stripe_customer_id as string).startsWith("cus_"),
       true,

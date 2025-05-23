@@ -1,14 +1,14 @@
 import { db } from "../../db/database.ts";
 import {
-  ADMIN_ROLE,
-  BASIC_PLAN,
-  CUSTOM_PLAN,
-  type MEMBER_ROLE,
+  BASIC_PRODUCT,
   MONTHLY_BILLING_CYCLE,
-  PREMIUM_PLAN,
-  PRO_PLAN,
-  YEARLY_BILLING_CYCLE,
-} from "../../db/types.ts";
+  type StripeBillingCycle,
+  type StripeProduct,
+} from "../../db/models/organization.ts";
+import {
+  ADMIN_ROLE,
+  type OrganizationMemberRole,
+} from "../../db/models/organizationMember.ts";
 import { sendInvitationEmail } from "../../email/index.ts";
 import settings from "../../settings.ts";
 import { StripeService } from "../../stripe/index.ts";
@@ -67,8 +67,8 @@ export class OrganizationService {
           name,
           isTeam: true,
           stripe_customer_id: null,
-          plan: BASIC_PLAN,
-          billing_cycle: MONTHLY_BILLING_CYCLE,
+          stripe_product: BASIC_PRODUCT,
+          stripe_billing_cycle: MONTHLY_BILLING_CYCLE,
           access_enabled: false,
           created_at: new Date(),
           deactivated: false,
@@ -125,13 +125,9 @@ export class OrganizationService {
       id: number;
       name: string;
       isTeam: boolean;
-      role: typeof ADMIN_ROLE | typeof MEMBER_ROLE;
-      plan:
-        | typeof BASIC_PLAN
-        | typeof PRO_PLAN
-        | typeof PREMIUM_PLAN
-        | typeof CUSTOM_PLAN;
-      billing_cycle: typeof MONTHLY_BILLING_CYCLE | typeof YEARLY_BILLING_CYCLE;
+      role: OrganizationMemberRole | null;
+      stripe_product: StripeProduct | null;
+      stripe_billing_cycle: StripeBillingCycle | null;
     }[];
     total: number;
   }> {
@@ -171,8 +167,8 @@ export class OrganizationService {
         "organization.name",
         "organization.isTeam",
         "organization_member.role",
-        "organization.plan",
-        "organization.billing_cycle",
+        "organization.stripe_product",
+        "organization.stripe_billing_cycle",
       ])
       .where("organization_member.user_id", "=", userId)
       .where("organization.deactivated", "=", false)
@@ -454,7 +450,7 @@ export class OrganizationService {
         id: number;
         user_id: number;
         email: string;
-        role: typeof ADMIN_ROLE | typeof MEMBER_ROLE;
+        role: OrganizationMemberRole | null;
       }[];
       total: number;
     } | {
@@ -533,7 +529,7 @@ export class OrganizationService {
     userId: number,
     organizationId: number,
     memberId: number,
-    role: typeof ADMIN_ROLE | typeof MEMBER_ROLE,
+    role: OrganizationMemberRole,
   ): Promise<{ error?: string }> {
     // First check if user is an admin of the organization
     const adminCheck = await db

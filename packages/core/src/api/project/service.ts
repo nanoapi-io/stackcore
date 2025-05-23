@@ -1,5 +1,5 @@
 import { db } from "../../db/database.ts";
-import type { Project } from "../../db/types.ts";
+import type { Project } from "../../db/models/project.ts";
 
 export const projectAlreadyExistsErrorCode = "project_already_exists";
 export const projectNotFoundError = "project_not_found";

@@ -1,5 +1,6 @@
 import { type RouterContext, type RouterMiddleware, Status } from "@oak/oak";
 import { AuthService } from "./service.ts";
+import { type Session, sessionSchema } from "./types.ts";
 
 export const authMiddleware: RouterMiddleware<string> = async (
   ctx: RouterContext<string>,
@@ -21,13 +22,31 @@ export const authMiddleware: RouterMiddleware<string> = async (
 
   const authService = new AuthService();
 
-  const session = await authService.verifyToken(token);
-  if (!session) {
+  const verifiedToken = await authService.verifyToken(token);
+
+  if (!verifiedToken) {
     ctx.response.status = Status.Unauthorized;
     ctx.response.body = { error: "Invalid or expired token" };
     return;
   }
 
-  ctx.state.session = session;
+  ctx.state.session = {
+    userId: verifiedToken.userId,
+    email: verifiedToken.email,
+  } as Session;
+
   await next();
 };
+
+export function getSession(ctx: RouterContext<string>) {
+  const userId = ctx.state.session?.userId;
+  const email = ctx.state.session?.email;
+
+  const parsedSession = sessionSchema.safeParse({ userId, email });
+
+  if (!parsedSession.success) {
+    throw new Error("Invalid session");
+  }
+
+  return parsedSession.data;
+}

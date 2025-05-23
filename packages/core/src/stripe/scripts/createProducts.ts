@@ -34,6 +34,16 @@ await stripe.prices.create({
   },
 });
 
+// Basic yearly
+await stripe.prices.create({
+  product: basicProduct.id,
+  unit_amount: 0,
+  currency: "usd",
+  recurring: {
+    interval: "year",
+  },
+});
+
 // Basic usage
 // 50 credits for free
 // then 0.50 USD per credit
