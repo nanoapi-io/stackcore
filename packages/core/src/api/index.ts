@@ -1,9 +1,12 @@
 import { Application } from "@oak/oak";
 import authRouter from "./auth/router.ts";
 import organizationRouter from "./organization/router.ts";
+import invitationRouter from "./invitation/router.ts";
+import memberRouter from "./member/router.ts";
 import projectRouter from "./project/router.ts";
 import healthRouter from "./health/router.ts";
 import billingRouter from "./billing/router.ts";
+
 const api = new Application();
 
 api.use((ctx, next) => {
@@ -34,6 +37,12 @@ api.use(authRouter.allowedMethods());
 
 api.use(organizationRouter.prefix("/organizations").routes());
 api.use(organizationRouter.allowedMethods());
+
+api.use(invitationRouter.prefix("/invitations").routes());
+api.use(invitationRouter.allowedMethods());
+
+api.use(memberRouter.prefix("/members").routes());
+api.use(memberRouter.allowedMethods());
 
 api.use(projectRouter.prefix("/projects").routes());
 api.use(projectRouter.allowedMethods());

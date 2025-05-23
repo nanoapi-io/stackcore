@@ -3,7 +3,7 @@ import {
   MONTHLY_BILLING_CYCLE,
   PREMIUM_PRODUCT,
   PRO_PRODUCT,
-  StripeProduct,
+  type StripeProduct,
   YEARLY_BILLING_CYCLE,
 } from "./db/models/organization.ts";
 

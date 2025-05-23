@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "exports": "./src/index.ts",
   "imports": {
+    "@stackcore/core/responses": "../core/src/api/responseType.ts",
     "@deno/vite-plugin": "npm:@deno/vite-plugin@^1.0.4",
     "@hookform/resolvers": "npm:@hookform/resolvers@^5.0.1",
     "@radix-ui/react-dialog": "npm:@radix-ui/react-dialog@^1.1.13",

@@ -16,3 +16,7 @@ export const verifyOtpSchema = z.object({
   otp: z.string(),
 });
 export type VerifyOtpPayload = z.infer<typeof verifyOtpSchema>;
+
+export type VerifyOtpResponse = {
+  token: string;
+};

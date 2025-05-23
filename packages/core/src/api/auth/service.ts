@@ -1,7 +1,7 @@
 import { create, getNumericDate, verify } from "djwt";
 import { db } from "../../db/database.ts";
 import settings from "../../settings.ts";
-import { sendOtpEmail } from "../../email/index.ts";
+import { sendOtpEmail, sendWelcomeEmail } from "../../email/index.ts";
 import { StripeService } from "../../stripe/index.ts";
 import {
   BASIC_PRODUCT,
@@ -165,6 +165,8 @@ export class AuthService {
           .where("id", "=", newPersonalOrganization.id)
           .execute();
       });
+
+      sendWelcomeEmail(email);
     }
 
     await db

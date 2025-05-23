@@ -73,18 +73,28 @@ export class StripeService {
     return subscription;
   }
 
-  public async switchSubscription(
-    stripeCustomerId: string,
-    product: StripeProduct,
-    licensePeriod: StripeBillingCycle,
-    switchMethod: "upgrade" | "downgrade",
-  ) {
+  public async getCustomerSubscription(stripeCustomerId: string) {
     const subscriptions = await this.stripe.subscriptions.list({
       customer: stripeCustomerId,
       limit: 1,
     });
 
     const subscription = subscriptions.data[0];
+
+    if (!subscription) {
+      throw new Error("Subscription not found");
+    }
+
+    return subscription;
+  }
+
+  public async switchSubscription(
+    stripeCustomerId: string,
+    product: StripeProduct,
+    licensePeriod: StripeBillingCycle,
+    switchMethod: "upgrade" | "downgrade",
+  ) {
+    const subscription = await this.getCustomerSubscription(stripeCustomerId);
 
     const currentLicensePriceId = subscription.items.data.find((item) => {
       item.metadata.type === "license";
@@ -155,16 +165,7 @@ export class StripeService {
   }
 
   public async cancelSubscription(stripeCustomerId: string) {
-    const subscriptions = await this.stripe.subscriptions.list({
-      customer: stripeCustomerId,
-      limit: 1,
-    });
-
-    const subscription = subscriptions.data[0];
-
-    if (!subscription) {
-      throw new Error("Subscription not found");
-    }
+    const subscription = await this.getCustomerSubscription(stripeCustomerId);
 
     await this.stripe.subscriptions.update(subscription.id, {
       cancel_at_period_end: true,

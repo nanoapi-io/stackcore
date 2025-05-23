@@ -2,9 +2,8 @@ import { Router, Status } from "@oak/oak";
 import { OrganizationService } from "./service.ts";
 import { authMiddleware } from "../auth/middleware.ts";
 import {
-  createInvitationSchema,
   createOrganizationPayloadSchema,
-  updateMemberRoleSchema,
+  type GetOrganizationsResponse,
   updateOrganizationSchema,
 } from "./types.ts";
 import z from "zod";
@@ -67,12 +66,13 @@ router.get("/", authMiddleware, async (ctx) => {
     return;
   }
 
-  const response = await organizationService.getOrganizations(
-    userId,
-    parsedSearchParams.data.page,
-    parsedSearchParams.data.limit,
-    parsedSearchParams.data.search,
-  );
+  const response: GetOrganizationsResponse = await organizationService
+    .getOrganizations(
+      userId,
+      parsedSearchParams.data.page,
+      parsedSearchParams.data.limit,
+      parsedSearchParams.data.search,
+    );
 
   ctx.response.status = Status.OK;
   ctx.response.body = response;
@@ -149,219 +149,4 @@ router.delete("/:organizationId", authMiddleware, async (ctx) => {
 
   ctx.response.status = Status.NoContent;
 });
-
-// Create invitation to join an organization
-router.post("/:organizationId/invite", authMiddleware, async (ctx) => {
-  const paramSchema = z.object({
-    organizationId: z.string().refine((val) => !isNaN(Number(val)), {
-      message: "Organization ID must be a number",
-    }).transform((val) => Number(val)),
-  });
-
-  const parsedParams = paramSchema.safeParse(ctx.params);
-
-  if (!parsedParams.success) {
-    ctx.response.status = Status.BadRequest;
-    ctx.response.body = { error: parsedParams.error };
-    return;
-  }
-
-  const body = await ctx.request.body.json();
-
-  const parsedBody = createInvitationSchema.safeParse(body);
-
-  if (!parsedBody.success) {
-    ctx.response.status = Status.BadRequest;
-    ctx.response.body = { error: parsedBody.error };
-    return;
-  }
-
-  const { error } = await organizationService
-    .createInvitation(
-      ctx.state.session.userId,
-      parsedParams.data.organizationId,
-      parsedBody.data.email,
-    );
-
-  if (error) {
-    ctx.response.status = Status.BadRequest;
-    ctx.response.body = { error };
-    return;
-  }
-
-  ctx.response.status = Status.OK;
-  ctx.response.body = { message: "Invitation created successfully" };
-});
-
-// Claim an invitation to join an organization
-router.post("/invitation/claim/:uuid", authMiddleware, async (ctx) => {
-  const paramSchema = z.object({
-    uuid: z.string().uuid(),
-  });
-
-  const parsedParams = paramSchema.safeParse(ctx.params);
-
-  if (!parsedParams.success) {
-    ctx.response.status = Status.BadRequest;
-    ctx.response.body = { error: parsedParams.error };
-    return;
-  }
-
-  const { error } = await organizationService
-    .claimInvitation(parsedParams.data.uuid, ctx.state.session.userId);
-
-  if (error) {
-    ctx.response.status = Status.BadRequest;
-    ctx.response.body = { error };
-    return;
-  }
-
-  ctx.response.status = Status.OK;
-  ctx.response.body = { message: "Invitation claimed successfully" };
-});
-
-// Get all members of an organization
-router.get("/:organizationId/members", authMiddleware, async (ctx) => {
-  const paramSchema = z.object({
-    organizationId: z.string().refine((val) => !isNaN(Number(val)), {
-      message: "Organization ID must be a number",
-    }).transform((val) => Number(val)),
-  });
-
-  const parsedParams = paramSchema.safeParse(ctx.params);
-
-  if (!parsedParams.success) {
-    ctx.response.status = Status.BadRequest;
-    ctx.response.body = { error: parsedParams.error };
-    return;
-  }
-
-  const searchParamsSchema = z.object({
-    search: z.string().optional(),
-    page: z.string().refine((val) => !isNaN(Number(val)), {
-      message: "Page must be a number",
-    }).transform((val) => parseInt(val)),
-    limit: z.string().refine((val) => !isNaN(Number(val)), {
-      message: "Limit must be a number",
-    }).transform((val) => parseInt(val)),
-  });
-
-  const searchParams = Object.fromEntries(ctx.request.url.searchParams);
-
-  const parsedSearchParams = searchParamsSchema.safeParse(searchParams);
-
-  if (!parsedSearchParams.success) {
-    ctx.response.status = Status.BadRequest;
-    ctx.response.body = { error: parsedSearchParams.error };
-    return;
-  }
-
-  const response = await organizationService.getMembers(
-    ctx.state.session.userId,
-    parsedParams.data.organizationId,
-    parsedSearchParams.data.page,
-    parsedSearchParams.data.limit,
-    parsedSearchParams.data.search,
-  );
-
-  if ("error" in response) {
-    ctx.response.status = Status.BadRequest;
-    ctx.response.body = { error: response.error };
-    return;
-  }
-
-  ctx.response.status = Status.OK;
-  ctx.response.body = response;
-});
-
-router.patch(
-  "/:organizationId/members/:memberId",
-  authMiddleware,
-  async (ctx) => {
-    const paramSchema = z.object({
-      organizationId: z.string().refine((val) => !isNaN(Number(val)), {
-        message: "Organization ID must be a number",
-      }).transform((val) => Number(val)),
-      memberId: z.string().refine((val) => !isNaN(Number(val)), {
-        message: "Member ID must be a number",
-      }).transform((val) => Number(val)),
-    });
-
-    const parsedParams = paramSchema.safeParse(ctx.params);
-
-    if (!parsedParams.success) {
-      ctx.response.status = Status.BadRequest;
-      ctx.response.body = { error: parsedParams.error };
-      return;
-    }
-
-    const body = await ctx.request.body.json();
-
-    const parsedBody = updateMemberRoleSchema.safeParse(body);
-
-    if (!parsedBody.success) {
-      ctx.response.status = Status.BadRequest;
-      ctx.response.body = { error: parsedBody.error };
-      return;
-    }
-
-    const { error } = await organizationService.updateMemberRole(
-      ctx.state.session.userId,
-      parsedParams.data.organizationId,
-      parsedParams.data.memberId,
-      parsedBody.data.role,
-    );
-
-    if (error) {
-      ctx.response.status = Status.BadRequest;
-      ctx.response.body = { error };
-      return;
-    }
-
-    ctx.response.status = Status.OK;
-    ctx.response.body = { message: "Member role updated successfully" };
-  },
-);
-
-// Remove a member from an organization
-router.delete(
-  "/:organizationId/members/:memberId",
-  authMiddleware,
-  async (ctx) => {
-    const paramSchema = z.object({
-      organizationId: z.string().refine((val) => !isNaN(Number(val)), {
-        message: "Organization ID must be a number",
-      }).transform((val) => Number(val)),
-      memberId: z.string().refine((val) => !isNaN(Number(val)), {
-        message: "Member ID must be a number",
-      }).transform((val) => Number(val)),
-    });
-
-    const parsedParams = paramSchema.safeParse(ctx.params);
-
-    if (!parsedParams.success) {
-      ctx.response.status = Status.BadRequest;
-      ctx.response.body = { error: parsedParams.error };
-      return;
-    }
-
-    const { error } = await organizationService.removeMemberFromOrganization(
-      ctx.state.session.userId,
-      parsedParams.data.organizationId,
-      parsedParams.data.memberId,
-    );
-
-    if (error) {
-      ctx.response.status = Status.BadRequest;
-      ctx.response.body = { error };
-      return;
-    }
-
-    ctx.response.status = Status.OK;
-    ctx.response.body = {
-      message: "Member removed from organization successfully",
-    };
-  },
-);
-
 export default router;
