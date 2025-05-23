@@ -10,6 +10,8 @@ import {
   MONTHLY_BILLING_CYCLE,
 } from "../../db/models/organization.ts";
 import type { User } from "../../db/models/user.ts";
+import { createTestUserAndToken } from "../../testHelpers/auth.ts";
+import { ADMIN_ROLE } from "../../db/models/organizationMember.ts";
 
 Deno.test("request otp, invalid email", async () => {
   initKyselyDb();
@@ -87,19 +89,12 @@ Deno.test("request otp for new user", async () => {
         "organization.id",
       )
       .selectAll("organization")
+      .where("organization.isTeam", "=", false)
       .where("organization_member.user_id", "=", (user as User).id)
       .executeTakeFirst();
 
-    // Personal organization should exist
-    assertNotEquals(personalOrg, undefined);
-    assertEquals(personalOrg?.name, "Personal");
-    assertEquals(personalOrg?.isTeam, false);
-    assertEquals(personalOrg?.stripe_product, BASIC_PRODUCT);
-    assertEquals(personalOrg?.stripe_billing_cycle, MONTHLY_BILLING_CYCLE);
-    assertEquals(
-      (personalOrg?.stripe_customer_id as string).startsWith("cus_"),
-      true,
-    );
+    // Personal organization should not exist
+    assertEquals(personalOrg, undefined);
   } finally {
     await resetTables();
     await destroyKyselyDb();
@@ -111,20 +106,17 @@ Deno.test("request otp for existing user", async () => {
   await resetTables();
 
   try {
-    const email = `test-${crypto.randomUUID()}@example.com`;
+    const { userId, email } = await createTestUserAndToken();
 
-    const authService = new AuthService();
-    const otp = await authService.requestOtp(email);
-
-    let user = await db
+    const user = await db
       .selectFrom("user")
       .selectAll()
-      .where("email", "=", email)
-      .executeTakeFirst();
+      .where("id", "=", userId)
+      .executeTakeFirstOrThrow();
 
-    // User should exist
-    assertNotEquals(user, undefined);
-    assertNotEquals(user, null);
+    assertEquals(user.email, email);
+    assertEquals(user.otp, null);
+    assertEquals(user.otp_expires_at, null);
 
     const response = await api.handle(
       new Request("http://localhost:3000/auth/requestOtp", {
@@ -138,22 +130,22 @@ Deno.test("request otp for existing user", async () => {
     const responseBody = await response?.json();
     assertEquals(responseBody.message, "OTP sent successfully");
 
-    user = await db
+    const newUser = await db
       .selectFrom("user")
       .selectAll()
-      .where("email", "=", email)
-      .executeTakeFirst();
+      .where("id", "=", user.id)
+      .executeTakeFirstOrThrow();
 
-    assertNotEquals(user?.otp, otp); // OTP should have been updated
-    assertEquals(user?.otp, user?.otp);
-    assertEquals(user?.otp_expires_at, user?.otp_expires_at);
+    assertNotEquals(newUser.otp, null); // OTP should have been updated
+    assertEquals(newUser.otp?.length, 6);
+    assertNotEquals(newUser.otp_expires_at, null);
   } finally {
     await resetTables();
     await destroyKyselyDb();
   }
 });
 
-Deno.test("verify otp", async () => {
+Deno.test("verify otp for new user", async () => {
   initKyselyDb();
   await resetTables();
 
@@ -179,7 +171,7 @@ Deno.test("verify otp", async () => {
       .selectFrom("user")
       .selectAll()
       .where("email", "=", email)
-      .executeTakeFirst();
+      .executeTakeFirstOrThrow();
 
     const responseBody = await response!.json();
 
@@ -192,6 +184,124 @@ Deno.test("verify otp", async () => {
       payload.exp as number,
       getNumericDate(settings.JWT.EXPIRY_DAYS * 24 * 60 * 60),
     );
+
+    // check personal organization was created
+    const personalOrg = await db
+      .selectFrom("organization")
+      .innerJoin(
+        "organization_member",
+        "organization_member.organization_id",
+        "organization.id",
+      )
+      .selectAll("organization")
+      .where("isTeam", "=", false)
+      .where("organization_member.user_id", "=", user.id)
+      .executeTakeFirstOrThrow();
+
+    assertEquals(personalOrg.name, "Personal");
+    assertEquals(personalOrg.isTeam, false);
+    assertEquals(personalOrg.stripe_customer_id?.startsWith("cus_"), true);
+    assertEquals(personalOrg.stripe_product, BASIC_PRODUCT);
+    assertEquals(personalOrg.stripe_billing_cycle, MONTHLY_BILLING_CYCLE);
+    assertEquals(personalOrg.access_enabled, false);
+    assertEquals(personalOrg.deactivated, false);
+
+    const personalOrgMember = await db
+      .selectFrom("organization_member")
+      .selectAll()
+      .where("organization_id", "=", personalOrg.id)
+      .where("user_id", "=", user.id)
+      .executeTakeFirstOrThrow();
+
+    assertEquals(personalOrgMember.role, ADMIN_ROLE);
+  } finally {
+    await resetTables();
+    await destroyKyselyDb();
+  }
+});
+
+Deno.test("verify otp for existing user", async () => {
+  initKyselyDb();
+  await resetTables();
+
+  try {
+    const { userId, email } = await createTestUserAndToken();
+
+    const user = await db
+      .selectFrom("user")
+      .selectAll()
+      .where("id", "=", userId)
+      .executeTakeFirstOrThrow();
+
+    assertEquals(user.email, email);
+    assertEquals(user.otp, null);
+    assertEquals(user.otp_expires_at, null);
+
+    const personalOrg = await db
+      .selectFrom("organization")
+      .selectAll()
+      .where("isTeam", "=", false)
+      .executeTakeFirstOrThrow();
+
+    assertEquals(personalOrg.name, "Personal");
+    assertEquals(personalOrg.isTeam, false);
+    assertEquals(personalOrg.stripe_customer_id?.startsWith("cus_"), true);
+    assertEquals(personalOrg.stripe_product, BASIC_PRODUCT);
+    assertEquals(personalOrg.stripe_billing_cycle, MONTHLY_BILLING_CYCLE);
+    assertEquals(personalOrg.access_enabled, false);
+    assertEquals(personalOrg.deactivated, false);
+
+    const personalOrgMember = await db
+      .selectFrom("organization_member")
+      .selectAll()
+      .where("organization_id", "=", personalOrg.id)
+      .where("user_id", "=", user.id)
+      .executeTakeFirstOrThrow();
+
+    assertEquals(personalOrgMember.role, ADMIN_ROLE);
+
+    const authService = new AuthService();
+    const otp = await authService.requestOtp(email);
+
+    const response = await api.handle(
+      new Request("http://localhost:3000/auth/verifyOtp", {
+        method: "POST",
+        body: JSON.stringify({ email, otp }),
+      }),
+    );
+
+    assertEquals(response!.status, 200);
+
+    const responseBody = await response!.json();
+
+    // Verify token is valid
+    assertGreater(responseBody.token.length, 0);
+    const payload = await verify(responseBody.token, secretCryptoKey);
+    assertEquals(payload.userId, user?.id);
+    assertEquals(payload.email, user?.email);
+    assertEquals(
+      payload.exp as number,
+      getNumericDate(settings.JWT.EXPIRY_DAYS * 24 * 60 * 60),
+    );
+
+    // check personal organization was not created again
+    const newPersonalOrg = await db
+      .selectFrom("organization")
+      .selectAll()
+      .where("isTeam", "=", false)
+      .executeTakeFirst();
+
+    assertEquals(newPersonalOrg, personalOrg);
+
+    // check personal organization member was not created again
+    const newPersonalOrgMember = await db
+      .selectFrom("organization_member")
+      .selectAll()
+      .where("organization_id", "=", personalOrg.id)
+      .where("user_id", "=", user.id)
+      .executeTakeFirst();
+
+    assertEquals(newPersonalOrgMember, personalOrgMember);
   } finally {
     await resetTables();
     await destroyKyselyDb();

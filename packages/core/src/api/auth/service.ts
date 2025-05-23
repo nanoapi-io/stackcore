@@ -57,65 +57,17 @@ export class AuthService {
         .where("email", "=", email)
         .execute();
     } else {
-      // everything in a transaction, so if something fails we do not end up in a broken state
-      await db.transaction().execute(async (trx) => {
-        const newUser = await trx
-          .insertInto("user")
-          .values({
-            email,
-            otp,
-            otp_expires_at: expiresAt,
-            created_at: new Date(),
-            last_login_at: new Date(),
-            deactivated: false,
-          })
-          .returningAll()
-          .executeTakeFirstOrThrow();
-
-        const personalOrganization = await trx
-          .insertInto("organization")
-          .values({
-            name: "Personal",
-            isTeam: false,
-            stripe_customer_id: null,
-            stripe_product: BASIC_PRODUCT,
-            stripe_billing_cycle: MONTHLY_BILLING_CYCLE,
-            access_enabled: false,
-            deactivated: false,
-            created_at: new Date(),
-          })
-          .returningAll()
-          .executeTakeFirstOrThrow();
-
-        await trx
-          .insertInto("organization_member")
-          .values({
-            role: ADMIN_ROLE,
-            organization_id: personalOrganization.id,
-            user_id: newUser.id,
-            created_at: new Date(),
-          })
-          .executeTakeFirstOrThrow();
-
-        const stripeService = new StripeService();
-        const customer = await stripeService.createCustomer(
-          personalOrganization.id,
-          personalOrganization.name,
-        );
-        await stripeService.createSubscription(
-          customer.id,
-          BASIC_PRODUCT,
-          MONTHLY_BILLING_CYCLE,
-        );
-
-        await trx
-          .updateTable("organization")
-          .set({
-            stripe_customer_id: customer.id,
-          })
-          .where("id", "=", personalOrganization.id)
-          .execute();
-      });
+      // create a new user with the OTP
+      await db
+        .insertInto("user")
+        .values({
+          email,
+          otp,
+          otp_expires_at: expiresAt,
+          created_at: new Date(),
+          deactivated: false,
+        })
+        .execute();
     }
 
     // Send OTP to user via email
@@ -153,11 +105,75 @@ export class AuthService {
       return { error: otpExpiredErrorCode };
     }
 
+    const personalOrganization = await db
+      .selectFrom("organization")
+      .innerJoin(
+        "organization_member",
+        "organization_member.organization_id",
+        "organization.id",
+      )
+      .selectAll("organization")
+      .where("isTeam", "=", false)
+      .where("organization_member.user_id", "=", user.id)
+      .executeTakeFirst();
+
+    if (!personalOrganization) {
+      // create a personal organization, membership and subscription
+      // everything in a transaction, so if something fails we do not end up in a broken state
+      await db.transaction().execute(async (trx) => {
+        const newPersonalOrganization = await trx
+          .insertInto("organization")
+          .values({
+            name: "Personal",
+            isTeam: false,
+            stripe_customer_id: null,
+            stripe_product: BASIC_PRODUCT,
+            stripe_billing_cycle: MONTHLY_BILLING_CYCLE,
+            access_enabled: false,
+            deactivated: false,
+            created_at: new Date(),
+          })
+          .returningAll()
+          .executeTakeFirstOrThrow();
+
+        await trx
+          .insertInto("organization_member")
+          .values({
+            role: ADMIN_ROLE,
+            organization_id: newPersonalOrganization.id,
+            user_id: user.id,
+            created_at: new Date(),
+          })
+          .executeTakeFirstOrThrow();
+
+        const stripeService = new StripeService();
+        const customer = await stripeService.createCustomer(
+          newPersonalOrganization.id,
+          newPersonalOrganization.name,
+        );
+        await stripeService.createSubscription(
+          customer.id,
+          BASIC_PRODUCT,
+          MONTHLY_BILLING_CYCLE,
+        );
+
+        await trx
+          .updateTable("organization")
+          .set({
+            stripe_customer_id: customer.id,
+          })
+          .where("id", "=", newPersonalOrganization.id)
+          .execute();
+      });
+    }
+
     await db
       .updateTable("user")
       .set({
+        // reset OTP
         otp: null,
         otp_expires_at: null,
+        // update last login date
         last_login_at: new Date(),
       })
       .where("id", "=", user.id)

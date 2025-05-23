@@ -3,6 +3,7 @@ import { db } from "../db/database.ts";
 
 export async function createTestUserAndToken() {
   const email = `test-${crypto.randomUUID()}@example.com`;
+
   const authService = new AuthService();
   const otp = await authService.requestOtp(email);
 
