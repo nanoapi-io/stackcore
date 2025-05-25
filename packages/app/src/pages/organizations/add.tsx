@@ -24,6 +24,7 @@ import {
   FormLabel,
   FormMessage,
 } from "../../components/shadcn/Form.tsx";
+import { OrganizationApiTypes } from "@stackcore/core/responses";
 
 export default function AddOrganizationPage() {
   const navigate = useNavigate();
@@ -45,13 +46,12 @@ export default function AddOrganizationPage() {
     setIsBusy(true);
 
     try {
-      const response = await coreApi.handleRequest(
-        "/organizations",
-        "POST",
-        {
+      const { url, method, body } = OrganizationApiTypes
+        .prepareCreateOrganization({
           name: values.name,
-        },
-      );
+        });
+
+      const response = await coreApi.handleRequest(url, method, body);
 
       if (!response.ok || response.status !== 201) {
         const { error } = await response.json();
@@ -71,7 +71,8 @@ export default function AddOrganizationPage() {
         description: "You can now manage your organization",
       });
 
-      const organization = await response.json() as { id: number };
+      const organization = await response
+        .json() as OrganizationApiTypes.CreateOrganizationResponse;
 
       await refreshOrganizations();
 

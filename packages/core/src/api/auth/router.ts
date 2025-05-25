@@ -58,7 +58,7 @@ router.post("/verifyOtp", async (ctx) => {
 router.get("/me", authMiddleware, (ctx) => {
   const session = getSession(ctx);
 
-  ctx.response.body = { email: session.email };
+  ctx.response.body = { userId: session.userId, email: session.email };
 });
 
 export default router;

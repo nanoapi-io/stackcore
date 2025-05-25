@@ -3,6 +3,7 @@ import { OrganizationService } from "./service.ts";
 import { authMiddleware } from "../auth/middleware.ts";
 import {
   createOrganizationPayloadSchema,
+  type CreateOrganizationResponse,
   type GetOrganizationsResponse,
   updateOrganizationSchema,
 } from "./types.ts";
@@ -24,20 +25,20 @@ router.post("/", authMiddleware, async (ctx) => {
   }
 
   const userId = ctx.state.session.userId;
-  const { error } = await organizationService
+  const result = await organizationService
     .createTeamOrganization(
       parsedBody.data.name,
       userId,
     );
 
-  if (error) {
+  if ("error" in result) {
     ctx.response.status = Status.BadRequest;
-    ctx.response.body = { error };
+    ctx.response.body = { error: result.error };
     return;
   }
 
   ctx.response.status = Status.Created;
-  ctx.response.body = { message: "Team organization created successfully" };
+  ctx.response.body = result as CreateOrganizationResponse;
 });
 
 // Get all organizations for current user

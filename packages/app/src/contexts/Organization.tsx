@@ -1,30 +1,9 @@
 import { createContext, useContext, useState } from "react";
 import { toast } from "../components/shadcn/hooks/use-toast.tsx";
 import { useCoreApi } from "./CoreApi.tsx";
-
-export const ADMIN_ROLE = "admin";
-export const MEMBER_ROLE = "member";
-
-export const BASIC_PLAN = "BASIC";
-export const PRO_PLAN = "PRO";
-export const PREMIUM_PLAN = "PREMIUM";
-export const CUSTOM_PLAN = "CUSTOM";
-
-export const MONTHLY_BILLING_CYCLE = "MONTHLY";
-export const YEARLY_BILLING_CYCLE = "YEARLY";
-
-export type Organization = {
-  id: number;
-  isTeam: boolean;
-  name: string;
-  role: typeof ADMIN_ROLE | typeof MEMBER_ROLE;
-  plan:
-    | typeof BASIC_PLAN
-    | typeof PRO_PLAN
-    | typeof PREMIUM_PLAN
-    | typeof CUSTOM_PLAN;
-  billing_cycle: typeof MONTHLY_BILLING_CYCLE | typeof YEARLY_BILLING_CYCLE;
-};
+import { OrganizationApiTypes } from "@stackcore/core/responses";
+export type Organization =
+  OrganizationApiTypes.GetOrganizationsResponse["results"][number];
 
 type OrganizationContextType = {
   isBusy: boolean;
@@ -64,10 +43,11 @@ export function OrganizationProvider(
     const organizations: Organization[] = [];
 
     while (true) {
-      const response = await coreApiContext.handleRequest(
-        `/organizations?page=${page}&limit=${limit}`,
-        "GET",
-      );
+      const { url, method } = OrganizationApiTypes.prepareGetOrganizations({
+        page,
+        limit,
+      });
+      const response = await coreApiContext.handleRequest(url, method);
 
       if (!response.ok || response.status !== 200) {
         throw new Error("Failed to get organizations");

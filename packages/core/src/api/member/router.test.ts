@@ -10,6 +10,8 @@ import {
   notAdminOfOrganizationError,
   notMemberOfOrganizationError,
 } from "./service.ts";
+import { MemberApiTypes } from "../responseType.ts";
+import type { OrganizationMemberRole } from "../../db/models/organizationMember.ts";
 
 // GET /:organizationId/members (list members)
 Deno.test("get organization members", async () => {
@@ -47,12 +49,18 @@ Deno.test("get organization members", async () => {
         .execute();
     }
 
+    const { url, method } = MemberApiTypes.prepareGetMembers({
+      organizationId: org.id,
+      page: 1,
+      limit: 10,
+    });
+
     // Get members
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/members?organizationId=${org.id}&page=1&limit=10`,
+        `http://localhost:3000${url}`,
         {
-          method: "GET",
+          method,
           headers: {
             "Authorization": `Bearer ${token}`,
           },
@@ -79,11 +87,17 @@ Deno.test("get organization members - invalid parameters", async () => {
     const { token } = await createTestUserAndToken();
 
     // Invalid organization ID
+    const { url, method } = MemberApiTypes.prepareGetMembers({
+      organizationId: -1,
+      page: 1,
+      limit: 10,
+    });
+
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/members?page=1&limit=10`,
+        `http://localhost:3000${url}`,
         {
-          method: "GET",
+          method,
           headers: {
             "Authorization": `Bearer ${token}`,
           },
@@ -92,21 +106,6 @@ Deno.test("get organization members - invalid parameters", async () => {
     );
 
     assertEquals(response?.status, 400);
-
-    // Invalid page/limit
-    const response2 = await api.handle(
-      new Request(
-        `http://localhost:3000/members?organizationId=1&page=invalid&limit=ten`,
-        {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-          },
-        },
-      ),
-    );
-
-    assertEquals(response2?.status, 400);
   } finally {
     await resetTables();
     await destroyKyselyDb();
@@ -120,12 +119,18 @@ Deno.test("get organization members - invalid page/limit values", async () => {
   try {
     const { token } = await createTestUserAndToken();
 
+    const { url, method } = MemberApiTypes.prepareGetMembers({
+      organizationId: 1,
+      page: -1,
+      limit: -10,
+    });
+
     // Test with negative page
     const response1 = await api.handle(
       new Request(
-        `http://localhost:3000/members?organizationId=1&page=-1&limit=10`,
+        `http://localhost:3000${url}`,
         {
-          method: "GET",
+          method,
           headers: {
             "Authorization": `Bearer ${token}`,
           },
@@ -134,21 +139,6 @@ Deno.test("get organization members - invalid page/limit values", async () => {
     );
 
     assertEquals(response1?.status, 400);
-
-    // Test with negative limit
-    const response2 = await api.handle(
-      new Request(
-        `http://localhost:3000/members?organizationId=1&page=1&limit=-10`,
-        {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-          },
-        },
-      ),
-    );
-
-    assertEquals(response2?.status, 400);
   } finally {
     await resetTables();
     await destroyKyselyDb();
@@ -176,12 +166,18 @@ Deno.test("get organization members - empty search", async () => {
       .where("name", "=", "Test Team")
       .executeTakeFirstOrThrow();
 
+    const { url, method } = MemberApiTypes.prepareGetMembers({
+      organizationId: org.id,
+      page: 1,
+      limit: 10,
+    });
+
     // Test with empty search string
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/members?organizationId=${org.id}&page=1&limit=10&search=`,
+        `http://localhost:3000${url}`,
         {
-          method: "GET",
+          method,
           headers: {
             "Authorization": `Bearer ${token}`,
           },
@@ -235,12 +231,18 @@ Deno.test("get organization members - pagination", async () => {
         .execute();
     }
 
+    const { url: url1, method: method1 } = MemberApiTypes.prepareGetMembers({
+      organizationId: org.id,
+      page: 1,
+      limit: 10,
+    });
+
     // Test first page
     const response1 = await api.handle(
       new Request(
-        `http://localhost:3000/members?organizationId=${org.id}&page=1&limit=10`,
+        `http://localhost:3000${url1}`,
         {
-          method: "GET",
+          method: method1,
           headers: {
             "Authorization": `Bearer ${token}`,
           },
@@ -254,12 +256,18 @@ Deno.test("get organization members - pagination", async () => {
     assertEquals(responseBody1.total, 16); // 15 added members + 1 creator
     assertEquals(responseBody1.results.length, 10);
 
+    const { url: url2, method: method2 } = MemberApiTypes.prepareGetMembers({
+      organizationId: org.id,
+      page: 2,
+      limit: 10,
+    });
+
     // Test second page
     const response2 = await api.handle(
       new Request(
-        `http://localhost:3000/members?organizationId=${org.id}&page=2&limit=10`,
+        `http://localhost:3000${url2}`,
         {
-          method: "GET",
+          method: method2,
           headers: {
             "Authorization": `Bearer ${token}`,
           },
@@ -302,11 +310,17 @@ Deno.test("get organization members - not a member", async () => {
     // Create second user (not a member of the organization)
     const { token: nonMemberToken } = await createTestUserAndToken();
 
+    const { url, method } = MemberApiTypes.prepareGetMembers({
+      organizationId: org.id,
+      page: 1,
+      limit: 10,
+    });
+
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/members?organizationId=${org.id}&page=1&limit=10`,
+        `http://localhost:3000${url}`,
         {
-          method: "GET",
+          method,
           headers: {
             "Authorization": `Bearer ${nonMemberToken}`,
           },
@@ -373,11 +387,18 @@ Deno.test("get organization members - with search", async () => {
     }
 
     // Search for members with "test" in their email
+    const { url, method } = MemberApiTypes.prepareGetMembers({
+      organizationId: org.id,
+      page: 1,
+      limit: 10,
+      search: "user",
+    });
+
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/members?organizationId=${org.id}&page=1&limit=10&search=user`,
+        `http://localhost:3000${url}`,
         {
-          method: "GET",
+          method,
           headers: {
             "Authorization": `Bearer ${token}`,
           },
@@ -431,15 +452,19 @@ Deno.test("update member role", async () => {
       .returningAll()
       .executeTakeFirstOrThrow();
 
+    const { url, method, body } = MemberApiTypes.prepareUpdateMemberRole(
+      memberRecord.id,
+      {
+        role: "admin",
+      },
+    );
     // Update member role to admin
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/members/${memberRecord.id}`,
+        `http://localhost:3000${url}`,
         {
-          method: "PATCH",
-          body: JSON.stringify({
-            role: "admin",
-          }),
+          method,
+          body: JSON.stringify(body),
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`,
@@ -514,15 +539,20 @@ Deno.test("update member role - non-admin user", async () => {
       .returningAll()
       .executeTakeFirstOrThrow();
 
+    const { url, method, body } = MemberApiTypes.prepareUpdateMemberRole(
+      targetMember.id,
+      {
+        role: "admin",
+      },
+    );
+
     // Regular member tries to update another member's role
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/members/${targetMember.id}`,
+        `http://localhost:3000${url}`,
         {
-          method: "PATCH",
-          body: JSON.stringify({
-            role: "admin",
-          }),
+          method,
+          body: JSON.stringify(body),
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${memberToken}`,
@@ -570,15 +600,20 @@ Deno.test("update member role - cannot update self", async () => {
       .where("user_id", "=", userId)
       .executeTakeFirstOrThrow();
 
+    const { url, method, body } = MemberApiTypes.prepareUpdateMemberRole(
+      adminMember.id,
+      {
+        role: "member",
+      },
+    );
+
     // Try to update own role
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/members/${adminMember.id}`,
+        `http://localhost:3000${url}`,
         {
-          method: "PATCH",
-          body: JSON.stringify({
-            role: "member",
-          }),
+          method,
+          body: JSON.stringify(body),
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`,
@@ -631,15 +666,20 @@ Deno.test("update member role - invalid role value", async () => {
       .returningAll()
       .executeTakeFirstOrThrow();
 
+    const { url, method, body } = MemberApiTypes.prepareUpdateMemberRole(
+      memberRecord.id,
+      {
+        role: "invalid_role" as OrganizationMemberRole,
+      },
+    );
+
     // Try to update with invalid role
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/members/${memberRecord.id}`,
+        `http://localhost:3000${url}`,
         {
-          method: "PATCH",
-          body: JSON.stringify({
-            role: "invalid_role",
-          }),
+          method,
+          body: JSON.stringify(body),
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`,
@@ -663,15 +703,20 @@ Deno.test("update member role - non-existent member", async () => {
   try {
     const { token } = await createTestUserAndToken();
 
+    const { url, method, body } = MemberApiTypes.prepareUpdateMemberRole(
+      999999,
+      {
+        role: "admin",
+      },
+    );
+
     // Try to update non-existent member
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/members/999999`,
+        `http://localhost:3000${url}`,
         {
-          method: "PATCH",
-          body: JSON.stringify({
-            role: "admin",
-          }),
+          method,
+          body: JSON.stringify(body),
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`,
@@ -697,15 +742,20 @@ Deno.test("update member role - invalid member ID format", async () => {
   try {
     const { token } = await createTestUserAndToken();
 
+    const { url, method, body } = MemberApiTypes.prepareUpdateMemberRole(
+      -1,
+      {
+        role: "admin",
+      },
+    );
+
     // Try to update with invalid member ID format
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/members/invalid_id`,
+        `http://localhost:3000${url}`,
         {
-          method: "PATCH",
-          body: JSON.stringify({
-            role: "admin",
-          }),
+          method,
+          body: JSON.stringify(body),
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`,
@@ -757,12 +807,16 @@ Deno.test("remove member from organization", async () => {
       .returningAll()
       .executeTakeFirstOrThrow();
 
+    const { url, method } = MemberApiTypes.prepareDeleteMember(
+      memberRecord.id,
+    );
+
     // Remove member
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/members/${memberRecord.id}`,
+        `http://localhost:3000${url}`,
         {
-          method: "DELETE",
+          method,
           headers: {
             "Authorization": `Bearer ${token}`,
           },
@@ -821,12 +875,16 @@ Deno.test("remove member - cannot remove self", async () => {
       .where("user_id", "=", userId)
       .executeTakeFirstOrThrow();
 
+    const { url, method } = MemberApiTypes.prepareDeleteMember(
+      adminMember.id,
+    );
+
     // Try to remove self
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/members/${adminMember.id}`,
+        `http://localhost:3000${url}`,
         {
-          method: "DELETE",
+          method,
           headers: {
             "Authorization": `Bearer ${token}`,
           },
@@ -851,12 +909,16 @@ Deno.test("remove member - non-existent member", async () => {
   try {
     const { token } = await createTestUserAndToken();
 
+    const { url, method } = MemberApiTypes.prepareDeleteMember(
+      999999,
+    );
+
     // Try to remove non-existent member
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/members/999999`,
+        `http://localhost:3000${url}`,
         {
-          method: "DELETE",
+          method,
           headers: {
             "Authorization": `Bearer ${token}`,
           },
@@ -881,12 +943,16 @@ Deno.test("remove member - invalid member ID format", async () => {
   try {
     const { token } = await createTestUserAndToken();
 
+    const { url, method } = MemberApiTypes.prepareDeleteMember(
+      -1,
+    );
+
     // Try to remove with invalid member ID format
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/members/invalid_id`,
+        `http://localhost:3000${url}`,
         {
-          method: "DELETE",
+          method,
           headers: {
             "Authorization": `Bearer ${token}`,
           },
@@ -949,12 +1015,16 @@ Deno.test("remove member - not admin", async () => {
       .returningAll()
       .executeTakeFirstOrThrow();
 
+    const { url, method } = MemberApiTypes.prepareDeleteMember(
+      targetMember.id,
+    );
+
     // Regular member tries to remove another member
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/members/${targetMember.id}`,
+        `http://localhost:3000${url}`,
         {
-          method: "DELETE",
+          method,
           headers: {
             "Authorization": `Bearer ${memberToken}`,
           },

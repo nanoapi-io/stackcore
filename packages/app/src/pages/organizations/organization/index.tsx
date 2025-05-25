@@ -1,26 +1,18 @@
-import { useNavigate, useParams } from "react-router";
-import LoggedInLayout from "../../layout/loggedIn.tsx";
+import { Link, useNavigate, useParams } from "react-router";
+import LoggedInLayout from "../../../layout/loggedIn.tsx";
 import { useEffect, useState } from "react";
 import {
-  ADMIN_ROLE,
-  BASIC_PLAN,
-  CUSTOM_PLAN,
-  MONTHLY_BILLING_CYCLE,
   type Organization,
-  PREMIUM_PLAN,
-  PRO_PLAN,
   useOrganization,
-  YEARLY_BILLING_CYCLE,
-} from "../../contexts/Organization.tsx";
+} from "../../../contexts/Organization.tsx";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
-} from "../../components/shadcn/Card.tsx";
-import { Separator } from "../../components/shadcn/Separator.tsx";
-import { Button } from "../../components/shadcn/Button.tsx";
+} from "../../../components/shadcn/Card.tsx";
+import { Separator } from "../../../components/shadcn/Separator.tsx";
+import { Button } from "../../../components/shadcn/Button.tsx";
 import {
   Dialog,
   DialogClose,
@@ -28,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../../components/shadcn/Dialog.tsx";
+} from "../../../components/shadcn/Dialog.tsx";
 import z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -39,12 +31,12 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "../../components/shadcn/Form.tsx";
-import { Input } from "../../components/shadcn/Input.tsx";
-import { useCoreApi } from "../../contexts/CoreApi.tsx";
-import { toast } from "../../components/shadcn/hooks/use-toast.tsx";
+} from "../../../components/shadcn/Form.tsx";
+import { Input } from "../../../components/shadcn/Input.tsx";
+import { useCoreApi } from "../../../contexts/CoreApi.tsx";
+import { toast } from "../../../components/shadcn/hooks/use-toast.tsx";
 import { CalendarCog, CreditCard, Edit, Loader, Trash } from "lucide-react";
-import { Badge } from "../../components/shadcn/Badge.tsx";
+import { Badge } from "../../../components/shadcn/Badge.tsx";
 import {
   Table,
   TableBody,
@@ -52,7 +44,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../../components/shadcn/Table.tsx";
+} from "../../../components/shadcn/Table.tsx";
 import {
   type ColumnDef,
   flexRender,
@@ -61,19 +53,25 @@ import {
   type PaginationState,
   useReactTable,
 } from "@tanstack/react-table";
-import { DataTablePagination } from "../../components/shadcn/Datatablepagination.tsx";
+import { DataTablePagination } from "../../../components/shadcn/Datatablepagination.tsx";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../components/shadcn/Select.tsx";
+} from "../../../components/shadcn/Select.tsx";
+import {
+  BillingApiTypes,
+  MemberApiTypes,
+  OrganizationApiTypes,
+} from "@stackcore/core/responses";
+import { Skeleton } from "../../../components/shadcn/Skeleton.tsx";
 
 type Member = {
   id: number;
   email: string;
-  role: "admin" | "member";
+  role: MemberApiTypes.OrganizationMemberRole;
 };
 
 export default function OrganizationPage() {
@@ -83,7 +81,7 @@ export default function OrganizationPage() {
 
   const { organizationId } = useParams<{ organizationId: string }>();
 
-  const { organizations, refreshOrganizations } = useOrganization();
+  const { organizations } = useOrganization();
 
   const [organization, setOrganization] = useState<Organization | null>(null);
 
@@ -104,16 +102,19 @@ export default function OrganizationPage() {
   }, [organizations, organizationId]);
 
   async function goToPortalToUpdatePaymentMethod() {
+    if (!organization) {
+      return;
+    }
+
     setIsBusy(true);
+
     try {
-      const response = await coreApi.handleRequest(
-        "/billing/portal/payment-method",
-        "POST",
-        {
-          organizationId: organization?.id,
-          returnUrl: globalThis.location.href,
-        },
-      );
+      const { url, method, body } = BillingApiTypes.prepareCreatePortalSession({
+        organizationId: organization.id,
+        returnUrl: globalThis.location.href,
+      });
+
+      const response = await coreApi.handleRequest(url, method, body);
 
       if (!response.ok || response.status !== 200) {
         throw new Error("Failed to go to billing portal");
@@ -137,57 +138,93 @@ export default function OrganizationPage() {
     <LoggedInLayout>
       <Card className="w-full max-w-7xl mx-auto mt-5 mb-5">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center space-x-1">
-              <span>Organization: {organization?.name}</span>
-              {organization?.isTeam && (
-                <Badge variant="outline" className="ml-2">Team</Badge>
-              )}
-            </CardTitle>
-            {(organization && organization.role === "admin" &&
-              organization.isTeam) && (
-              <DeleteOrganizationDialog
-                organization={organization}
-              />
-            )}
-          </div>
+          {organization
+            ? (
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center space-x-1">
+                  <span>Organization: {organization.name}</span>
+                  {organization.isTeam && (
+                    <Badge variant="outline" className="ml-2">Team</Badge>
+                  )}
+                </CardTitle>
+                {(organization &&
+                  organization.role === MemberApiTypes.ADMIN_ROLE &&
+                  organization.isTeam) && (
+                  <DeleteOrganizationDialog
+                    organization={organization}
+                  />
+                )}
+              </div>
+            )
+            : <Skeleton className="w-full h-8" />}
         </CardHeader>
         <CardContent className="flex flex-col space-y-4">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Plan</TableHead>
-                <TableHead>Billing Cycle</TableHead>
+                <TableHead>Payment Status</TableHead>
+                <TableHead>Current Plan</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               <TableRow>
-                <TableCell>{organization?.plan}</TableCell>
-                <TableCell>{organization?.billing_cycle}</TableCell>
+                {organization
+                  ? (
+                    <>
+                      <TableCell>
+                        <div className="flex flex-col items-start space-y-2">
+                          {organization.access_enabled
+                            ? (
+                              <Badge variant="outline">
+                                Up to date
+                              </Badge>
+                            )
+                            : (
+                              <Badge variant="destructive">
+                                Out of date
+                              </Badge>
+                            )}
+                          <Button
+                            onClick={goToPortalToUpdatePaymentMethod}
+                            disabled={isBusy}
+                          >
+                            {isBusy
+                              ? <Loader className="animate-spin" />
+                              : <CreditCard />}
+                            Update payment method
+                          </Button>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col items-start space-y-2">
+                          <Badge variant="outline">
+                            {organization.stripe_product}{" "}
+                            ({organization.stripe_billing_cycle})
+                          </Badge>
+                          {organization.role === MemberApiTypes.ADMIN_ROLE && (
+                            <Link
+                              to={`changePlan`}
+                            >
+                              <Button variant="link">
+                                <CalendarCog />
+                                Change plan
+                              </Button>
+                            </Link>
+                          )}
+                        </div>
+                      </TableCell>
+                    </>
+                  )
+                  : (
+                    <TableCell colSpan={2}>
+                      <Skeleton className="w-full h-12" />
+                    </TableCell>
+                  )}
               </TableRow>
             </TableBody>
           </Table>
-
-          {organization?.role === ADMIN_ROLE && (
-            <div className="flex space-x-2">
-              <Button
-                onClick={goToPortalToUpdatePaymentMethod}
-                disabled={isBusy}
-              >
-                {isBusy ? <Loader className="animate-spin" /> : <CreditCard />}
-                Update payment method
-              </Button>
-              <ChangePlanDialog
-                organization={organization}
-                onChanged={() => {
-                  refreshOrganizations();
-                }}
-                disable={isBusy}
-              />
-            </div>
-          )}
         </CardContent>
-        {organization?.isTeam && (
+        {organization && organization.isTeam && (
           <>
             <Separator className="my-3" />
             <CardHeader>
@@ -228,10 +265,13 @@ function OrganizationMembersTable(
     const pageSize = pagination.pageSize;
 
     try {
-      const url =
-        `/organizations/${props.organization.id}/members?page=${page}&limit=${pageSize}`;
+      const { url, method } = MemberApiTypes.prepareGetMembers({
+        organizationId: props.organization.id,
+        page,
+        limit: pageSize,
+      });
 
-      const response = await coreApi.handleRequest(url, "GET");
+      const response = await coreApi.handleRequest(url, method);
 
       if (!response.ok || response.status !== 200) {
         throw new Error("Failed to get members");
@@ -247,7 +287,7 @@ function OrganizationMembersTable(
         members.push({
           id: i,
           email: `test${i}@test.com`,
-          role: "member",
+          role: MemberApiTypes.MEMBER_ROLE,
         });
       }
 
@@ -278,11 +318,11 @@ function OrganizationMembersTable(
       accessorKey: "role",
       header: "Role",
       cell: ({ row }) => {
-        const badgeVariant = row.original.role === "admin"
+        const badgeVariant = row.original.role === MemberApiTypes.ADMIN_ROLE
           ? "default"
           : "outline";
 
-        if (props.organization.role === "admin") {
+        if (props.organization.role === MemberApiTypes.ADMIN_ROLE) {
           return (
             <div className="flex items-center space-x-2">
               <Badge
@@ -420,9 +460,13 @@ function DeleteOrganizationDialog(
   async function onSubmit() {
     setIsBusy(true);
     try {
+      const { url, method } = OrganizationApiTypes.prepareDeleteOrganization(
+        props.organization.id,
+      );
+
       const response = await coreApi.handleRequest(
-        `/organizations/${props.organization.id}`,
-        "DELETE",
+        url,
+        method,
       );
 
       if (!response.ok || response.status !== 204) {
@@ -488,7 +532,7 @@ function DeleteOrganizationDialog(
                     "
                   </FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input {...field} disabled={isBusy} autoComplete="off" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -526,7 +570,10 @@ function EditMemberDialog(
   const coreApi = useCoreApi();
 
   const formSchema = z.object({
-    role: z.enum(["admin", "member"]),
+    role: z.enum([
+      MemberApiTypes.ADMIN_ROLE,
+      MemberApiTypes.MEMBER_ROLE,
+    ]),
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -540,12 +587,17 @@ function EditMemberDialog(
   async function onSubmit() {
     setIsBusy(true);
     try {
-      const response = await coreApi.handleRequest(
-        `/organizations/${props.organization.id}/members/${props.member.id}`,
-        "PATCH",
+      const { url, method, body } = MemberApiTypes.prepareUpdateMemberRole(
+        props.member.id,
         {
           role: form.getValues("role"),
         },
+      );
+
+      const response = await coreApi.handleRequest(
+        url,
+        method,
+        body,
       );
 
       if (!response.ok || response.status !== 200) {
@@ -598,10 +650,10 @@ function EditMemberDialog(
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="admin">
+                      <SelectItem value={MemberApiTypes.ADMIN_ROLE}>
                         admin
                       </SelectItem>
-                      <SelectItem value="member">
+                      <SelectItem value={MemberApiTypes.MEMBER_ROLE}>
                         member
                       </SelectItem>
                     </SelectContent>
@@ -623,187 +675,6 @@ function EditMemberDialog(
             </div>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function ChangePlanDialog(
-  props: {
-    organization: Organization;
-    onChanged: () => void;
-    disable: boolean;
-  },
-) {
-  const [isBusy, setIsBusy] = useState(false);
-  const [open, setOpen] = useState(false);
-
-  const coreApi = useCoreApi();
-
-  async function onSubmit(
-    newPlan: typeof BASIC_PLAN | typeof PRO_PLAN | typeof PREMIUM_PLAN,
-    newBillingCycle: typeof MONTHLY_BILLING_CYCLE | typeof YEARLY_BILLING_CYCLE,
-  ) {
-    setIsBusy(true);
-    try {
-      const response = await coreApi.handleRequest(
-        `/organizations/${props.organization.id}/changePlan`,
-        "POST",
-        {
-          plan: newPlan,
-          billing_cycle: newBillingCycle,
-        },
-      );
-
-      if (!response.ok || response.status !== 200) {
-        throw new Error("Failed to edit member");
-      }
-
-      toast({
-        title: "Plan updated",
-        description: "Plan updated successfully",
-      });
-      props.onChanged();
-    } catch (error) {
-      console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to change plan",
-        variant: "destructive",
-      });
-    } finally {
-      setIsBusy(false);
-    }
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button disabled={props.disable}>
-          <CalendarCog />
-          Change plan
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-7xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
-            <div>Current plan:</div>
-            <Badge variant="outline">
-              {props.organization.plan} {props.organization.billing_cycle}
-            </Badge>
-          </DialogTitle>
-        </DialogHeader>
-
-        {props.organization.plan === CUSTOM_PLAN
-          ? (
-            <div>
-              <p>
-                Your plan is custom. Please contact us to change your plan.
-              </p>
-              <a
-                href="mailto:support@nanoapi.io"
-                className="font-bold hover:underline"
-              >
-                support@nanoapi.io
-              </a>
-            </div>
-          )
-          : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[{
-                name: "Basic",
-                description: "Great to try out the platform",
-                monthlyPrice: "0.00",
-                yearlyPrice: "0.00",
-                includedCredits: 1000,
-                overage: "0.50",
-                plan: BASIC_PLAN as typeof BASIC_PLAN,
-              }, {
-                name: "Pro",
-                description: "Great for small teams",
-                monthlyPrice: "10.00",
-                yearlyPrice: "100.00",
-                includedCredits: 10000,
-                overage: "0.25",
-                plan: PRO_PLAN as typeof PRO_PLAN,
-              }, {
-                name: "Premium",
-                description: "Great for medium teams",
-                monthlyPrice: "50.00",
-                yearlyPrice: "500.00",
-                includedCredits: 100000,
-                overage: "0.10",
-                plan: PREMIUM_PLAN as typeof PREMIUM_PLAN,
-              }].map((plan) => {
-                return (
-                  <Card key={plan.plan}>
-                    <CardHeader>
-                      <CardTitle>{plan.name}</CardTitle>
-                      <CardDescription>
-                        <div className="flex flex-col gap-2">
-                          <div>{plan.description}</div>
-                          <div>
-                            Includes {plan.includedCredits} credits, after that
-                            {" "}
-                            {plan.overage} USD per credit, charged monthly
-                          </div>
-                        </div>
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex space-x-2">
-                      <Button
-                        variant="secondary"
-                        disabled={props.disable ||
-                          (props.organization.plan === plan.plan &&
-                            props.organization.billing_cycle ===
-                              MONTHLY_BILLING_CYCLE)}
-                        onClick={() => {
-                          onSubmit(plan.plan, MONTHLY_BILLING_CYCLE);
-                        }}
-                      >
-                        {plan.monthlyPrice} USD/month
-                      </Button>
-                      <Button
-                        disabled={props.disable ||
-                          (props.organization.plan === plan.plan &&
-                            props.organization.billing_cycle ===
-                              YEARLY_BILLING_CYCLE)}
-                        onClick={() => {
-                          onSubmit(plan.plan, YEARLY_BILLING_CYCLE);
-                        }}
-                      >
-                        {plan.yearlyPrice} USD/year
-                      </Button>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Enterprise</CardTitle>
-                  <CardDescription>
-                    <div className="flex flex-col gap-2">
-                      <div>
-                        Custom plan for large teams, please contact us to
-                        discuss your needs.
-                      </div>
-                      <div>
-                        Please contact us to discuss your needs.
-                      </div>
-                    </div>
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex space-x-2">
-                  <a
-                    href="mailto:support@nanoapi.io"
-                    className="font-bold hover:underline"
-                  >
-                    support@nanoapi.io
-                  </a>
-                </CardContent>
-              </Card>
-            </div>
-          )}
       </DialogContent>
     </Dialog>
   );

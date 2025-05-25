@@ -12,6 +12,7 @@ import {
 import type { User } from "../../db/models/user.ts";
 import { createTestUserAndToken } from "../../testHelpers/auth.ts";
 import { ADMIN_ROLE } from "../../db/models/organizationMember.ts";
+import { prepareMe, prepareRequestOtp, prepareVerifyOtp } from "./types.ts";
 
 Deno.test("request otp, invalid email", async () => {
   initKyselyDb();
@@ -20,10 +21,12 @@ Deno.test("request otp, invalid email", async () => {
   try {
     const email = `invalidemail`;
 
+    const requestInfo = prepareRequestOtp({ email });
+
     const response = await api.handle(
-      new Request("http://localhost:3000/auth/requestOtp", {
-        method: "POST",
-        body: JSON.stringify({ email }),
+      new Request(`http://localhost:3000${requestInfo.url}`, {
+        method: requestInfo.method,
+        body: JSON.stringify(requestInfo.body),
         headers: {
           "Content-Type": "application/json",
         },
@@ -53,10 +56,12 @@ Deno.test("request otp for new user", async () => {
     // User should not exist
     assertEquals(user, undefined);
 
+    const requestInfo = prepareRequestOtp({ email });
+
     const response = await api.handle(
-      new Request("http://localhost:3000/auth/requestOtp", {
-        method: "POST",
-        body: JSON.stringify({ email }),
+      new Request(`http://localhost:3000${requestInfo.url}`, {
+        method: requestInfo.method,
+        body: JSON.stringify(requestInfo.body),
         headers: {
           "Content-Type": "application/json",
         },
@@ -118,10 +123,15 @@ Deno.test("request otp for existing user", async () => {
     assertEquals(user.otp, null);
     assertEquals(user.otp_expires_at, null);
 
+    const requestInfo = prepareRequestOtp({ email });
+
     const response = await api.handle(
-      new Request("http://localhost:3000/auth/requestOtp", {
-        method: "POST",
-        body: JSON.stringify({ email }),
+      new Request(`http://localhost:3000${requestInfo.url}`, {
+        method: requestInfo.method,
+        body: JSON.stringify(requestInfo.body),
+        headers: {
+          "Content-Type": "application/json",
+        },
       }),
     );
 
@@ -155,10 +165,12 @@ Deno.test("verify otp for new user", async () => {
     const authService = new AuthService();
     const otp = await authService.requestOtp(email);
 
+    const requestInfo = prepareVerifyOtp({ email, otp });
+
     const response = await api.handle(
-      new Request("http://localhost:3000/auth/verifyOtp", {
-        method: "POST",
-        body: JSON.stringify({ email, otp }),
+      new Request(`http://localhost:3000${requestInfo.url}`, {
+        method: requestInfo.method,
+        body: JSON.stringify(requestInfo.body),
         headers: {
           "Content-Type": "application/json",
         },
@@ -203,7 +215,7 @@ Deno.test("verify otp for new user", async () => {
     assertEquals(personalOrg.stripe_customer_id?.startsWith("cus_"), true);
     assertEquals(personalOrg.stripe_product, BASIC_PRODUCT);
     assertEquals(personalOrg.stripe_billing_cycle, MONTHLY_BILLING_CYCLE);
-    assertEquals(personalOrg.access_enabled, false);
+    assertEquals(personalOrg.access_enabled, true);
     assertEquals(personalOrg.deactivated, false);
 
     const personalOrgMember = await db
@@ -248,7 +260,7 @@ Deno.test("verify otp for existing user", async () => {
     assertEquals(personalOrg.stripe_customer_id?.startsWith("cus_"), true);
     assertEquals(personalOrg.stripe_product, BASIC_PRODUCT);
     assertEquals(personalOrg.stripe_billing_cycle, MONTHLY_BILLING_CYCLE);
-    assertEquals(personalOrg.access_enabled, false);
+    assertEquals(personalOrg.access_enabled, true);
     assertEquals(personalOrg.deactivated, false);
 
     const personalOrgMember = await db
@@ -263,10 +275,15 @@ Deno.test("verify otp for existing user", async () => {
     const authService = new AuthService();
     const otp = await authService.requestOtp(email);
 
+    const requestInfo = prepareVerifyOtp({ email, otp });
+
     const response = await api.handle(
-      new Request("http://localhost:3000/auth/verifyOtp", {
-        method: "POST",
-        body: JSON.stringify({ email, otp }),
+      new Request(`http://localhost:3000${requestInfo.url}`, {
+        method: requestInfo.method,
+        body: JSON.stringify(requestInfo.body),
+        headers: {
+          "Content-Type": "application/json",
+        },
       }),
     );
 
@@ -302,6 +319,36 @@ Deno.test("verify otp for existing user", async () => {
       .executeTakeFirst();
 
     assertEquals(newPersonalOrgMember, personalOrgMember);
+  } finally {
+    await resetTables();
+    await destroyKyselyDb();
+  }
+});
+
+Deno.test("get user info", async () => {
+  initKyselyDb();
+  await resetTables();
+
+  try {
+    const { token, userId, email } = await createTestUserAndToken();
+
+    const requestInfo = prepareMe();
+
+    const response = await api.handle(
+      new Request(`http://localhost:3000${requestInfo.url}`, {
+        method: requestInfo.method,
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }),
+    );
+
+    assertEquals(response!.status, 200);
+
+    const responseBody = await response!.json();
+    assertEquals(responseBody.userId, userId);
+    assertEquals(responseBody.email, email);
   } finally {
     await resetTables();
     await destroyKyselyDb();

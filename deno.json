@@ -15,7 +15,7 @@
     "stripe:create-meter": "deno run -A --env-file=.env ./packages/core/src/stripe/scripts/createMeter.ts",
     "stripe:create-products": "deno run -A --env-file=.env ./packages/core/src/stripe/scripts/createProducts.ts",
     "stripe:cli": "docker run --rm -it --env-file=.env stripe/stripe-cli:latest",
-    "stripe:forward": "deno task stripe:cli listen --forward-to http://localhost:3000/billing/webhook",
+    "stripe:forward": "deno task stripe:cli listen --forward-to http://host.docker.internal:4000/billing/webhook",
     "stripe:mock": "docker run --rm -it -p 12111-12112:12111-12112 stripe/stripe-mock:latest"
   },
   "compilerOptions": {

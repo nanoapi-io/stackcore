@@ -118,8 +118,6 @@ export class BillingService {
           return { error: cannotUpgradeToInferiorProductError };
         }
         break;
-      default:
-        throw new Error(`Unknown product: ${organization.stripe_product}`);
     }
 
     // Check if user is upgrading to a superior billing cycle
@@ -129,9 +127,6 @@ export class BillingService {
           if (billingCycle === MONTHLY_BILLING_CYCLE) {
             return { error: cannotUpgradeToInferiorProductError };
           }
-          break;
-        case MONTHLY_BILLING_CYCLE:
-          // this is allowed
           break;
       }
     }
@@ -354,15 +349,27 @@ export class BillingService {
 
     const bodyText = await ctx.request.body.text();
 
-    const event = stripeService.getWebhookEvent(bodyText, signature);
+    const event = await stripeService.getWebhookEvent(bodyText, signature);
 
     switch (event.type) {
       case "customer.subscription.deleted":
         await this.handleSubscriptionDeleted(event);
+        console.info(
+          `Subscription ${event.data.object.id} deleted`,
+        );
         break;
       case "customer.subscription.created":
       case "customer.subscription.updated":
         await this.handleSubscriptionCreatedOrUpdated(event);
+        console.info(
+          `Subscription ${event.data.object.id} created or updated`,
+        );
+        break;
+      case "customer.updated":
+        await this.handleCustomerUpdated(event);
+        console.info(
+          `Customer ${event.data.object.id} updated`,
+        );
         break;
       default:
         console.warn(`Unhandled event received: type ${event.type}`);
@@ -445,6 +452,27 @@ export class BillingService {
   ) {
     const subscription = event.data.object;
     const customer = subscription.customer as Stripe.Customer;
+
+    const accessEnabled = shouldHaveAccess(subscription.status);
+
+    await db
+      .updateTable("organization")
+      .set({
+        access_enabled: accessEnabled,
+      })
+      .where("stripe_customer_id", "=", customer.id)
+      .execute();
+  }
+
+  private async handleCustomerUpdated(
+    event: Stripe.CustomerUpdatedEvent,
+  ) {
+    const customer = event.data.object;
+
+    const stripeService = new StripeService();
+    const subscription = await stripeService.getCustomerSubscription(
+      customer.id,
+    );
 
     const accessEnabled = shouldHaveAccess(subscription.status);
 

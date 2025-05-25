@@ -1,6 +1,7 @@
 import { Router, Status } from "@oak/oak";
 import {
   createPortalSessionRequestSchema,
+  type CreatePortalSessionResponse,
   downgradeSubscriptionRequestSchema,
   upgradeSubscriptionRequestSchema,
 } from "./types.ts";
@@ -101,7 +102,7 @@ router.post("/portal/paymentMethod", authMiddleware, async (ctx) => {
   }
 
   ctx.response.status = Status.OK;
-  ctx.response.body = { url };
+  ctx.response.body = { url } as CreatePortalSessionResponse;
 });
 
 router.post("/webhook", async (ctx) => {

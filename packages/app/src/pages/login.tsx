@@ -15,7 +15,7 @@ import {
 import { toast } from "../components/shadcn/hooks/use-toast.tsx";
 import { ChevronLeft, Loader } from "lucide-react";
 import LoggedOutLayout from "../layout/loggedOut.tsx";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { useCoreApi } from "../contexts/CoreApi.tsx";
 import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,10 +29,11 @@ import {
   FormLabel,
   FormMessage,
 } from "../components/shadcn/Form.tsx";
-import type { AuthApiTypes } from "@stackcore/core/responses";
+import { AuthApiTypes } from "@stackcore/core/responses";
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const [searchParams, _] = useSearchParams();
 
   const coreApiContext = useCoreApi();
 
@@ -68,12 +69,14 @@ export default function LoginPage() {
     setIsBusy(true);
 
     try {
+      const { url, method, body } = AuthApiTypes.prepareRequestOtp({
+        email: values.email,
+      });
+
       const response = await coreApiContext.handleRequest(
-        "/auth/requestOtp",
-        "POST",
-        {
-          email: values.email,
-        } as AuthApiTypes.RequestOtpPayload,
+        url,
+        method,
+        body,
       );
 
       if (!response.ok || response.status !== 200) {
@@ -102,13 +105,18 @@ export default function LoginPage() {
     setIsBusy(true);
 
     try {
+      const {
+        url,
+        method,
+        body,
+      } = AuthApiTypes.prepareVerifyOtp(
+        { email: emailForm.getValues("email"), otp: values.otp },
+      );
+
       const response = await coreApiContext.handleRequest(
-        "/auth/verifyOtp",
-        "POST",
-        {
-          email: emailForm.getValues("email"),
-          otp: values.otp,
-        } as AuthApiTypes.VerifyOtpPayload,
+        url,
+        method,
+        body,
       );
 
       if (!response.ok && response.status === 400) {
@@ -133,7 +141,10 @@ export default function LoginPage() {
       const { token } = await response.json() as AuthApiTypes.VerifyOtpResponse;
 
       coreApiContext.login(token);
-      navigate("/");
+
+      // Redirect to the location parameter or the root page
+      const location = searchParams.get("from") || "/";
+      navigate(location);
     } catch (error) {
       toast({
         title: "Unexpected error",

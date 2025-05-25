@@ -6,6 +6,7 @@ import { StripeService } from "../../stripe/index.ts";
 import {
   BASIC_PRODUCT,
   MONTHLY_BILLING_CYCLE,
+  shouldHaveAccess,
 } from "../../db/models/organization.ts";
 import { ADMIN_ROLE } from "../../db/models/organizationMember.ts";
 import type { User } from "../../db/models/user.ts";
@@ -151,16 +152,19 @@ export class AuthService {
           newPersonalOrganization.id,
           newPersonalOrganization.name,
         );
-        await stripeService.createSubscription(
+        const subscription = await stripeService.createSubscription(
           customer.id,
           BASIC_PRODUCT,
           MONTHLY_BILLING_CYCLE,
         );
 
+        const accessEnabled = shouldHaveAccess(subscription.status);
+
         await trx
           .updateTable("organization")
           .set({
             stripe_customer_id: customer.id,
+            access_enabled: accessEnabled,
           })
           .where("id", "=", newPersonalOrganization.id)
           .execute();

@@ -13,6 +13,7 @@ import {
   notMemberOfOrganizationError,
   organizationNotTeamError,
 } from "./service.ts";
+import { prepareClaimInvitation, prepareCreateInvitation } from "./types.ts";
 
 // POST /:organizationId/invite (create invitation)
 Deno.test("create invitation - with invalid email", async () => {
@@ -36,15 +37,17 @@ Deno.test("create invitation - with invalid email", async () => {
       .where("name", "=", "Test Team")
       .executeTakeFirstOrThrow();
 
+    const { url, method, body } = prepareCreateInvitation({
+      organizationId: org.id,
+      email: "invalid-email",
+    });
+
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/invitations`,
+        `http://localhost:3000${url}`,
         {
-          method: "POST",
-          body: JSON.stringify({
-            organizationId: org.id,
-            email: "invalid-email",
-          }),
+          method,
+          body: JSON.stringify(body),
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`,
@@ -78,15 +81,17 @@ Deno.test("create invitation - with personal organization", async () => {
 
     const inviteeEmail = `invited-${crypto.randomUUID()}@example.com`;
 
+    const { url, method, body } = prepareCreateInvitation({
+      organizationId: personalOrgId,
+      email: inviteeEmail,
+    });
+
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/invitations`,
+        `http://localhost:3000${url}`,
         {
-          method: "POST",
-          body: JSON.stringify({
-            organizationId: personalOrgId,
-            email: inviteeEmail,
-          }),
+          method,
+          body: JSON.stringify(body),
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`,
@@ -144,15 +149,17 @@ Deno.test("create invitation - with non-admin user", async () => {
       })
       .execute();
 
+    const { url, method, body } = prepareCreateInvitation({
+      organizationId: org.id,
+      email: "test@example.com",
+    });
+
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/invitations`,
+        `http://localhost:3000${url}`,
         {
-          method: "POST",
-          body: JSON.stringify({
-            organizationId: org.id,
-            email: "test@example.com",
-          }),
+          method,
+          body: JSON.stringify(body),
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${memberToken}`,
@@ -195,15 +202,17 @@ Deno.test("create invitation - with non-member user", async () => {
     // Create another user who is not a member
     const { token: nonMemberToken } = await createTestUserAndToken();
 
+    const { url, method, body } = prepareCreateInvitation({
+      organizationId: org.id,
+      email: "test@example.com",
+    });
+
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/invitations`,
+        `http://localhost:3000${url}`,
         {
-          method: "POST",
-          body: JSON.stringify({
-            organizationId: org.id,
-            email: "test@example.com",
-          }),
+          method,
+          body: JSON.stringify(body),
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${nonMemberToken}`,
@@ -230,15 +239,17 @@ Deno.test("create invitation - with non-existent organization", async () => {
     // Create a test user
     const { token } = await createTestUserAndToken();
 
+    const { url, method, body } = prepareCreateInvitation({
+      organizationId: 999999,
+      email: "test@example.com",
+    });
+
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/invitations`,
+        `http://localhost:3000${url}`,
         {
-          method: "POST",
-          body: JSON.stringify({
-            organizationId: 999999, // Non-existent organization ID
-            email: "test@example.com",
-          }),
+          method,
+          body: JSON.stringify(body),
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`,
@@ -280,15 +291,17 @@ Deno.test("create invitation - success", async () => {
 
     const inviteeEmail = `invited-${crypto.randomUUID()}@example.com`;
 
+    const { url, method, body } = prepareCreateInvitation({
+      organizationId: org.id,
+      email: inviteeEmail,
+    });
+
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/invitations`,
+        `http://localhost:3000${url}`,
         {
-          method: "POST",
-          body: JSON.stringify({
-            organizationId: org.id,
-            email: inviteeEmail,
-          }),
+          method,
+          body: JSON.stringify(body),
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`,
@@ -354,11 +367,13 @@ Deno.test("claim  invitation - success", async () => {
     const { token: inviteeToken, userId: inviteeUserId } =
       await createTestUserAndToken();
 
+    const { url, method } = prepareClaimInvitation(invitation.uuid);
+
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/invitations/${invitation.uuid}/claim`,
+        `http://localhost:3000${url}`,
         {
-          method: "POST",
+          method,
           headers: {
             "Authorization": `Bearer ${inviteeToken}`,
           },
@@ -445,11 +460,13 @@ Deno.test("claim invitation - already a member", async () => {
       .execute();
 
     // Try to claim invitation when already a member
+    const { url, method } = prepareClaimInvitation(invitation.uuid);
+
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/invitations/${invitation.uuid}/claim`,
+        `http://localhost:3000${url}`,
         {
-          method: "POST",
+          method,
           headers: {
             "Authorization": `Bearer ${inviteeToken}`,
           },
@@ -474,11 +491,13 @@ Deno.test("claim invitation - with non-existent invitation", async () => {
   try {
     const { token } = await createTestUserAndToken();
 
+    const { url, method } = prepareClaimInvitation(crypto.randomUUID());
+
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/invitations/${crypto.randomUUID()}/claim`,
+        `http://localhost:3000${url}`,
         {
-          method: "POST",
+          method,
           headers: {
             "Authorization": `Bearer ${token}`,
           },
@@ -527,11 +546,13 @@ Deno.test("claim invitation - with non-team organization", async () => {
       .returningAll()
       .executeTakeFirstOrThrow();
 
+    const { url, method } = prepareClaimInvitation(invitation.uuid);
+
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/invitations/${invitation.uuid}/claim`,
+        `http://localhost:3000${url}`,
         {
-          method: "POST",
+          method,
           headers: {
             "Authorization": `Bearer ${token}`,
           },
@@ -582,11 +603,13 @@ Deno.test("claim invitation - with expired invitation", async () => {
 
     const { token } = await createTestUserAndToken();
 
+    const { url, method } = prepareClaimInvitation(invitation.uuid);
+
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/invitations/${invitation.uuid}/claim`,
+        `http://localhost:3000${url}`,
         {
-          method: "POST",
+          method,
           headers: {
             "Authorization": `Bearer ${token}`,
           },

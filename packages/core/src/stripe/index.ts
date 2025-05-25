@@ -212,8 +212,8 @@ export class StripeService {
     return session;
   }
 
-  public getWebhookEvent(bodyText: string, signature: string) {
-    const event = this.stripe.webhooks.constructEvent(
+  public async getWebhookEvent(bodyText: string, signature: string) {
+    const event = await this.stripe.webhooks.constructEventAsync(
       bodyText,
       signature,
       settings.STRIPE.WEBHOOK_SECRET,

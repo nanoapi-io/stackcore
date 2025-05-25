@@ -29,7 +29,13 @@ api.use((ctx, next) => {
   return next();
 });
 
-api.use(healthRouter.routes());
+// log all requests
+api.use((ctx, next) => {
+  console.info(`${ctx.request.method} ${ctx.request.url}`);
+  return next();
+});
+
+api.use(healthRouter.prefix("/health").routes());
 api.use(healthRouter.allowedMethods());
 
 api.use(authRouter.prefix("/auth").routes());

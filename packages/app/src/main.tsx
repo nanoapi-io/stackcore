@@ -9,10 +9,10 @@ import { ThemeProvider } from "./contexts/ThemeProvider.tsx";
 import LoginPage from "./pages/login.tsx";
 import { CoreApiProvider } from "./contexts/CoreApi.tsx";
 import { RequireAuth } from "./guards/RequireAuth.tsx";
-import { RequireAnonymous } from "./guards/RequireAnonymous.tsx";
 import { OrganizationProvider } from "./contexts/Organization.tsx";
 import AddOrganizationPage from "./pages/organizations/add.tsx";
-import OrganizationPage from "./pages/organizations/organization.tsx";
+import OrganizationPage from "./pages/organizations/organization/index.tsx";
+import ChangePlanPage from "./pages/organizations/organization/changePlan.tsx";
 
 const router = createBrowserRouter([
   {
@@ -25,11 +25,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/login",
-    element: (
-      <RequireAnonymous>
-        <LoginPage />
-      </RequireAnonymous>
-    ),
+    element: <LoginPage />,
   },
   {
     path: "/organizations/new",
@@ -38,6 +34,10 @@ const router = createBrowserRouter([
   {
     path: "/organizations/:organizationId",
     element: <OrganizationPage />,
+  },
+  {
+    path: "/organizations/:organizationId/changePlan",
+    element: <ChangePlanPage />,
   },
 ]);
 

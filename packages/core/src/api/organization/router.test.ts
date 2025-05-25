@@ -8,6 +8,7 @@ import {
   BASIC_PRODUCT,
   MONTHLY_BILLING_CYCLE,
 } from "../../db/models/organization.ts";
+import { OrganizationApiTypes } from "../responseType.ts";
 
 // POST / (create organization)
 Deno.test("create a team organization", async () => {
@@ -17,10 +18,15 @@ Deno.test("create a team organization", async () => {
   try {
     const { token } = await createTestUserAndToken();
 
+    const { url, method, body } = OrganizationApiTypes
+      .prepareCreateOrganization({
+        name: "Test Team",
+      });
+
     const response = await api.handle(
-      new Request("http://localhost:3000/organizations", {
-        method: "POST",
-        body: JSON.stringify({ name: "Test Team" }),
+      new Request(`http://localhost:3000${url}`, {
+        method,
+        body: JSON.stringify(body),
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
@@ -31,10 +37,6 @@ Deno.test("create a team organization", async () => {
     assertEquals(response?.status, 201);
 
     const responseBody = await response?.json();
-    assertEquals(
-      responseBody.message,
-      "Team organization created successfully",
-    );
 
     // Verify organization exists in database
     const org = await db
@@ -42,6 +44,8 @@ Deno.test("create a team organization", async () => {
       .selectAll()
       .where("name", "=", "Test Team")
       .executeTakeFirstOrThrow();
+
+    assertEquals(responseBody.id, org.id);
 
     assertEquals(org.name, "Test Team");
     assertEquals(org.isTeam, true);
@@ -73,10 +77,15 @@ Deno.test("create a team organization with a duplicate name should fail", async 
     const orgService = new OrganizationService();
     await orgService.createTeamOrganization("Test Team", userId);
 
+    const { url, method, body } = OrganizationApiTypes
+      .prepareCreateOrganization({
+        name: "Test Team",
+      });
+
     const response = await api.handle(
-      new Request("http://localhost:3000/organizations", {
-        method: "POST",
-        body: JSON.stringify({ name: "Test Team" }),
+      new Request(`http://localhost:3000${url}`, {
+        method,
+        body: JSON.stringify(body),
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
@@ -111,9 +120,14 @@ Deno.test("get user organizations", async () => {
       );
     }
 
+    const { url, method } = OrganizationApiTypes.prepareGetOrganizations({
+      page: 1,
+      limit: 5,
+    });
+
     const response = await api.handle(
-      new Request("http://localhost:3000/organizations?page=1&limit=5", {
-        method: "GET",
+      new Request(`http://localhost:3000${url}`, {
+        method,
         headers: {
           "Authorization": `Bearer ${token}`,
         },
@@ -156,11 +170,16 @@ Deno.test("get user organizations, pagination", async () => {
       );
     }
 
+    const { url, method } = OrganizationApiTypes.prepareGetOrganizations({
+      page: 2,
+      limit: 5,
+    });
+
     const response = await api.handle(
       new Request(
-        "http://localhost:3000/organizations?page=2&limit=5",
+        `http://localhost:3000${url}`,
         {
-          method: "GET",
+          method,
           headers: {
             "Authorization": `Bearer ${token}`,
           },
@@ -204,13 +223,17 @@ Deno.test("get user organizations, search by name", async () => {
       );
     }
 
+    const { url, method } = OrganizationApiTypes.prepareGetOrganizations({
+      page: 1,
+      limit: 5,
+      search: "Test Org 0",
+    });
+
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/organizations?page=1&limit=5&search=${
-          encodeURIComponent("Test Org 0")
-        }`,
+        `http://localhost:3000${url}`,
         {
-          method: "GET",
+          method,
           headers: {
             "Authorization": `Bearer ${token}`,
           },
@@ -256,15 +279,21 @@ Deno.test("update an organization", async () => {
       .where("name", "=", "Original Name")
       .executeTakeFirstOrThrow();
 
+    const { url, method, body } = OrganizationApiTypes
+      .prepareUpdateOrganization(
+        org.id,
+        {
+          name: "Updated Name",
+        },
+      );
+
     // Update organization name
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/organizations/${org.id}`,
+        `http://localhost:3000${url}`,
         {
-          method: "PATCH",
-          body: JSON.stringify({
-            name: "Updated Name",
-          }),
+          method,
+          body: JSON.stringify(body),
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`,
@@ -315,14 +344,20 @@ Deno.test("update an organization - non-member", async () => {
     // Create second user (not a member of the organization)
     const { token: nonMemberToken } = await createTestUserAndToken();
 
+    const { url, method, body } = OrganizationApiTypes
+      .prepareUpdateOrganization(
+        org.id,
+        {
+          name: "Unauthorized Update",
+        },
+      );
+
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/organizations/${org.id}`,
+        `http://localhost:3000${url}`,
         {
-          method: "PATCH",
-          body: JSON.stringify({
-            name: "Unauthorized Update",
-          }),
+          method,
+          body: JSON.stringify(body),
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${nonMemberToken}`,
@@ -362,12 +397,16 @@ Deno.test("delete an organization", async () => {
       .where("name", "=", "Test Team")
       .executeTakeFirstOrThrow();
 
+    const { url, method } = OrganizationApiTypes.prepareDeleteOrganization(
+      org.id,
+    );
+
     // Delete organization
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/organizations/${org.id}`,
+        `http://localhost:3000${url}`,
         {
-          method: "DELETE",
+          method,
           headers: {
             "Authorization": `Bearer ${token}`,
           },
@@ -415,11 +454,15 @@ Deno.test("delete an organization - non-member", async () => {
     // Create second user (not a member of the organization)
     const { token: nonMemberToken } = await createTestUserAndToken();
 
+    const { url, method } = OrganizationApiTypes.prepareDeleteOrganization(
+      org.id,
+    );
+
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/organizations/${org.id}`,
+        `http://localhost:3000${url}`,
         {
-          method: "DELETE",
+          method,
           headers: {
             "Authorization": `Bearer ${nonMemberToken}`,
           },
@@ -454,12 +497,16 @@ Deno.test(
     try {
       const { token, personalOrgId } = await createTestUserAndToken();
 
+      const { url, method } = OrganizationApiTypes.prepareDeleteOrganization(
+        personalOrgId,
+      );
+
       // Try to delete personal organization
       const response = await api.handle(
         new Request(
-          `http://localhost:3000/organizations/${personalOrgId}`,
+          `http://localhost:3000${url}`,
           {
-            method: "DELETE",
+            method,
             headers: {
               "Authorization": `Bearer ${token}`,
             },

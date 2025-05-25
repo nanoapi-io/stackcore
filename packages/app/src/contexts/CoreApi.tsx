@@ -34,7 +34,9 @@ export function CoreApiProvider(
     localStorage.removeItem("token");
     setToken(null);
     // redirect to login page
-    globalThis.location.href = "/login";
+    const newSearchParams = new URLSearchParams(globalThis.location.search);
+    newSearchParams.set("from", globalThis.location.pathname);
+    globalThis.location.href = `/login?${newSearchParams.toString()}`;
   }
 
   function login(token: string) {

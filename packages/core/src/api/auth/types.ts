@@ -11,12 +11,36 @@ export const requestOtpSchema = z.object({
 });
 export type RequestOtpPayload = z.infer<typeof requestOtpSchema>;
 
+export function prepareRequestOtp(payload: RequestOtpPayload) {
+  return {
+    url: "/auth/requestOtp",
+    method: "POST",
+    body: payload,
+  };
+}
+
 export const verifyOtpSchema = z.object({
   email: z.string().email(),
   otp: z.string(),
 });
 export type VerifyOtpPayload = z.infer<typeof verifyOtpSchema>;
 
+export function prepareVerifyOtp(payload: VerifyOtpPayload) {
+  return {
+    url: "/auth/verifyOtp",
+    method: "POST",
+    body: payload,
+  };
+}
+
 export type VerifyOtpResponse = {
   token: string;
 };
+
+export function prepareMe() {
+  return {
+    url: "/auth/me",
+    method: "GET",
+    body: undefined,
+  };
+}

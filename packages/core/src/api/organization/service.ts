@@ -2,6 +2,7 @@ import { db } from "../../db/database.ts";
 import {
   BASIC_PRODUCT,
   MONTHLY_BILLING_CYCLE,
+  shouldHaveAccess,
   type StripeBillingCycle,
   type StripeProduct,
 } from "../../db/models/organization.ts";
@@ -35,9 +36,13 @@ export class OrganizationService {
   public async createTeamOrganization(
     name: string,
     userId: number,
-  ): Promise<{
-    error?: typeof organizationAlreadyExistsErrorCode;
-  }> {
+  ): Promise<
+    {
+      id: number;
+    } | {
+      error: typeof organizationAlreadyExistsErrorCode;
+    }
+  > {
     // First check if user is a member of any organization with this name
     const existingOrg = await db
       .selectFrom("organization")
@@ -57,7 +62,7 @@ export class OrganizationService {
     }
 
     // Create organization and member in a transaction
-    await db.transaction().execute(async (trx) => {
+    const orgId = await db.transaction().execute(async (trx) => {
       // Create the organization
       const org = await trx
         .insertInto("organization")
@@ -91,23 +96,30 @@ export class OrganizationService {
         org.id,
         org.name,
       );
-      await stripeService.createSubscription(
+      const subscription = await stripeService.createSubscription(
         customer.id,
         "BASIC",
         "MONTHLY",
       );
+
+      const accessEnabled = shouldHaveAccess(subscription.status);
 
       // Update organization with Stripe customer ID
       await trx
         .updateTable("organization")
         .set({
           stripe_customer_id: customer.id,
+          access_enabled: accessEnabled,
         })
         .where("id", "=", org.id)
         .execute();
+
+      return org.id;
     });
 
-    return {};
+    return {
+      id: orgId,
+    };
   }
 
   /**
@@ -126,6 +138,7 @@ export class OrganizationService {
       role: OrganizationMemberRole | null;
       stripe_product: StripeProduct | null;
       stripe_billing_cycle: StripeBillingCycle | null;
+      access_enabled: boolean;
     }[];
     total: number;
   }> {
@@ -167,6 +180,7 @@ export class OrganizationService {
         "organization_member.role",
         "organization.stripe_product",
         "organization.stripe_billing_cycle",
+        "organization.access_enabled",
       ])
       .where("organization_member.user_id", "=", userId)
       .where("organization.deactivated", "=", false)
