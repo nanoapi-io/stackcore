@@ -3,7 +3,6 @@ import {
   MONTHLY_BILLING_CYCLE,
   PREMIUM_PRODUCT,
   PRO_PRODUCT,
-  type StripeProduct,
   YEARLY_BILLING_CYCLE,
 } from "./db/models/organization.ts";
 
@@ -21,6 +20,7 @@ export default {
   SECRET_KEY: getEnv("SECRET_KEY", "secret"),
   OTP: {
     EXPIRY_MINUTES: parseInt(getEnv("OTP_EXPIRY_MINUTES", "5")),
+    MAX_ATTEMPTS: parseInt(getEnv("OTP_MAX_ATTEMPTS", "3")),
   },
   JWT: {
     EXPIRY_DAYS: parseInt(getEnv("JWT_EXPIRY_DAYS", "7")),
@@ -44,53 +44,41 @@ export default {
       ),
     },
     PRODUCTS: {
-      [BASIC_PRODUCT as StripeProduct]: {
-        LICENSE_PRICE_ID: {
-          [MONTHLY_BILLING_CYCLE]: getEnv(
-            "STRIPE_PRODUCT_BASIC_LICENSE_MONTHLY_PRICE_ID",
-            "price_basic_license_monthly",
-          ),
-          [YEARLY_BILLING_CYCLE]: getEnv(
-            "STRIPE_PRODUCT_BASIC_LICENSE_YEARLY_PRICE_ID",
-            "price_basic_license_yearly",
+      [BASIC_PRODUCT]: {
+        [MONTHLY_BILLING_CYCLE]: {
+          PRICE_ID: getEnv(
+            "STRIPE_PRODUCT_BASIC_MONTHLY_PRICE_ID",
+            "price_basic_monthly",
           ),
         },
-        MONTHLY_METER_PRICE_ID: getEnv(
-          "STRIPE_PRODUCT_BASIC_MONTHLY_METER_CREDIT_USAGE_PRICE_ID",
-          "price_basic_monthly_meter_credit_usage",
-        ),
       },
-      [PRO_PRODUCT as StripeProduct]: {
-        LICENSE_PRICE_ID: {
-          [MONTHLY_BILLING_CYCLE]: getEnv(
-            "STRIPE_PRODUCT_PRO_LICENSE_MONTHLY_PRICE_ID",
-            "price_pro_license_monthly",
-          ),
-          [YEARLY_BILLING_CYCLE]: getEnv(
-            "STRIPE_PRODUCT_PRO_LICENSE_YEARLY_PRICE_ID",
-            "price_pro_license_yearly",
+      [PRO_PRODUCT]: {
+        [MONTHLY_BILLING_CYCLE]: {
+          PRICE_ID: getEnv(
+            "STRIPE_PRODUCT_PRO_MONTHLY_PRICE_ID",
+            "price_pro_monthly",
           ),
         },
-        MONTHLY_METER_PRICE_ID: getEnv(
-          "STRIPE_PRODUCT_PRO_MONTHLY_METER_CREDIT_USAGE_PRICE_ID",
-          "price_pro_monthly_meter_credit_usage",
-        ),
+        [YEARLY_BILLING_CYCLE]: {
+          PRICE_ID: getEnv(
+            "STRIPE_PRODUCT_PRO_YEARLY_PRICE_ID",
+            "price_pro_yearly",
+          ),
+        },
       },
-      [PREMIUM_PRODUCT as StripeProduct]: {
-        LICENSE_PRICE_ID: {
-          [MONTHLY_BILLING_CYCLE]: getEnv(
-            "STRIPE_PRODUCT_PREMIUM_LICENSE_MONTHLY_PRICE_ID",
-            "price_premium_license_monthly",
-          ),
-          [YEARLY_BILLING_CYCLE]: getEnv(
-            "STRIPE_PRODUCT_PREMIUM_LICENSE_YEARLY_PRICE_ID",
-            "price_premium_license_yearly",
+      [PREMIUM_PRODUCT]: {
+        [MONTHLY_BILLING_CYCLE]: {
+          PRICE_ID: getEnv(
+            "STRIPE_PRODUCT_PREMIUM_MONTHLY_PRICE_ID",
+            "price_premium_monthly",
           ),
         },
-        MONTHLY_METER_PRICE_ID: getEnv(
-          "STRIPE_PRODUCT_PREMIUM_MONTHLY_METER_CREDIT_USAGE_PRICE_ID",
-          "price_premium_monthly_meter_credit_usage",
-        ),
+        [YEARLY_BILLING_CYCLE]: {
+          PRICE_ID: getEnv(
+            "STRIPE_PRODUCT_PREMIUM_YEARLY_PRICE_ID",
+            "price_premium_yearly",
+          ),
+        },
       },
     },
   },

@@ -1,11 +1,5 @@
 import { db } from "../../db/database.ts";
-import {
-  BASIC_PRODUCT,
-  MONTHLY_BILLING_CYCLE,
-  shouldHaveAccess,
-  type StripeBillingCycle,
-  type StripeProduct,
-} from "../../db/models/organization.ts";
+import { shouldHaveAccess } from "../../db/models/organization.ts";
 import {
   ADMIN_ROLE,
   type OrganizationMemberRole,
@@ -70,8 +64,6 @@ export class OrganizationService {
           name,
           isTeam: true,
           stripe_customer_id: null,
-          stripe_product: BASIC_PRODUCT,
-          stripe_billing_cycle: MONTHLY_BILLING_CYCLE,
           access_enabled: false,
           created_at: new Date(),
           deactivated: false,
@@ -136,8 +128,6 @@ export class OrganizationService {
       name: string;
       isTeam: boolean;
       role: OrganizationMemberRole | null;
-      stripe_product: StripeProduct | null;
-      stripe_billing_cycle: StripeBillingCycle | null;
       access_enabled: boolean;
     }[];
     total: number;
@@ -178,8 +168,6 @@ export class OrganizationService {
         "organization.name",
         "organization.isTeam",
         "organization_member.role",
-        "organization.stripe_product",
-        "organization.stripe_billing_cycle",
         "organization.access_enabled",
       ])
       .where("organization_member.user_id", "=", userId)

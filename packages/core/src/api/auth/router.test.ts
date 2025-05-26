@@ -5,10 +5,6 @@ import { AuthService, secretCryptoKey } from "./service.ts";
 import { resetTables } from "../../testHelpers/db.ts";
 import { getNumericDate, verify } from "djwt";
 import settings from "../../settings.ts";
-import {
-  BASIC_PRODUCT,
-  MONTHLY_BILLING_CYCLE,
-} from "../../db/models/organization.ts";
 import type { User } from "../../db/models/user.ts";
 import { createTestUserAndToken } from "../../testHelpers/auth.ts";
 import { ADMIN_ROLE } from "../../db/models/organizationMember.ts";
@@ -213,8 +209,6 @@ Deno.test("verify otp for new user", async () => {
     assertEquals(personalOrg.name, "Personal");
     assertEquals(personalOrg.isTeam, false);
     assertEquals(personalOrg.stripe_customer_id?.startsWith("cus_"), true);
-    assertEquals(personalOrg.stripe_product, BASIC_PRODUCT);
-    assertEquals(personalOrg.stripe_billing_cycle, MONTHLY_BILLING_CYCLE);
     assertEquals(personalOrg.access_enabled, true);
     assertEquals(personalOrg.deactivated, false);
 
@@ -258,8 +252,6 @@ Deno.test("verify otp for existing user", async () => {
     assertEquals(personalOrg.name, "Personal");
     assertEquals(personalOrg.isTeam, false);
     assertEquals(personalOrg.stripe_customer_id?.startsWith("cus_"), true);
-    assertEquals(personalOrg.stripe_product, BASIC_PRODUCT);
-    assertEquals(personalOrg.stripe_billing_cycle, MONTHLY_BILLING_CYCLE);
     assertEquals(personalOrg.access_enabled, true);
     assertEquals(personalOrg.deactivated, false);
 
@@ -319,6 +311,207 @@ Deno.test("verify otp for existing user", async () => {
       .executeTakeFirst();
 
     assertEquals(newPersonalOrgMember, personalOrgMember);
+  } finally {
+    await resetTables();
+    await destroyKyselyDb();
+  }
+});
+
+Deno.test("verify otp - should block after max failed attempts", async () => {
+  initKyselyDb();
+  await resetTables();
+
+  try {
+    const email = `test-${crypto.randomUUID()}@example.com`;
+    const authService = new AuthService();
+
+    // Request OTP
+    const validOtp = await authService.requestOtp(email);
+    const wrongOtp = "000000"; // Wrong OTP
+
+    // Make 3 failed attempts (assuming MAX_ATTEMPTS is 3)
+    for (let i = 0; i < settings.OTP.MAX_ATTEMPTS; i++) {
+      const requestInfo = prepareVerifyOtp({ email, otp: wrongOtp });
+
+      const response = await api.handle(
+        new Request(`http://localhost:3000${requestInfo.url}`, {
+          method: requestInfo.method,
+          body: JSON.stringify(requestInfo.body),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }),
+      );
+
+      assertEquals(response!.status, 400);
+      const responseBody = await response!.json();
+      assertEquals(responseBody.error, "invalid_otp");
+    }
+
+    // Next attempt should be blocked
+    const blockedRequestInfo = prepareVerifyOtp({ email, otp: wrongOtp });
+    const blockedResponse = await api.handle(
+      new Request(`http://localhost:3000${blockedRequestInfo.url}`, {
+        method: blockedRequestInfo.method,
+        body: JSON.stringify(blockedRequestInfo.body),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }),
+    );
+
+    assertEquals(blockedResponse!.status, 400);
+    const blockedResponseBody = await blockedResponse!.json();
+    assertEquals(blockedResponseBody.error, "otp_max_attempts");
+
+    // Even correct OTP should be blocked now
+    const correctRequestInfo = prepareVerifyOtp({ email, otp: validOtp });
+    const correctResponse = await api.handle(
+      new Request(`http://localhost:3000${correctRequestInfo.url}`, {
+        method: correctRequestInfo.method,
+        body: JSON.stringify(correctRequestInfo.body),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }),
+    );
+
+    assertEquals(correctResponse!.status, 400);
+    const correctResponseBody = await correctResponse!.json();
+    assertEquals(correctResponseBody.error, "otp_max_attempts");
+  } finally {
+    await resetTables();
+    await destroyKyselyDb();
+  }
+});
+
+Deno.test("verify otp - should reset attempts on new OTP request", async () => {
+  initKyselyDb();
+  await resetTables();
+
+  try {
+    const email = `test-${crypto.randomUUID()}@example.com`;
+
+    // Request initial OTP
+    const requestOtpInfo = prepareRequestOtp({ email });
+    await api.handle(
+      new Request(`http://localhost:3000${requestOtpInfo.url}`, {
+        method: requestOtpInfo.method,
+        body: JSON.stringify(requestOtpInfo.body),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }),
+    );
+
+    // Make some failed attempts
+    const wrongOtp = "000000";
+    for (let i = 0; i < 2; i++) {
+      const verifyInfo = prepareVerifyOtp({ email, otp: wrongOtp });
+      await api.handle(
+        new Request(`http://localhost:3000${verifyInfo.url}`, {
+          method: verifyInfo.method,
+          body: JSON.stringify(verifyInfo.body),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }),
+      );
+    }
+
+    // Verify attempts were recorded
+    let user = await db
+      .selectFrom("user")
+      .selectAll()
+      .where("email", "=", email)
+      .executeTakeFirstOrThrow();
+    assertEquals(user.otp_attempts, 2);
+
+    // Request new OTP - should reset attempts
+    const authService = new AuthService();
+    const newOtp = await authService.requestOtp(email);
+
+    user = await db
+      .selectFrom("user")
+      .selectAll()
+      .where("email", "=", email)
+      .executeTakeFirstOrThrow();
+    assertEquals(user.otp_attempts, 0); // Should be reset
+
+    // Should be able to verify with new OTP
+    const newVerifyInfo = prepareVerifyOtp({ email, otp: newOtp });
+    const response = await api.handle(
+      new Request(`http://localhost:3000${newVerifyInfo.url}`, {
+        method: newVerifyInfo.method,
+        body: JSON.stringify(newVerifyInfo.body),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }),
+    );
+
+    assertEquals(response!.status, 200);
+    const responseBody = await response!.json();
+    assertGreater(responseBody.token.length, 0);
+  } finally {
+    await resetTables();
+    await destroyKyselyDb();
+  }
+});
+
+Deno.test("verify otp - should track failed attempts correctly", async () => {
+  initKyselyDb();
+  await resetTables();
+
+  try {
+    const email = `test-${crypto.randomUUID()}@example.com`;
+    const authService = new AuthService();
+
+    // Request OTP
+    await authService.requestOtp(email);
+    const wrongOtp = "000000";
+
+    // Make first failed attempt
+    const firstAttemptInfo = prepareVerifyOtp({ email, otp: wrongOtp });
+    const firstResponse = await api.handle(
+      new Request(`http://localhost:3000${firstAttemptInfo.url}`, {
+        method: firstAttemptInfo.method,
+        body: JSON.stringify(firstAttemptInfo.body),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }),
+    );
+
+    assertEquals(firstResponse!.status, 400);
+
+    let user = await db
+      .selectFrom("user")
+      .selectAll()
+      .where("email", "=", email)
+      .executeTakeFirstOrThrow();
+    assertEquals(user.otp_attempts, 1);
+
+    // Make second failed attempt
+    const secondAttemptInfo = prepareVerifyOtp({ email, otp: wrongOtp });
+    const secondResponse = await api.handle(
+      new Request(`http://localhost:3000${secondAttemptInfo.url}`, {
+        method: secondAttemptInfo.method,
+        body: JSON.stringify(secondAttemptInfo.body),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }),
+    );
+
+    assertEquals(secondResponse!.status, 400);
+
+    user = await db
+      .selectFrom("user")
+      .selectAll()
+      .where("email", "=", email)
+      .executeTakeFirstOrThrow();
+    assertEquals(user.otp_attempts, 2);
   } finally {
     await resetTables();
     await destroyKyselyDb();

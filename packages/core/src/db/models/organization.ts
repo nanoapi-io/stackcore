@@ -27,8 +27,6 @@ export interface OrganizationTable {
   name: string;
   isTeam: boolean;
   stripe_customer_id: string | null;
-  stripe_product: StripeProduct | null;
-  stripe_billing_cycle: StripeBillingCycle | null;
   access_enabled: boolean;
   deactivated: boolean;
   created_at: ColumnType<Date>;

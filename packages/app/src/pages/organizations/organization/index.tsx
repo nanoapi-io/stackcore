@@ -78,12 +78,12 @@ export default function OrganizationPage() {
   const coreApi = useCoreApi();
 
   const [isBusy, setIsBusy] = useState(false);
-
   const { organizationId } = useParams<{ organizationId: string }>();
-
   const { organizations } = useOrganization();
-
   const [organization, setOrganization] = useState<Organization | null>(null);
+  const [subscription, setSubscription] = useState<
+    BillingApiTypes.SubscriptionDetails | null
+  >(null);
 
   useEffect(() => {
     if (!organizationId) {
@@ -95,13 +95,45 @@ export default function OrganizationPage() {
     );
 
     if (!organization) {
+      console.error("Organization not found", organizations.length);
       return;
     }
 
     setOrganization(organization);
+
+    getSubscription(organization.id);
   }, [organizations, organizationId]);
 
-  async function goToPortalToUpdatePaymentMethod() {
+  async function getSubscription(organizationId: number) {
+    setIsBusy(true);
+
+    try {
+      const { url, method } = BillingApiTypes.prepareGetSubscription(
+        organizationId,
+      );
+
+      const response = await coreApi.handleRequest(url, method);
+
+      if (!response.ok || response.status !== 200) {
+        throw new Error("Failed to get subscription");
+      }
+
+      const data = await response.json() as BillingApiTypes.SubscriptionDetails;
+
+      setSubscription(data);
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "Failed to get subscription",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBusy(false);
+    }
+  }
+
+  async function goToStripePortal() {
     if (!organization) {
       return;
     }
@@ -162,13 +194,13 @@ export default function OrganizationPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Payment Status</TableHead>
+                <TableHead>Subscription status</TableHead>
                 <TableHead>Current Plan</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               <TableRow>
-                {organization
+                {organization && subscription
                   ? (
                     <>
                       <TableCell>
@@ -181,35 +213,60 @@ export default function OrganizationPage() {
                             )
                             : (
                               <Badge variant="destructive">
-                                Out of date
+                                Access disabled. Update your payment method
                               </Badge>
                             )}
                           <Button
-                            onClick={goToPortalToUpdatePaymentMethod}
+                            onClick={goToStripePortal}
                             disabled={isBusy}
                           >
                             {isBusy
                               ? <Loader className="animate-spin" />
                               : <CreditCard />}
-                            Update payment method
+                            Invoices and payment method
                           </Button>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col items-start space-y-2">
                           <Badge variant="outline">
-                            {organization.stripe_product}{" "}
-                            ({organization.stripe_billing_cycle})
+                            {subscription.product}{" "}
+                            ({subscription.billingCycle || "unknown"})
                           </Badge>
                           {organization.role === MemberApiTypes.ADMIN_ROLE && (
                             <Link
                               to={`changePlan`}
                             >
-                              <Button variant="link">
+                              <Button>
                                 <CalendarCog />
-                                Change plan
+                                Update current plan
                               </Button>
                             </Link>
+                          )}
+                          {subscription.cancelAt && (
+                            <div className="text-muted-foreground text-sm">
+                              <p>
+                                Your subscription will be canceled on{" "}
+                                <span className="font-bold">
+                                  {new Date(subscription.cancelAt)
+                                    .toLocaleDateString()}
+                                </span>.
+                              </p>
+                              <p>
+                                Once cancelled, your subscription will be
+                                downgraded to{" "}
+                                <span className="font-bold">
+                                  {subscription.newProductWhenCanceled ||
+                                    "unknown"}
+                                </span>{" "}
+                                with{" "}
+                                <span className="font-bold">
+                                  {subscription.newBillingCycleWhenCanceled ||
+                                    "unknown"}
+                                </span>{" "}
+                                billing.
+                              </p>
+                            </div>
                           )}
                         </div>
                       </TableCell>

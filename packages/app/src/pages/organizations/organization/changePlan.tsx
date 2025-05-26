@@ -24,12 +24,11 @@ import {
   ToggleGroupItem,
 } from "../../../components/shadcn/ToggleGroup.tsx";
 import { Badge } from "../../../components/shadcn/Badge.tsx";
-import { Check, Loader2 } from "lucide-react";
+import { Check, CreditCard, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogClose,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -85,15 +84,21 @@ const PLANS = [
 ];
 
 export default function ChangePlanPage() {
+  const coreApi = useCoreApi();
+
   const [billingCycle, setBillingCycle] = useState<
     OrganizationApiTypes.StripeBillingCycle
   >(
     OrganizationApiTypes.YEARLY_BILLING_CYCLE,
   );
 
+  const [isBusy, setIsBusy] = useState(false);
   const { organizationId } = useParams<{ organizationId: string }>();
   const { organizations } = useOrganization();
   const [organization, setOrganization] = useState<Organization | null>(null);
+  const [subscription, setSubscription] = useState<
+    BillingApiTypes.SubscriptionDetails | null
+  >(null);
 
   useEffect(() => {
     if (!organizationId) {
@@ -109,7 +114,37 @@ export default function ChangePlanPage() {
     }
 
     setOrganization(organization);
+    getSubscription(organization.id);
   }, [organizations, organizationId]);
+
+  async function getSubscription(organizationId: number) {
+    setIsBusy(true);
+
+    try {
+      const { url, method } = BillingApiTypes.prepareGetSubscription(
+        organizationId,
+      );
+
+      const response = await coreApi.handleRequest(url, method);
+
+      if (!response.ok || response.status !== 200) {
+        throw new Error("Failed to get subscription");
+      }
+
+      const data = await response.json() as BillingApiTypes.SubscriptionDetails;
+
+      setSubscription(data);
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "Failed to get subscription",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBusy(false);
+    }
+  }
 
   return (
     <LoggedInLayout>
@@ -136,11 +171,10 @@ export default function ChangePlanPage() {
               <span className="text-sm text-muted-foreground">
                 Current Plan:
               </span>
-              {organization
+              {subscription
                 ? (
                   <Badge variant="outline">
-                    {organization.stripe_product}{" "}
-                    ({organization.stripe_billing_cycle})
+                    {subscription.product} ({subscription.billingCycle})
                   </Badge>
                 )
                 : <Skeleton className="w-full" />}
@@ -148,10 +182,10 @@ export default function ChangePlanPage() {
 
             <Separator />
 
-            {organization
+            {!isBusy && organization && subscription
               ? (
                 <div>
-                  {organization.stripe_product ===
+                  {subscription.product ===
                       OrganizationApiTypes.CUSTOM_PRODUCT
                     ? <CustomPricingCard />
                     : (
@@ -183,9 +217,8 @@ export default function ChangePlanPage() {
                               organizationId={organization.id}
                               plan={plan}
                               selectedBillingCycle={billingCycle}
-                              currentProduct={organization.stripe_product}
-                              currentBillingCycle={organization
-                                .stripe_billing_cycle}
+                              currentProduct={subscription.product}
+                              currentBillingCycle={subscription.billingCycle}
                             />
                           ))}
                         </div>
@@ -348,6 +381,36 @@ function ChangePlanDialog(props: {
 
   const [busy, setBusy] = useState(false);
 
+  async function handleManagePaymentMethodClick() {
+    setBusy(true);
+
+    try {
+      const { url, method, body } = BillingApiTypes.prepareCreatePortalSession({
+        organizationId: props.organizationId,
+        returnUrl: globalThis.location.href,
+      });
+
+      const response = await coreApi.handleRequest(url, method, body);
+
+      if (!response.ok) {
+        throw new Error("Failed to create portal session");
+      }
+
+      const data = await response
+        .json() as BillingApiTypes.CreatePortalSessionResponse;
+
+      globalThis.location.href = data.url;
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "Failed to create portal session",
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleSubmit() {
     setBusy(true);
 
@@ -374,8 +437,6 @@ function ChangePlanDialog(props: {
           title: "Success",
           description: "Plan upgraded successfully",
         });
-
-        return;
       } else {
         const { url, method, body } = BillingApiTypes
           .prepareDowngradeSubscription({
@@ -400,12 +461,59 @@ function ChangePlanDialog(props: {
       console.error(error);
       toast({
         title: "Error",
-        description: "Failed to update plan",
+        description: (
+          <div className="space-y-2">
+            <div>
+              Failed to update plan. Make sure you have a payment method added
+              to your account and try again.
+            </div>
+            <Button
+              onClick={handleManagePaymentMethodClick}
+              disabled={busy}
+            >
+              <CreditCard />
+              Manage payment method
+            </Button>
+          </div>
+        ),
         variant: "destructive",
       });
     } finally {
       setBusy(false);
     }
+  }
+
+  function Description() {
+    if (props.changeType === "upgrade") {
+      return (
+        <div className="space-y-4 text-muted-foreground">
+          <div>
+            Your plan will be upgraded immediately to{" "}
+            <span className="font-bold">{props.newProduct}</span> with{" "}
+            <span className="font-bold">{props.newBillingCycle}</span>{" "}
+            billing. You will be billed for your existing plan now, and your new
+            subscription will start from today.
+          </div>
+          <div>
+            Are you sure you want to upgrade your plan?
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4 text-muted-foreground">
+        <div>
+          You will retain access to your current plan until the end of your
+          billing cycle. After that, your plan will be downgraded to{" "}
+          <span className="font-bold">{props.newProduct}</span> with{" "}
+          <span className="font-bold">{props.newBillingCycle}</span> billing.
+        </div>
+        <div>
+          Are you sure you want to downgrade your plan?
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -424,36 +532,9 @@ function ChangePlanDialog(props: {
             {props.changeType === "upgrade" ? "Upgrade Plan" : "Downgrade Plan"}
           </DialogTitle>
         </DialogHeader>
-        <DialogDescription className="space-y-4">
-          {props.changeType === "upgrade"
-            ? (
-              <>
-                <p>
-                  Your plan will be upgraded immediately to{" "}
-                  <strong>{props.newProduct}</strong> with{" "}
-                  <strong>{props.newBillingCycle}</strong>{" "}
-                  billing. You will be billed for your existing plan now, and
-                  your new subscription will start from today.
-                </p>
-                <p>
-                  Are you sure you want to upgrade your plan?
-                </p>
-              </>
-            )
-            : (
-              <>
-                <p>
-                  You will retain access to your current plan until the end of
-                  your billing cycle. After that, your plan will be downgraded
-                  to <strong>{props.newProduct}</strong> with{" "}
-                  <strong>{props.newBillingCycle}</strong> billing.
-                </p>
-                <p>
-                  Are you sure you want to downgrade your plan?
-                </p>
-              </>
-            )}
-        </DialogDescription>
+
+        <Description />
+
         <DialogFooter>
           <DialogClose asChild>
             <Button variant="outline" disabled={busy}>

@@ -22,6 +22,7 @@ export const secretCryptoKey = await crypto.subtle.importKey(
 
 export const invalidOtpErrorCode = "invalid_otp";
 export const otpExpiredErrorCode = "otp_expired";
+export const otpMaxAttemptsErrorCode = "otp_max_attempts";
 
 export class AuthService {
   private generateOtp() {
@@ -53,6 +54,7 @@ export class AuthService {
         .updateTable("user")
         .set({
           otp,
+          otp_attempts: 0,
           otp_expires_at: expiresAt,
         })
         .where("email", "=", email)
@@ -64,6 +66,7 @@ export class AuthService {
         .values({
           email,
           otp,
+          otp_attempts: 0,
           otp_expires_at: expiresAt,
           created_at: new Date(),
           deactivated: false,
@@ -86,7 +89,7 @@ export class AuthService {
   ): Promise<
     {
       token?: string;
-      error?: typeof invalidOtpErrorCode | typeof otpExpiredErrorCode;
+      error?: string;
     }
   > {
     const now = new Date();
@@ -95,10 +98,24 @@ export class AuthService {
       .selectFrom("user")
       .selectAll()
       .where("email", "=", email)
-      .where("otp", "=", otp)
       .executeTakeFirst();
 
     if (!user) {
+      return { error: invalidOtpErrorCode };
+    }
+
+    if (user.otp_attempts >= settings.OTP.MAX_ATTEMPTS) {
+      return { error: otpMaxAttemptsErrorCode };
+    }
+
+    if (user.otp !== otp) {
+      await db
+        .updateTable("user")
+        .set({
+          otp_attempts: user.otp_attempts + 1,
+        })
+        .where("id", "=", user.id)
+        .execute();
       return { error: invalidOtpErrorCode };
     }
 
@@ -128,8 +145,6 @@ export class AuthService {
             name: "Personal",
             isTeam: false,
             stripe_customer_id: null,
-            stripe_product: BASIC_PRODUCT,
-            stripe_billing_cycle: MONTHLY_BILLING_CYCLE,
             access_enabled: false,
             deactivated: false,
             created_at: new Date(),
@@ -225,6 +240,20 @@ export class AuthService {
       });
 
       if (!parsedPayload.success) {
+        return false;
+      }
+
+      const user = await db
+        .selectFrom("user")
+        .selectAll()
+        .where("id", "=", parsedPayload.data.userId)
+        .executeTakeFirst();
+
+      if (!user) {
+        return false;
+      }
+
+      if (user.deactivated) {
         return false;
       }
 

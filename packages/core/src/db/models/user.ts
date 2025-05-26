@@ -10,6 +10,7 @@ export interface UserTable {
   id: Generated<number>;
   email: string;
   otp: string | null;
+  otp_attempts: number;
   otp_expires_at: ColumnType<Date | null>;
   last_login_at: ColumnType<Date | null>;
   deactivated: boolean;

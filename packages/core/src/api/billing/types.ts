@@ -4,8 +4,30 @@ import {
   MONTHLY_BILLING_CYCLE,
   PREMIUM_PRODUCT,
   PRO_PRODUCT,
+  type StripeBillingCycle,
+  type StripeProduct,
   YEARLY_BILLING_CYCLE,
 } from "../../db/models/organization.ts";
+
+export type SubscriptionDetails = {
+  product: StripeProduct;
+  billingCycle: StripeBillingCycle | null;
+  cancelAt: Date | null;
+  newProductWhenCanceled: StripeProduct | null;
+  newBillingCycleWhenCanceled: StripeBillingCycle | null;
+};
+
+export function prepareGetSubscription(
+  organizationId: number,
+) {
+  const searchParams = new URLSearchParams();
+  searchParams.set("organizationId", organizationId.toString());
+
+  return {
+    url: `/billing/subscription?${searchParams.toString()}`,
+    method: "GET",
+  };
+}
 
 export const upgradeSubscriptionRequestSchema = z.object({
   organizationId: z.number(),
@@ -61,6 +83,16 @@ export type CreatePortalSessionResponse = {
 };
 
 export function prepareCreatePortalSession(
+  payload: CreatePortalSessionRequest,
+) {
+  return {
+    url: "/billing/portal",
+    method: "POST",
+    body: payload,
+  };
+}
+
+export function prepareCreatePortalSessionPaymentMethod(
   payload: CreatePortalSessionRequest,
 ) {
   return {

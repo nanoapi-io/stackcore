@@ -1,3 +1,7 @@
+import type {
+  StripeBillingCycle,
+  StripeProduct,
+} from "../db/models/organization.ts";
 import settings from "../settings.ts";
 import { ConsoleEmailService } from "./console/index.ts";
 
@@ -85,12 +89,12 @@ export function sendSubscriptionUpgradedEmail(
     email: string;
     organizationName: string;
     oldSubscription: {
-      product: string;
-      billingCycle: string;
+      product: StripeProduct;
+      billingCycle: StripeBillingCycle | null;
     };
     newSubscription: {
-      product: string;
-      billingCycle: string;
+      product: StripeProduct;
+      billingCycle: StripeBillingCycle | null;
     };
   },
 ) {
@@ -102,8 +106,12 @@ export function sendSubscriptionUpgradedEmail(
 
 Your subscription for "${payload.organizationName}" has been successfully upgraded!
 
-Previous subscription: ${payload.oldSubscription.product} (${payload.oldSubscription.billingCycle})
-New subscription: ${payload.newSubscription.product} (${payload.newSubscription.billingCycle})
+Previous subscription: ${payload.oldSubscription.product} (${
+      payload.oldSubscription.billingCycle ?? "Custom billing cycle"
+    })
+New subscription: ${payload.newSubscription.product} (${
+      payload.newSubscription.billingCycle ?? "Custom billing cycle"
+    })
 
 This change is effective immediately, and you now have access to all the features included in your new plan.
 
@@ -119,12 +127,12 @@ export function sendSubscriptionDowngradedEmail(
     email: string;
     organizationName: string;
     oldSubscription: {
-      product: string;
-      billingCycle: string;
+      product: StripeProduct;
+      billingCycle: StripeBillingCycle | null;
     };
     newSubscription: {
-      product: string;
-      billingCycle: string;
+      product: StripeProduct;
+      billingCycle: StripeBillingCycle | null;
     };
     newSubscriptionDate: string;
   },
@@ -137,8 +145,12 @@ export function sendSubscriptionDowngradedEmail(
 
 Your subscription for "${payload.organizationName}" has been scheduled for downgrade.
 
-Current subscription: ${payload.oldSubscription.product} (${payload.oldSubscription.billingCycle})
-New subscription: ${payload.newSubscription.product} (${payload.newSubscription.billingCycle})
+Current subscription: ${payload.oldSubscription.product} (${
+      payload.oldSubscription.billingCycle ?? "Custom billing cycle"
+    })
+New subscription: ${payload.newSubscription.product} (${
+      payload.newSubscription.billingCycle ?? "Custom billing cycle"
+    })
 Effective date: ${payload.newSubscriptionDate}
 
 Your current subscription will remain active until the end of your billing period, and the new subscription will take effect on ${payload.newSubscriptionDate}.

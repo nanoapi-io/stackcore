@@ -7,6 +7,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn("id", "serial", (col) => col.primaryKey())
     .addColumn("email", "varchar(255)", (col) => col.notNull().unique())
     .addColumn("otp", "varchar(6)")
+    .addColumn("otp_attempts", "integer", (col) => col.notNull())
     .addColumn("otp_expires_at", "timestamp")
     .addColumn("last_login_at", "timestamp")
     .addColumn(
@@ -28,17 +29,6 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn("isTeam", "boolean", (col) => col.notNull())
     .addColumn("access_enabled", "boolean", (col) => col.notNull())
     .addColumn("stripe_customer_id", "varchar(255)")
-    .addColumn(
-      "stripe_product",
-      "varchar(255)",
-      (col) =>
-        col.check(sql`stripe_product IN ('BASIC', 'PRO', 'PREMIUM', 'CUSTOM')`),
-    )
-    .addColumn(
-      "stripe_billing_cycle",
-      "varchar(255)",
-      (col) => col.check(sql`stripe_billing_cycle IN ('MONTHLY', 'YEARLY')`),
-    )
     .addColumn(
       "deactivated",
       "boolean",

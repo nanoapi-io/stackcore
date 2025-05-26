@@ -1,8 +1,13 @@
 import stripe from "stripe";
 import settings from "../settings.ts";
-import type {
-  StripeBillingCycle,
-  StripeProduct,
+import {
+  BASIC_PRODUCT,
+  MONTHLY_BILLING_CYCLE,
+  PREMIUM_PRODUCT,
+  PRO_PRODUCT,
+  type StripeBillingCycle,
+  type StripeProduct,
+  YEARLY_BILLING_CYCLE,
 } from "../db/models/organization.ts";
 
 export function getStripe() {
@@ -37,35 +42,58 @@ export class StripeService {
     return customer;
   }
 
+  private getStandardStripeProductPriceId(
+    product: StripeProduct,
+    billingCycle: StripeBillingCycle,
+  ) {
+    if (product === BASIC_PRODUCT) {
+      if (billingCycle === MONTHLY_BILLING_CYCLE) {
+        return settings.STRIPE.PRODUCTS[BASIC_PRODUCT][MONTHLY_BILLING_CYCLE]
+          .PRICE_ID;
+      }
+    }
+
+    if (product === PRO_PRODUCT) {
+      if (billingCycle === MONTHLY_BILLING_CYCLE) {
+        return settings.STRIPE.PRODUCTS[PRO_PRODUCT][MONTHLY_BILLING_CYCLE]
+          .PRICE_ID;
+      }
+      if (billingCycle === YEARLY_BILLING_CYCLE) {
+        return settings.STRIPE.PRODUCTS[PRO_PRODUCT][YEARLY_BILLING_CYCLE]
+          .PRICE_ID;
+      }
+    }
+
+    if (product === PREMIUM_PRODUCT) {
+      if (billingCycle === MONTHLY_BILLING_CYCLE) {
+        return settings.STRIPE.PRODUCTS[PREMIUM_PRODUCT][MONTHLY_BILLING_CYCLE]
+          .PRICE_ID;
+      }
+      if (billingCycle === YEARLY_BILLING_CYCLE) {
+        return settings.STRIPE.PRODUCTS[PREMIUM_PRODUCT][YEARLY_BILLING_CYCLE]
+          .PRICE_ID;
+      }
+    }
+
+    // assume custom product, no price id
+    throw new Error("Could not determine price ID");
+  }
+
   public async createSubscription(
     stripeCustomerId: string,
     product: StripeProduct,
     licensePeriod: StripeBillingCycle,
   ) {
-    const licensePriceId = settings.STRIPE.PRODUCTS[product]
-      .LICENSE_PRICE_ID[licensePeriod];
-
-    const meterPriceId =
-      settings.STRIPE.PRODUCTS[product].MONTHLY_METER_PRICE_ID;
+    const priceId = this.getStandardStripeProductPriceId(
+      product,
+      licensePeriod,
+    );
 
     const subscription = await this.stripe.subscriptions.create({
       customer: stripeCustomerId,
       items: [
         {
-          price: licensePriceId,
-          metadata: {
-            product: product,
-            type: "license",
-            billing_cycle: licensePeriod,
-          },
-        },
-        {
-          price: meterPriceId,
-          metadata: {
-            product: product,
-            type: "usage",
-            billing_cycle: licensePeriod,
-          },
+          price: priceId,
         },
       ],
     });
@@ -96,52 +124,25 @@ export class StripeService {
   ) {
     const subscription = await this.getCustomerSubscription(stripeCustomerId);
 
-    const currentLicensePriceId = subscription.items.data.find((item) => {
-      item.metadata.type === "license";
-    })?.price.id;
-
-    if (!currentLicensePriceId) {
-      throw new Error(
-        "Current license price ID is not set in stripe metadata",
-      );
+    if (subscription.items.data.length !== 1) {
+      throw new Error("Subscription has multiple items");
     }
 
-    const currentMeterPriceId = subscription.items.data.find((item) => {
-      item.metadata.type === "usage";
-    })?.price.id;
+    const existingItemId = subscription.items.data[0].id;
 
-    if (!currentMeterPriceId) {
-      throw new Error(
-        "Current meter price ID is not set in stripe metadata",
-      );
-    }
-
-    const newLicensePriceId =
-      settings.STRIPE.PRODUCTS[product].LICENSE_PRICE_ID[licensePeriod];
-
-    const newMeterPriceId =
-      settings.STRIPE.PRODUCTS[product].MONTHLY_METER_PRICE_ID;
+    const newPriceId = this.getStandardStripeProductPriceId(
+      product,
+      licensePeriod,
+    );
 
     if (switchMethod === "upgrade") {
       await this.stripe.subscriptions.update(subscription.id, {
+        // make sure the subscription is not canceled, could have been the case if previously downgraded
+        cancel_at_period_end: false,
         items: [
           {
-            id: currentLicensePriceId,
-            price: newLicensePriceId,
-            metadata: {
-              product: product,
-              type: "license",
-              billing_cycle: licensePeriod,
-            },
-          },
-          {
-            id: currentMeterPriceId,
-            price: newMeterPriceId,
-            metadata: {
-              product: product,
-              type: "usage",
-              billing_cycle: licensePeriod,
-            },
+            id: existingItemId,
+            price: newPriceId,
           },
         ],
         // Do not prorate the new price, instead we start new billing cycle immediately
@@ -150,6 +151,10 @@ export class StripeService {
         // This will create an invoice immediately for the old subscription
         // and will create a new subscription with the new price from now
         billing_cycle_anchor: "now",
+        metadata: {
+          new_product_when_canceled: null,
+          new_billing_cycle_when_canceled: null,
+        },
       });
     } else if (switchMethod === "downgrade") {
       await this.stripe.subscriptions.update(subscription.id, {
@@ -191,6 +196,22 @@ export class StripeService {
         value: amount.toString(),
       },
     });
+  }
+
+  public async getPortalSession(
+    stripeCustomerId: string,
+    returnUrl: string,
+  ) {
+    if (!stripeCustomerId) {
+      throw new Error("Stripe customer ID is not set");
+    }
+
+    const session = await this.stripe.billingPortal.sessions.create({
+      customer: stripeCustomerId,
+      return_url: returnUrl,
+    });
+
+    return session;
   }
 
   public async updatePaymentMethod(

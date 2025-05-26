@@ -131,6 +131,16 @@ export default function LoginPage() {
           setIsBusy(false);
           return;
         }
+        if (error === "otp_max_attempts") {
+          toast({
+            title: "Too many attempts",
+            description: "Please request a new one time password",
+            variant: "destructive",
+          });
+          setStep("email");
+          setIsBusy(false);
+          return;
+        }
         throw new Error(error);
       }
 

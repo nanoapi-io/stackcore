@@ -18,6 +18,8 @@ import {
   sendSubscriptionDowngradedEmail,
   sendSubscriptionUpgradedEmail,
 } from "../../email/index.ts";
+import settings from "../../settings.ts";
+import type { SubscriptionDetails } from "./types.ts";
 
 const notAMemberOfOrganizationError = "not_a_member_of_organization";
 const notAnAdminError = "not_an_admin";
@@ -28,8 +30,148 @@ const cannotDowngradeToSuperiorProductError =
   "cannot_downgrade_to_superior_product";
 const cannotChangeToSameProductAndBillingCycleError =
   "cannot_change_to_same_product_and_billing_cycle";
+const couldNotChangeSubscriptionError = "could_not_change_subscription";
 
 export class BillingService {
+  public async getSubscription(
+    userId: number,
+    organizationId: number,
+  ): Promise<{ subscription?: SubscriptionDetails; error?: string }> {
+    const isMember = await db
+      .selectFrom("organization_member")
+      .select("user_id")
+      .where("user_id", "=", userId)
+      .where("organization_id", "=", organizationId)
+      .executeTakeFirst();
+
+    if (!isMember) {
+      return { error: notAMemberOfOrganizationError };
+    }
+
+    const organization = await db
+      .selectFrom("organization")
+      .selectAll()
+      .where("id", "=", organizationId)
+      .executeTakeFirstOrThrow();
+
+    if (!organization.stripe_customer_id) {
+      throw new Error("Stripe customer ID is not set");
+    }
+
+    const stripeService = new StripeService();
+    const subscription = await stripeService.getCustomerSubscription(
+      organization.stripe_customer_id,
+    );
+
+    if (subscription.items.data.length !== 1) {
+      throw new Error("Subscription has multiple items");
+    }
+
+    const priceId = subscription.items.data[0].price.id;
+
+    const priceIdMap = {
+      [settings.STRIPE.PRODUCTS[BASIC_PRODUCT][MONTHLY_BILLING_CYCLE].PRICE_ID]:
+        {
+          product: BASIC_PRODUCT as StripeProduct,
+          billingCycle: MONTHLY_BILLING_CYCLE as StripeBillingCycle,
+        },
+      [settings.STRIPE.PRODUCTS[PRO_PRODUCT][MONTHLY_BILLING_CYCLE].PRICE_ID]: {
+        product: PRO_PRODUCT as StripeProduct,
+        billingCycle: MONTHLY_BILLING_CYCLE as StripeBillingCycle,
+      },
+      [settings.STRIPE.PRODUCTS[PRO_PRODUCT][YEARLY_BILLING_CYCLE].PRICE_ID]: {
+        product: PRO_PRODUCT as StripeProduct,
+        billingCycle: YEARLY_BILLING_CYCLE as StripeBillingCycle,
+      },
+      [
+        settings.STRIPE.PRODUCTS[PREMIUM_PRODUCT][MONTHLY_BILLING_CYCLE]
+          .PRICE_ID
+      ]: {
+        product: PREMIUM_PRODUCT as StripeProduct,
+        billingCycle: MONTHLY_BILLING_CYCLE as StripeBillingCycle,
+      },
+      [
+        settings.STRIPE.PRODUCTS[PREMIUM_PRODUCT][YEARLY_BILLING_CYCLE].PRICE_ID
+      ]: {
+        product: PREMIUM_PRODUCT as StripeProduct,
+        billingCycle: YEARLY_BILLING_CYCLE as StripeBillingCycle,
+      },
+    };
+
+    const productInfo = priceIdMap[priceId];
+
+    if (!productInfo) {
+      const subscriptionDetails: SubscriptionDetails = {
+        product: CUSTOM_PRODUCT,
+        billingCycle: null,
+        cancelAt: null,
+        newProductWhenCanceled: null,
+        newBillingCycleWhenCanceled: null,
+      };
+
+      return { subscription: subscriptionDetails };
+    }
+
+    const cancelAt = subscription.cancel_at;
+    let newProductWhenCanceled: StripeProduct | null = null;
+    let newBillingCycleWhenCanceled: StripeBillingCycle | null = null;
+    if (cancelAt) {
+      newProductWhenCanceled = subscription.metadata
+        .new_product_when_canceled as StripeProduct || null;
+      newBillingCycleWhenCanceled = subscription.metadata
+        .new_billing_cycle_when_canceled as StripeBillingCycle || null;
+    }
+
+    const subscriptionDetails: SubscriptionDetails = {
+      product: productInfo.product,
+      billingCycle: productInfo.billingCycle,
+      cancelAt: cancelAt ? new Date(cancelAt * 1000) : null,
+      newProductWhenCanceled,
+      newBillingCycleWhenCanceled,
+    };
+
+    return {
+      subscription: subscriptionDetails,
+    };
+  }
+
+  public async getPortalSession(
+    userId: number,
+    organizationId: number,
+    returnUrl: string,
+  ): Promise<{ url?: string; error?: string }> {
+    const isMember = await db
+      .selectFrom("organization_member")
+      .select("user_id")
+      .where("user_id", "=", userId)
+      .where("organization_id", "=", organizationId)
+      .executeTakeFirst();
+
+    if (!isMember) {
+      return { error: notAMemberOfOrganizationError };
+    }
+
+    const organization = await db
+      .selectFrom("organization")
+      .selectAll()
+      .where("id", "=", organizationId)
+      .executeTakeFirstOrThrow();
+
+    if (!organization.stripe_customer_id) {
+      throw new Error("Stripe customer ID is not set");
+    }
+
+    const stripeService = new StripeService();
+    const session = await stripeService.getPortalSession(
+      organization.stripe_customer_id,
+      returnUrl,
+    );
+
+    return {
+      url: session.url,
+    };
+  }
+
   public async updatePaymentMethod(
     userId: number,
     organizationId: number,
@@ -100,29 +242,31 @@ export class BillingService {
       .where("id", "=", organizationId)
       .executeTakeFirstOrThrow();
 
-    if (!organization.stripe_product || !organization.stripe_billing_cycle) {
-      throw new Error("Stripe product or billing cycle is not set");
+    const { subscription: currentSubscription, error } = await this
+      .getSubscription(userId, organizationId);
+    if (error || !currentSubscription) {
+      return { error };
     }
 
     // Check if user is upgrading to a superior product
-    switch (organization.stripe_product) {
+    switch (currentSubscription.product) {
       case CUSTOM_PRODUCT:
         return { error: cannotChangeCustomProductError };
       case PREMIUM_PRODUCT:
-        if (![BASIC_PRODUCT, PRO_PRODUCT].includes(product)) {
+        if ([BASIC_PRODUCT, PRO_PRODUCT].includes(product)) {
           return { error: cannotUpgradeToInferiorProductError };
         }
         break;
       case PRO_PRODUCT:
-        if (![BASIC_PRODUCT].includes(product)) {
+        if ([BASIC_PRODUCT].includes(product)) {
           return { error: cannotUpgradeToInferiorProductError };
         }
         break;
     }
 
     // Check if user is upgrading to a superior billing cycle
-    if (organization.stripe_product === product) {
-      switch (organization.stripe_billing_cycle) {
+    if (currentSubscription.product === product) {
+      switch (currentSubscription.billingCycle) {
         case YEARLY_BILLING_CYCLE:
           if (billingCycle === MONTHLY_BILLING_CYCLE) {
             return { error: cannotUpgradeToInferiorProductError };
@@ -133,8 +277,8 @@ export class BillingService {
 
     // Check if user is upgrading to the same product and billing cycle
     if (
-      organization.stripe_product === product &&
-      organization.stripe_billing_cycle === billingCycle
+      currentSubscription.product === product &&
+      currentSubscription.billingCycle === billingCycle
     ) {
       return { error: cannotChangeToSameProductAndBillingCycleError };
     }
@@ -144,31 +288,32 @@ export class BillingService {
     }
 
     const stripeService = new StripeService();
-    await stripeService.switchSubscription(
-      organization.stripe_customer_id,
-      product,
-      billingCycle,
-      "upgrade",
-    );
+
+    try {
+      await stripeService.switchSubscription(
+        organization.stripe_customer_id,
+        product,
+        billingCycle,
+        "upgrade",
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "unknown error";
+      console.warn(
+        "Failed to upgrade subscription:",
+        message,
+      );
+      return { error: couldNotChangeSubscriptionError };
+    }
 
     const oldSubscription = {
-      product: organization.stripe_product,
-      billingCycle: organization.stripe_billing_cycle,
+      product: currentSubscription.product,
+      billingCycle: currentSubscription.billingCycle,
     };
 
     const newSubscription = {
       product,
       billingCycle,
     };
-
-    await db
-      .updateTable("organization")
-      .set({
-        stripe_product: product,
-        stripe_billing_cycle: billingCycle,
-      })
-      .where("id", "=", organizationId)
-      .execute();
 
     // Send email to all adminss
     const emails = await db
@@ -228,29 +373,31 @@ export class BillingService {
       .where("id", "=", organizationId)
       .executeTakeFirstOrThrow();
 
-    if (!organization.stripe_product || !organization.stripe_billing_cycle) {
-      throw new Error("Stripe product or billing cycle is not set");
+    const { subscription: currentSubscription, error } = await this
+      .getSubscription(userId, organizationId);
+    if (error || !currentSubscription) {
+      return { error };
     }
 
     // check if user is downgrading to an inferior product
-    switch (organization.stripe_product) {
+    switch (currentSubscription.product) {
       case CUSTOM_PRODUCT:
         return { error: cannotChangeCustomProductError };
       case PRO_PRODUCT:
-        if (![PREMIUM_PRODUCT].includes(product)) {
+        if ([PREMIUM_PRODUCT].includes(product)) {
           return { error: cannotDowngradeToSuperiorProductError };
         }
         break;
       case BASIC_PRODUCT:
-        if (![PRO_PRODUCT, PREMIUM_PRODUCT].includes(product)) {
+        if ([PRO_PRODUCT, PREMIUM_PRODUCT].includes(product)) {
           return { error: cannotDowngradeToSuperiorProductError };
         }
         break;
     }
 
     // Check if the user is downgrading to an inferior billing cycle
-    if (organization.stripe_product === product) {
-      switch (organization.stripe_billing_cycle) {
+    if (currentSubscription.product === product) {
+      switch (currentSubscription.billingCycle) {
         case MONTHLY_BILLING_CYCLE:
           if (billingCycle === YEARLY_BILLING_CYCLE) {
             return { error: cannotDowngradeToSuperiorProductError };
@@ -264,8 +411,8 @@ export class BillingService {
 
     // Check if the user is downgrading to the same product and billing cycle
     if (
-      organization.stripe_product === product &&
-      organization.stripe_billing_cycle === billingCycle
+      currentSubscription.product === product &&
+      currentSubscription.billingCycle === billingCycle
     ) {
       return { error: cannotChangeToSameProductAndBillingCycleError };
     }
@@ -275,31 +422,32 @@ export class BillingService {
     }
 
     const stripeService = new StripeService();
-    await stripeService.switchSubscription(
-      organization.stripe_customer_id,
-      product,
-      billingCycle,
-      "downgrade",
-    );
+
+    try {
+      await stripeService.switchSubscription(
+        organization.stripe_customer_id,
+        product,
+        billingCycle,
+        "downgrade",
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "unknown error";
+      console.warn(
+        "Failed to downgrade subscription:",
+        message,
+      );
+      return { error: couldNotChangeSubscriptionError };
+    }
 
     const oldSubscription = {
-      product: organization.stripe_product,
-      billingCycle: organization.stripe_billing_cycle,
+      product: currentSubscription.product,
+      billingCycle: currentSubscription.billingCycle,
     };
 
     const newSubscription = {
       product,
       billingCycle,
     };
-
-    await db
-      .updateTable("organization")
-      .set({
-        stripe_product: product,
-        stripe_billing_cycle: billingCycle,
-      })
-      .where("id", "=", organizationId)
-      .execute();
 
     // Send email to all admins
     const emails = await db
@@ -314,12 +462,8 @@ export class BillingService {
       .where("organization_member.role", "=", ADMIN_ROLE)
       .execute();
 
-    const subscription = await stripeService.getCustomerSubscription(
-      organization.stripe_customer_id,
-    );
-
-    const newSubscriptionDate = subscription.cancel_at
-      ? new Date(subscription.cancel_at * 1000).toISOString()
+    const newSubscriptionDate = currentSubscription.cancelAt
+      ? currentSubscription.cancelAt.toISOString()
       : "unknown";
 
     for (const email of emails) {
@@ -437,8 +581,6 @@ export class BillingService {
     await db
       .updateTable("organization")
       .set({
-        stripe_product: newProduct as StripeProduct,
-        stripe_billing_cycle: newLicensePeriod as StripeBillingCycle,
         access_enabled: accessEnabled,
       })
       .where("id", "=", organization.id)

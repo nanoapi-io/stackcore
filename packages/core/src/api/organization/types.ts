@@ -1,9 +1,5 @@
 import { z } from "zod";
 import type { OrganizationMemberRole } from "../../db/models/organizationMember.ts";
-import type {
-  StripeBillingCycle,
-  StripeProduct,
-} from "../../db/models/organization.ts";
 
 export {
   BASIC_PRODUCT,
@@ -60,8 +56,6 @@ export type GetOrganizationsResponse = {
     name: string;
     isTeam: boolean;
     role: OrganizationMemberRole | null;
-    stripe_product: StripeProduct | null;
-    stripe_billing_cycle: StripeBillingCycle | null;
     access_enabled: boolean;
   }[];
   total: number;
