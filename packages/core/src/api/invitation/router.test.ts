@@ -2,43 +2,43 @@ import { assertEquals, assertNotEquals } from "@std/assert";
 import api from "../index.ts";
 import { db, destroyKyselyDb, initKyselyDb } from "../../db/database.ts";
 import { resetTables } from "../../testHelpers/db.ts";
-import { OrganizationService } from "../organization/service.ts";
+import { WorkspaceService } from "../workspace/service.ts";
 import { InvitationService } from "./service.ts";
 import { createTestUserAndToken } from "../../testHelpers/auth.ts";
 import {
-  alreadyAMemberOfOrganizationError,
+  alreadyAMemberOfWorkspaceError,
   invitationExpiredError,
   invitationNotFoundError,
-  notAnAdminOfOrganizationError,
-  notMemberOfOrganizationError,
-  organizationNotTeamError,
+  notAnAdminOfWorkspaceError,
+  notMemberOfWorkspaceError,
+  workspaceNotTeamError,
 } from "./service.ts";
 import { prepareClaimInvitation, prepareCreateInvitation } from "./types.ts";
 
-// POST /:organizationId/invite (create invitation)
+// POST /:workspaceId/invite (create invitation)
 Deno.test("create invitation - with invalid email", async () => {
   initKyselyDb();
   await resetTables();
 
   try {
-    // Create a test user and organization
+    // Create a test user and workspace
     const { userId, token } = await createTestUserAndToken();
 
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
-      "Test Team",
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
+      "Test Workspace",
       userId,
     );
 
-    // Get the organization ID from the database
-    const org = await db
-      .selectFrom("organization")
+    // Get the workspace ID from the database
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("name", "=", "Test Team")
+      .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
     const { url, method, body } = prepareCreateInvitation({
-      organizationId: org.id,
+      workspaceId: workspace.id,
       email: "invalid-email",
     });
 
@@ -71,18 +71,18 @@ Deno.test("create invitation - with invalid email", async () => {
   }
 });
 
-Deno.test("create invitation - with personal organization", async () => {
+Deno.test("create invitation - with personal workspace", async () => {
   initKyselyDb();
   await resetTables();
 
   try {
-    // Create a test user and organization
-    const { token, personalOrgId } = await createTestUserAndToken();
+    // Create a test user and workspace
+    const { token, personalWorkspaceId } = await createTestUserAndToken();
 
     const inviteeEmail = `invited-${crypto.randomUUID()}@example.com`;
 
     const { url, method, body } = prepareCreateInvitation({
-      organizationId: personalOrgId,
+      workspaceId: personalWorkspaceId,
       email: inviteeEmail,
     });
 
@@ -103,10 +103,7 @@ Deno.test("create invitation - with personal organization", async () => {
     assertNotEquals(response, undefined);
     assertEquals(response?.status, 400);
     const responseBody = await response?.json();
-    assertEquals(
-      responseBody.error,
-      organizationNotTeamError,
-    );
+    assertEquals(responseBody.error, workspaceNotTeamError);
   } finally {
     await resetTables();
     await destroyKyselyDb();
@@ -118,20 +115,20 @@ Deno.test("create invitation - with non-admin user", async () => {
   await resetTables();
 
   try {
-    // Create a test user and organization
+    // Create a test user and workspace
     const { userId } = await createTestUserAndToken();
 
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
-      "Test Team",
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
+      "Test Workspace",
       userId,
     );
 
-    // Get the organization ID from the database
-    const org = await db
-      .selectFrom("organization")
+    // Get the workspace ID from the database
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("name", "=", "Test Team")
+      .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
     // Create another user who will be a member but not admin
@@ -140,9 +137,9 @@ Deno.test("create invitation - with non-admin user", async () => {
 
     // Add the second user as a member
     await db
-      .insertInto("organization_member")
+      .insertInto("member")
       .values({
-        organization_id: org.id,
+        workspace_id: workspace.id,
         user_id: memberUserId,
         role: "member",
         created_at: new Date(),
@@ -150,7 +147,7 @@ Deno.test("create invitation - with non-admin user", async () => {
       .execute();
 
     const { url, method, body } = prepareCreateInvitation({
-      organizationId: org.id,
+      workspaceId: workspace.id,
       email: "test@example.com",
     });
 
@@ -171,7 +168,7 @@ Deno.test("create invitation - with non-admin user", async () => {
     assertNotEquals(response, undefined);
     assertEquals(response?.status, 400);
     const responseBody = await response?.json();
-    assertEquals(responseBody.error, notAnAdminOfOrganizationError);
+    assertEquals(responseBody.error, notAnAdminOfWorkspaceError);
   } finally {
     await resetTables();
     await destroyKyselyDb();
@@ -183,27 +180,27 @@ Deno.test("create invitation - with non-member user", async () => {
   await resetTables();
 
   try {
-    // Create a test user and organization
+    // Create a test user and workspace
     const { userId } = await createTestUserAndToken();
 
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
-      "Test Team",
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
+      "Test Workspace",
       userId,
     );
 
-    // Get the organization ID from the database
-    const org = await db
-      .selectFrom("organization")
+    // Get the workspace ID from the database
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("name", "=", "Test Team")
+      .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
     // Create another user who is not a member
     const { token: nonMemberToken } = await createTestUserAndToken();
 
     const { url, method, body } = prepareCreateInvitation({
-      organizationId: org.id,
+      workspaceId: workspace.id,
       email: "test@example.com",
     });
 
@@ -224,14 +221,14 @@ Deno.test("create invitation - with non-member user", async () => {
     assertNotEquals(response, undefined);
     assertEquals(response?.status, 400);
     const responseBody = await response?.json();
-    assertEquals(responseBody.error, notMemberOfOrganizationError);
+    assertEquals(responseBody.error, notMemberOfWorkspaceError);
   } finally {
     await resetTables();
     await destroyKyselyDb();
   }
 });
 
-Deno.test("create invitation - with non-existent organization", async () => {
+Deno.test("create invitation - with non-existent workspace", async () => {
   initKyselyDb();
   await resetTables();
 
@@ -240,7 +237,7 @@ Deno.test("create invitation - with non-existent organization", async () => {
     const { token } = await createTestUserAndToken();
 
     const { url, method, body } = prepareCreateInvitation({
-      organizationId: 999999,
+      workspaceId: 999999,
       email: "test@example.com",
     });
 
@@ -261,7 +258,7 @@ Deno.test("create invitation - with non-existent organization", async () => {
     assertNotEquals(response, undefined);
     assertEquals(response?.status, 400);
     const responseBody = await response?.json();
-    assertEquals(responseBody.error, notMemberOfOrganizationError);
+    assertEquals(responseBody.error, notMemberOfWorkspaceError);
   } finally {
     await resetTables();
     await destroyKyselyDb();
@@ -273,26 +270,26 @@ Deno.test("create invitation - success", async () => {
   await resetTables();
 
   try {
-    // Create a test user and organization
+    // Create a test user and workspace
     const { userId, token } = await createTestUserAndToken();
 
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
-      "Test Team",
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
+      "Test Workspace",
       userId,
     );
 
-    // Get the organization ID from the database
-    const org = await db
-      .selectFrom("organization")
+    // Get the workspace ID from the database
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("name", "=", "Test Team")
+      .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
     const inviteeEmail = `invited-${crypto.randomUUID()}@example.com`;
 
     const { url, method, body } = prepareCreateInvitation({
-      organizationId: org.id,
+      workspaceId: workspace.id,
       email: inviteeEmail,
     });
 
@@ -317,9 +314,9 @@ Deno.test("create invitation - success", async () => {
 
     // Verify invitation was created in database
     const invitation = await db
-      .selectFrom("organization_invitation")
+      .selectFrom("invitation")
       .selectAll()
-      .where("organization_id", "=", org.id)
+      .where("workspace_id", "=", workspace.id)
       .executeTakeFirstOrThrow();
 
     assertNotEquals(invitation, undefined);
@@ -336,17 +333,17 @@ Deno.test("claim  invitation - success", async () => {
   try {
     const { userId } = await createTestUserAndToken();
 
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
-      "Test Team",
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
+      "Test Workspace",
       userId,
     );
 
-    // Get the organization ID from the database
-    const org = await db
-      .selectFrom("organization")
+    // Get the workspace ID from the database
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("name", "=", "Test Team")
+      .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
     const inviteeEmail = `invited-${crypto.randomUUID()}@example.com`;
@@ -354,14 +351,14 @@ Deno.test("claim  invitation - success", async () => {
     const invitationService = new InvitationService();
     await invitationService.createInvitation(
       userId,
-      org.id,
+      workspace.id,
       inviteeEmail,
     );
 
     const invitation = await db
-      .selectFrom("organization_invitation")
+      .selectFrom("invitation")
       .selectAll()
-      .where("organization_id", "=", org.id)
+      .where("workspace_id", "=", workspace.id)
       .executeTakeFirstOrThrow();
 
     const { token: inviteeToken, userId: inviteeUserId } =
@@ -384,19 +381,19 @@ Deno.test("claim  invitation - success", async () => {
     assertNotEquals(response, undefined);
     assertEquals(response?.status, 200);
 
-    // Check user is now a member of the organization
+    // Check user is now a member of the workspace
     const membership = await db
-      .selectFrom("organization_member")
+      .selectFrom("member")
       .selectAll()
       .where("user_id", "=", inviteeUserId)
-      .where("organization_id", "=", org.id)
+      .where("workspace_id", "=", workspace.id)
       .executeTakeFirstOrThrow();
 
     assertEquals(membership.role, "member");
 
     // Check invitation was deleted
     const checkInvitation = await db
-      .selectFrom("organization_invitation")
+      .selectFrom("invitation")
       .selectAll()
       .where("uuid", "=", invitation.uuid)
       .executeTakeFirst();
@@ -413,20 +410,20 @@ Deno.test("claim invitation - already a member", async () => {
   await resetTables();
 
   try {
-    // Create a test user and organization
+    // Create a test user and workspace
     const { userId } = await createTestUserAndToken();
 
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
-      "Test Team",
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
+      "Test Workspace",
       userId,
     );
 
-    // Get the organization ID from the database
-    const org = await db
-      .selectFrom("organization")
+    // Get the workspace ID from the database
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("name", "=", "Test Team")
+      .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
     const inviteeEmail = `invited-${crypto.randomUUID()}@example.com`;
@@ -435,24 +432,24 @@ Deno.test("claim invitation - already a member", async () => {
     const invitationService = new InvitationService();
     await invitationService.createInvitation(
       userId,
-      org.id,
+      workspace.id,
       inviteeEmail,
     );
 
     const invitation = await db
-      .selectFrom("organization_invitation")
+      .selectFrom("invitation")
       .selectAll()
-      .where("organization_id", "=", org.id)
+      .where("workspace_id", "=", workspace.id)
       .executeTakeFirstOrThrow();
 
-    // Create user and add them to organization
+    // Create user and add them to workspace
     const { token: inviteeToken, userId: inviteeUserId } =
       await createTestUserAndToken();
 
     await db
-      .insertInto("organization_member")
+      .insertInto("member")
       .values({
-        organization_id: org.id,
+        workspace_id: workspace.id,
         user_id: inviteeUserId,
         role: "member",
         created_at: new Date(),
@@ -477,7 +474,7 @@ Deno.test("claim invitation - already a member", async () => {
     assertNotEquals(response, undefined);
     assertEquals(response?.status, 400);
     const responseBody = await response?.json();
-    assertEquals(responseBody.error, alreadyAMemberOfOrganizationError);
+    assertEquals(responseBody.error, alreadyAMemberOfWorkspaceError);
   } finally {
     await resetTables();
     await destroyKyselyDb();
@@ -515,16 +512,16 @@ Deno.test("claim invitation - with non-existent invitation", async () => {
   }
 });
 
-Deno.test("claim invitation - with non-team organization", async () => {
+Deno.test("claim invitation - with non-team workspace", async () => {
   initKyselyDb();
   await resetTables();
 
   try {
     const { token } = await createTestUserAndToken();
 
-    // Create a personal organization (non-team)
-    const org = await db
-      .insertInto("organization")
+    // Create a personal workspace (non-team)
+    const workspace = await db
+      .insertInto("workspace")
       .values({
         name: "Personal Org",
         isTeam: false,
@@ -535,11 +532,11 @@ Deno.test("claim invitation - with non-team organization", async () => {
       .returningAll()
       .executeTakeFirstOrThrow();
 
-    // Create an invitation for the personal organization
+    // Create an invitation for the personal workspace
     const invitation = await db
-      .insertInto("organization_invitation")
+      .insertInto("invitation")
       .values({
-        organization_id: org.id,
+        workspace_id: workspace.id,
         expires_at: new Date(Date.now() + 86400000), // 1 day from now
         created_at: new Date(),
       })
@@ -563,7 +560,7 @@ Deno.test("claim invitation - with non-team organization", async () => {
     assertNotEquals(response, undefined);
     assertEquals(response?.status, 400);
     const responseBody = await response?.json();
-    assertEquals(responseBody.error, organizationNotTeamError);
+    assertEquals(responseBody.error, workspaceNotTeamError);
   } finally {
     await resetTables();
     await destroyKyselyDb();
@@ -577,24 +574,24 @@ Deno.test("claim invitation - with expired invitation", async () => {
   try {
     const { userId } = await createTestUserAndToken();
 
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
-      "Test Team",
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
+      "Test Workspace",
       userId,
     );
 
-    // Get the organization ID from the database
-    const org = await db
-      .selectFrom("organization")
+    // Get the workspace ID from the database
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("name", "=", "Test Team")
+      .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
     // Create an expired invitation
     const invitation = await db
-      .insertInto("organization_invitation")
+      .insertInto("invitation")
       .values({
-        organization_id: org.id,
+        workspace_id: workspace.id,
         expires_at: new Date(Date.now() - 86400000), // 1 day ago
         created_at: new Date(),
       })

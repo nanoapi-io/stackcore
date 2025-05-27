@@ -22,7 +22,7 @@ export type StripeBillingCycle =
   | typeof MONTHLY_BILLING_CYCLE
   | typeof YEARLY_BILLING_CYCLE;
 
-export interface OrganizationTable {
+export interface WorkspaceTable {
   id: Generated<number>;
   name: string;
   isTeam: boolean;
@@ -32,13 +32,13 @@ export interface OrganizationTable {
   created_at: ColumnType<Date>;
 }
 
-export type Organization = Selectable<OrganizationTable>;
-export type NewOrganization = Insertable<OrganizationTable>;
-export type OrganizationUpdate = Updateable<OrganizationTable>;
+export type Workspace = Selectable<WorkspaceTable>;
+export type NewWorkspace = Insertable<WorkspaceTable>;
+export type WorkspaceUpdate = Updateable<WorkspaceTable>;
 
 /*
   subscriptionStatus: The status of the subscription in Stripe
-  Returns true if the organization should have access, false otherwise
+  Returns true if the workspace should have access, false otherwise
 */
 export function shouldHaveAccess(
   subscriptionStatus: Stripe.Subscription.Status,

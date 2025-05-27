@@ -16,22 +16,22 @@ export async function createTestUserAndToken() {
     .select("id")
     .executeTakeFirstOrThrow();
 
-  const personalOrg = await db
-    .selectFrom("organization")
+  const personalWorkspace = await db
+    .selectFrom("workspace")
     .innerJoin(
-      "organization_member",
-      "organization_member.organization_id",
-      "organization.id",
+      "member",
+      "member.workspace_id",
+      "workspace.id",
     )
-    .where("organization_member.user_id", "=", user.id)
-    .where("organization.isTeam", "=", false)
-    .select("organization.id")
+    .where("member.user_id", "=", user.id)
+    .where("workspace.isTeam", "=", false)
+    .select("workspace.id")
     .executeTakeFirstOrThrow();
 
   return {
     token,
     userId: user.id,
     email,
-    personalOrgId: personalOrg.id,
+    personalWorkspaceId: personalWorkspace.id,
   };
 }

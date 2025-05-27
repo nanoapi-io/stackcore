@@ -1,7 +1,7 @@
 import type {
   StripeBillingCycle,
   StripeProduct,
-} from "../db/models/organization.ts";
+} from "../db/models/workspace.ts";
 import settings from "../settings.ts";
 import { ConsoleEmailService } from "./console/index.ts";
 
@@ -42,7 +42,7 @@ Your account has been successfully created and you're all set to get started. He
 
 • Explore the dashboard and familiarize yourself with the interface
 • Set up your profile and preferences
-• Create your first organization or join an existing one
+• Create your first workspace or join an existing one
 • Invite team members to collaborate with you
 
 If you have any questions or need assistance getting started, our support team is here to help. Don't hesitate to reach out!
@@ -56,7 +56,7 @@ The Team`,
 
 export function sendInvitationEmail(
   email: string,
-  organizationName: string,
+  workspaceName: string,
   invitationUuid: string,
 ) {
   const emailService = getEmailService();
@@ -66,10 +66,10 @@ export function sendInvitationEmail(
 
   emailService.sendEmail(
     email,
-    `Invitation to join ${organizationName}`,
+    `Invitation to join ${workspaceName}`,
     `Hi there,
 
-You've been invited to join "${organizationName}"!
+You've been invited to join "${workspaceName}"!
 
 We're excited to have you as part of our team. To get started, simply click the link below to accept your invitation and set up your account:
 
@@ -87,7 +87,7 @@ The Team`,
 export function sendSubscriptionUpgradedEmail(
   payload: {
     email: string;
-    organizationName: string;
+    workspaceName: string;
     oldSubscription: {
       product: StripeProduct;
       billingCycle: StripeBillingCycle | null;
@@ -104,7 +104,7 @@ export function sendSubscriptionUpgradedEmail(
     "Subscription upgraded",
     `Hi there,
 
-Your subscription for "${payload.organizationName}" has been successfully upgraded!
+Your subscription for workspace "${payload.workspaceName}" has been successfully upgraded!
 
 Previous subscription: ${payload.oldSubscription.product} (${
       payload.oldSubscription.billingCycle ?? "Custom billing cycle"
@@ -125,7 +125,7 @@ The Team`,
 export function sendSubscriptionDowngradedEmail(
   payload: {
     email: string;
-    organizationName: string;
+    workspaceName: string;
     oldSubscription: {
       product: StripeProduct;
       billingCycle: StripeBillingCycle | null;
@@ -143,7 +143,7 @@ export function sendSubscriptionDowngradedEmail(
     "Subscription downgraded",
     `Hi there,
 
-Your subscription for "${payload.organizationName}" has been scheduled for downgrade.
+Your subscription for workspace "${payload.workspaceName}" has been scheduled for downgrade.
 
 Current subscription: ${payload.oldSubscription.product} (${
       payload.oldSubscription.billingCycle ?? "Custom billing cycle"

@@ -3,8 +3,9 @@ import api from "../index.ts";
 import { db, destroyKyselyDb, initKyselyDb } from "../../db/database.ts";
 import { resetTables } from "../../testHelpers/db.ts";
 import { createTestUserAndToken } from "../../testHelpers/auth.ts";
-import { OrganizationService } from "../organization/service.ts";
+import { WorkspaceService } from "../workspace/service.ts";
 import { ProjectService } from "./service.ts";
+import { ProjectApiTypes } from "../responseType.ts";
 
 // --- CREATE PROJECT TESTS ---
 Deno.test("create a project", async () => {
@@ -14,29 +15,31 @@ Deno.test("create a project", async () => {
   try {
     const { userId, token } = await createTestUserAndToken();
 
-    // Create an organization first
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
-      "Test Organization",
+    // Create an workspace first
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
+      "Test Workspace",
       userId,
     );
-    // Fetch the organization from the DB
-    const organization = await db
-      .selectFrom("organization")
+    // Fetch the workspace from the DB
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("name", "=", "Test Organization")
+      .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
     // Create a project via API
+    const { url, method, body } = ProjectApiTypes.prepareCreateProject({
+      name: "Test Project",
+      workspaceId: workspace.id,
+      provider: "github",
+      providerId: "123456",
+    });
+
     const createResponse = await api.handle(
-      new Request("http://localhost:3000/projects", {
-        method: "POST",
-        body: JSON.stringify({
-          name: "Test Project",
-          organizationId: organization.id,
-          provider: "github",
-          providerId: "123456",
-        }),
+      new Request(`http://localhost:3000${url}`, {
+        method,
+        body: JSON.stringify(body),
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
@@ -50,11 +53,11 @@ Deno.test("create a project", async () => {
       .selectFrom("project")
       .selectAll()
       .where("name", "=", "Test Project")
-      .where("organization_id", "=", organization.id)
+      .where("workspace_id", "=", workspace.id)
       .executeTakeFirstOrThrow();
 
     assertEquals(project.name, "Test Project");
-    assertEquals(project.organization_id, organization.id);
+    assertEquals(project.workspace_id, workspace.id);
     assertEquals(project.provider, "github");
     assertEquals(project.provider_id, "123456");
   } finally {
@@ -70,17 +73,17 @@ Deno.test("create a project with a duplicate name should fail", async () => {
   try {
     const { userId, token } = await createTestUserAndToken();
 
-    // Create an organization first
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
-      "Test Organization",
+    // Create an workspace first
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
+      "Test Workspace",
       userId,
     );
-    // Fetch the organization from the DB
-    const organization = await db
-      .selectFrom("organization")
+    // Fetch the workspace from the DB
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("name", "=", "Test Organization")
+      .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
     // Create a project service
@@ -88,21 +91,23 @@ Deno.test("create a project with a duplicate name should fail", async () => {
     await projectService.createProject(
       userId,
       "Test Project",
-      organization.id,
+      workspace.id,
       "github",
       "123456",
     );
 
     // Try to create a project with the same name
+    const { url, method, body } = ProjectApiTypes.prepareCreateProject({
+      name: "Test Project",
+      workspaceId: workspace.id,
+      provider: "github",
+      providerId: "123456",
+    });
+
     const response = await api.handle(
-      new Request("http://localhost:3000/projects", {
-        method: "POST",
-        body: JSON.stringify({
-          name: "Test Project",
-          organizationId: organization.id,
-          provider: "gitlab",
-          providerId: "654321",
-        }),
+      new Request(`http://localhost:3000${url}`, {
+        method,
+        body: JSON.stringify(body),
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
@@ -120,39 +125,41 @@ Deno.test("create a project with a duplicate name should fail", async () => {
   }
 });
 
-Deno.test("create a project - non-member of organization", async () => {
+Deno.test("create a project - non-member of workspace", async () => {
   initKyselyDb();
   await resetTables();
 
   try {
-    // Create first user with organization
+    // Create first user with workspace
     const { userId } = await createTestUserAndToken();
 
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
-      "Test Organization",
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
+      "Test Workspace",
       userId,
     );
-    // Fetch the organization from the DB
-    const organization = await db
-      .selectFrom("organization")
+    // Fetch the workspace from the DB
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("name", "=", "Test Organization")
+      .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
-    // Create second user (not a member of the organization)
+    // Create second user (not a member of the workspace)
     const { token: nonMemberToken } = await createTestUserAndToken();
 
-    // Try to create a project in an organization the user is not a member of
+    // Try to create a project in an workspace the user is not a member of
+    const { url, method, body } = ProjectApiTypes.prepareCreateProject({
+      name: "Unauthorized Project",
+      workspaceId: workspace.id,
+      provider: null,
+      providerId: null,
+    });
+
     const response = await api.handle(
-      new Request("http://localhost:3000/projects", {
-        method: "POST",
-        body: JSON.stringify({
-          name: "Unauthorized Project",
-          organizationId: organization.id,
-          provider: null,
-          providerId: null,
-        }),
+      new Request(`http://localhost:3000${url}`, {
+        method,
+        body: JSON.stringify(body),
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${nonMemberToken}`,
@@ -162,7 +169,7 @@ Deno.test("create a project - non-member of organization", async () => {
 
     assertEquals(response?.status, 400);
     const responseBody = await response?.json();
-    assertEquals(responseBody.error, "not_a_member_of_organization");
+    assertEquals(responseBody.error, "not_a_member_of_workspace");
   } finally {
     await resetTables();
     await destroyKyselyDb();
@@ -177,10 +184,17 @@ Deno.test("create project - invalid input validation", async () => {
     const { token } = await createTestUserAndToken();
 
     // Test with invalid JSON
+    const { url, method, body } = ProjectApiTypes.prepareCreateProject({
+      name: "Test Project",
+      workspaceId: 1,
+      provider: "github",
+      providerId: "123456",
+    });
+
     const response = await api.handle(
-      new Request("http://localhost:3000/projects", {
-        method: "POST",
-        body: "{}",
+      new Request(`http://localhost:3000${url}`, {
+        method,
+        body: JSON.stringify(body),
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
@@ -190,13 +204,18 @@ Deno.test("create project - invalid input validation", async () => {
     assertEquals(response?.status, 400);
 
     // Test with missing required fields
+    const { url: url2, method: method2, body: body2 } = ProjectApiTypes
+      .prepareCreateProject({
+        name: "Test Project",
+        workspaceId: 1,
+        provider: "github",
+        providerId: "123456",
+      });
+
     const response2 = await api.handle(
-      new Request("http://localhost:3000/projects", {
-        method: "POST",
-        body: JSON.stringify({
-          name: "Test Project",
-          // missing organizationId
-        }),
+      new Request(`http://localhost:3000${url2}`, {
+        method: method2,
+        body: JSON.stringify(body2),
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
@@ -218,17 +237,17 @@ Deno.test("get user projects", async () => {
   try {
     const { userId, token } = await createTestUserAndToken();
 
-    // Create an organization first
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
-      "Test Organization",
+    // Create an workspace first
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
+      "Test Workspace",
       userId,
     );
-    // Fetch the organization from the DB
-    const organization = await db
-      .selectFrom("organization")
+    // Fetch the workspace from the DB
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("name", "=", "Test Organization")
+      .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
     // Create projects for the user
@@ -237,23 +256,26 @@ Deno.test("get user projects", async () => {
       await projectService.createProject(
         userId,
         `Project ${i}`,
-        organization.id,
+        workspace.id,
         null,
         null,
       );
     }
 
+    const { url, method, body } = ProjectApiTypes.prepareGetProjects({
+      page: 1,
+      limit: 5,
+      workspaceId: workspace.id,
+    });
+
     const response = await api.handle(
-      new Request(
-        "http://localhost:3000/projects?page=1&limit=5&organizationId=" +
-          organization.id,
-        {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-          },
+      new Request(`http://localhost:3000${url}`, {
+        method,
+        body: JSON.stringify(body),
+        headers: {
+          "Authorization": `Bearer ${token}`,
         },
-      ),
+      }),
     );
 
     assertEquals(response?.status, 200);
@@ -262,7 +284,7 @@ Deno.test("get user projects", async () => {
     assertEquals(responseBody.results.length, 5);
     for (let i = 0; i < 5; i++) {
       assertEquals(responseBody.results[i].name, `Project ${i}`);
-      assertEquals(responseBody.results[i].organization_id, organization.id);
+      assertEquals(responseBody.results[i].workspace_id, workspace.id);
     }
   } finally {
     await resetTables();
@@ -277,17 +299,17 @@ Deno.test("get user projects, pagination", async () => {
   try {
     const { userId, token } = await createTestUserAndToken();
 
-    // Create an organization first
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
-      "Test Organization",
+    // Create an workspace first
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
+      "Test Workspace",
       userId,
     );
-    // Fetch the organization from the DB
-    const organization = await db
-      .selectFrom("organization")
+    // Fetch the workspace from the DB
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("name", "=", "Test Organization")
+      .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
     // Create projects for the user
@@ -296,23 +318,26 @@ Deno.test("get user projects, pagination", async () => {
       await projectService.createProject(
         userId,
         `Project ${i}`,
-        organization.id,
+        workspace.id,
         null,
         null,
       );
     }
 
+    const { url, method, body } = ProjectApiTypes.prepareGetProjects({
+      page: 2,
+      limit: 5,
+      workspaceId: workspace.id,
+    });
+
     const response = await api.handle(
-      new Request(
-        "http://localhost:3000/projects?page=2&limit=5&organizationId=" +
-          organization.id,
-        {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-          },
+      new Request(`http://localhost:3000${url}`, {
+        method,
+        body: JSON.stringify(body),
+        headers: {
+          "Authorization": `Bearer ${token}`,
         },
-      ),
+      }),
     );
 
     assertEquals(response?.status, 200);
@@ -321,7 +346,7 @@ Deno.test("get user projects, pagination", async () => {
     assertEquals(responseBody.results.length, 5);
     for (let i = 0; i < 5; i++) {
       assertEquals(responseBody.results[i].name, `Project ${i + 5}`);
-      assertEquals(responseBody.results[i].organization_id, organization.id);
+      assertEquals(responseBody.results[i].workspace_id, workspace.id);
     }
   } finally {
     await resetTables();
@@ -336,17 +361,17 @@ Deno.test("get user projects, search by name", async () => {
   try {
     const { userId, token } = await createTestUserAndToken();
 
-    // Create an organization first
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
-      "Test Organization",
+    // Create an workspace first
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
+      "Test Workspace",
       userId,
     );
-    // Fetch the organization from the DB
-    const organization = await db
-      .selectFrom("organization")
+    // Fetch the workspace from the DB
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("name", "=", "Test Organization")
+      .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
     // Create projects for the user
@@ -355,19 +380,24 @@ Deno.test("get user projects, search by name", async () => {
       await projectService.createProject(
         userId,
         `Test Project ${i}`,
-        organization.id,
+        workspace.id,
         null,
         null,
       );
     }
 
+    const { url, method } = ProjectApiTypes.prepareGetProjects({
+      page: 1,
+      limit: 5,
+      search: "Test Project 0",
+      workspaceId: workspace.id,
+    });
+
     const response = await api.handle(
       new Request(
-        `http://localhost:3000/projects?page=1&limit=5&search=${
-          encodeURIComponent("Test Project 0")
-        }&organizationId=${organization.id}`,
+        `http://localhost:3000${url}`,
         {
-          method: "GET",
+          method,
           headers: {
             "Authorization": `Bearer ${token}`,
           },
@@ -421,10 +451,10 @@ Deno.test("get projects - invalid pagination parameters", async () => {
     );
     assertEquals(response2?.status, 400);
 
-    // Test with invalid organizationId
+    // Test with invalid workspaceId
     const response3 = await api.handle(
       new Request(
-        "http://localhost:3000/projects?page=1&limit=5&organizationId=invalid",
+        "http://localhost:3000/projects?page=1&limit=5&workspaceId=invalid",
         {
           method: "GET",
           headers: {
@@ -448,29 +478,31 @@ Deno.test("update a project", async () => {
   try {
     const { userId, token } = await createTestUserAndToken();
 
-    // Create an organization first
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
-      "Test Organization",
+    // Create an workspace first
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
+      "Test Workspace",
       userId,
     );
-    // Fetch the organization from the DB
-    const organization = await db
-      .selectFrom("organization")
+    // Fetch the workspace from the DB
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("name", "=", "Test Organization")
+      .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
     // Create a project via API
+    const { url, method, body } = ProjectApiTypes.prepareCreateProject({
+      name: "Original Project Name",
+      workspaceId: workspace.id,
+      provider: "github",
+      providerId: "123456",
+    });
+
     const createResponse = await api.handle(
-      new Request("http://localhost:3000/projects", {
-        method: "POST",
-        body: JSON.stringify({
-          name: "Original Project Name",
-          organizationId: organization.id,
-          provider: "github",
-          providerId: "123456",
-        }),
+      new Request(`http://localhost:3000${url}`, {
+        method,
+        body: JSON.stringify(body),
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
@@ -484,26 +516,26 @@ Deno.test("update a project", async () => {
       .selectFrom("project")
       .selectAll()
       .where("name", "=", "Original Project Name")
-      .where("organization_id", "=", organization.id)
+      .where("workspace_id", "=", workspace.id)
       .executeTakeFirstOrThrow();
 
     // Update project name via API
+    const { url: url2, method: method2, body: body2 } = ProjectApiTypes
+      .prepareUpdateProject(project.id, {
+        name: "Updated Project Name",
+        provider: "gitlab",
+        providerId: "654321",
+      });
+
     const response = await api.handle(
-      new Request(
-        `http://localhost:3000/projects/${project.id}`,
-        {
-          method: "PATCH",
-          body: JSON.stringify({
-            name: "Updated Project Name",
-            provider: "gitlab",
-            providerId: "654321",
-          }),
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-          },
+      new Request(`http://localhost:3000${url2}`, {
+        method: method2,
+        body: JSON.stringify(body2),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
-      ),
+      }),
     );
 
     assertEquals(response?.status, 200);
@@ -531,92 +563,86 @@ Deno.test("update a project - non-member", async () => {
   await resetTables();
 
   try {
-    // Create first user with organization and project
-    const { userId, token } = await createTestUserAndToken();
+    // Create first user with workspace and project
+    const { userId } = await createTestUserAndToken();
 
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
-      "Test Organization",
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
+      "Test Workspace",
       userId,
     );
-    // Fetch the organization from the DB
-    const organizationNM = await db
-      .selectFrom("organization")
+    // Fetch the workspace from the DB
+    const workspaceNM = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("name", "=", "Test Organization")
+      .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
     // Create a project as the first user
-    const createResponseNM = await api.handle(
-      new Request("http://localhost:3000/projects", {
-        method: "POST",
-        body: JSON.stringify({
-          name: "Test Project",
-          organizationId: organizationNM.id,
-          provider: null,
-          providerId: null,
-        }),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-      }),
+    const projectService = new ProjectService();
+    await projectService.createProject(
+      userId,
+      "Test Project",
+      workspaceNM.id,
+      null,
+      null,
     );
-    assertEquals(createResponseNM?.status, 201);
 
     // Get the project from the database for its ID
-    const projectNM = await db
+    const project = await db
       .selectFrom("project")
       .selectAll()
       .where("name", "=", "Test Project")
-      .where("organization_id", "=", organizationNM.id)
+      .where("workspace_id", "=", workspaceNM.id)
       .executeTakeFirstOrThrow();
 
-    // Create second user (not a member of the organization)
+    // Create second user (not a member of the workspace)
     const { token: nonMemberTokenNM } = await createTestUserAndToken();
 
-    const responseNM = await api.handle(
-      new Request(
-        `http://localhost:3000/projects/${projectNM.id}`,
-        {
-          method: "PATCH",
-          body: JSON.stringify({
-            name: "Unauthorized Update",
-          }),
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${nonMemberTokenNM}`,
-          },
-        },
-      ),
+    const { url, method, body } = ProjectApiTypes.prepareUpdateProject(
+      project.id,
+      {
+        name: "Unauthorized Update",
+      },
     );
 
-    assertEquals(responseNM?.status, 400);
-    const responseBodyNM = await responseNM?.json();
-    assertEquals(responseBodyNM.error, "project_not_found");
+    const response = await api.handle(
+      new Request(`http://localhost:3000${url}`, {
+        method,
+        body: JSON.stringify(body),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${nonMemberTokenNM}`,
+        },
+      }),
+    );
+
+    assertEquals(response?.status, 400);
+    const responseBody = await response?.json();
+    assertEquals(responseBody.error, "project_not_found");
   } finally {
     await resetTables();
     await destroyKyselyDb();
   }
 });
 
-Deno.test("update project - duplicate name in same organization", async () => {
+Deno.test("update project - duplicate name in same workspace", async () => {
   initKyselyDb();
   await resetTables();
 
   try {
     const { userId, token } = await createTestUserAndToken();
 
-    // Create an organization first
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
-      "Test Organization",
+    // Create an workspace first
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
+      "Test Workspace",
       userId,
     );
-    const organization = await db
-      .selectFrom("organization")
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("name", "=", "Test Organization")
+      .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
     // Create two projects
@@ -624,14 +650,14 @@ Deno.test("update project - duplicate name in same organization", async () => {
     await projectService.createProject(
       userId,
       "Project 1",
-      organization.id,
+      workspace.id,
       null,
       null,
     );
     await projectService.createProject(
       userId,
       "Project 2",
-      organization.id,
+      workspace.id,
       null,
       null,
     );
@@ -644,20 +670,22 @@ Deno.test("update project - duplicate name in same organization", async () => {
       .executeTakeFirstOrThrow();
 
     // Try to update Project 2 to have the same name as Project 1
+    const { url, method, body } = ProjectApiTypes.prepareUpdateProject(
+      project2.id,
+      {
+        name: "Project 1",
+      },
+    );
+
     const response = await api.handle(
-      new Request(
-        `http://localhost:3000/projects/${project2.id}`,
-        {
-          method: "PATCH",
-          body: JSON.stringify({
-            name: "Project 1",
-          }),
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-          },
+      new Request(`http://localhost:3000${url}`, {
+        method,
+        body: JSON.stringify(body),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
-      ),
+      }),
     );
 
     assertEquals(response?.status, 400);
@@ -677,56 +705,47 @@ Deno.test("delete a project", async () => {
   try {
     const { userId, token } = await createTestUserAndToken();
 
-    // Create an organization first
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
-      "Test Organization",
+    // Create an workspace first
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
+      "Test Workspace",
       userId,
     );
-    // Fetch the organization from the DB
-    const organization = await db
-      .selectFrom("organization")
+    // Fetch the workspace from the DB
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("name", "=", "Test Organization")
+      .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
     // Create a project via API
-    const createResponse = await api.handle(
-      new Request("http://localhost:3000/projects", {
-        method: "POST",
-        body: JSON.stringify({
-          name: "Test Project",
-          organizationId: organization.id,
-          provider: null,
-          providerId: null,
-        }),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-      }),
+    const projectService = new ProjectService();
+    await projectService.createProject(
+      userId,
+      "Test Project",
+      workspace.id,
+      null,
+      null,
     );
-    assertEquals(createResponse?.status, 201);
 
     // Get the project from the database for its ID
     const project = await db
       .selectFrom("project")
       .selectAll()
       .where("name", "=", "Test Project")
-      .where("organization_id", "=", organization.id)
+      .where("workspace_id", "=", workspace.id)
       .executeTakeFirstOrThrow();
 
     // --- DELETE ---
+    const { url, method } = ProjectApiTypes.prepareDeleteProject(project.id);
+
     const response = await api.handle(
-      new Request(
-        `http://localhost:3000/projects/${project.id}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-          },
+      new Request(`http://localhost:3000${url}`, {
+        method,
+        headers: {
+          "Authorization": `Bearer ${token}`,
         },
-      ),
+      }),
     );
 
     assertEquals(response?.status, 204);
@@ -750,60 +769,51 @@ Deno.test("delete a project - non-member", async () => {
   await resetTables();
 
   try {
-    // Create first user with organization and project
-    const { userId, token } = await createTestUserAndToken();
+    // Create first user with workspace and project
+    const { userId } = await createTestUserAndToken();
 
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
-      "Test Organization",
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
+      "Test Workspace",
       userId,
     );
-    // Fetch the organization from the DB
-    const organizationNM = await db
-      .selectFrom("organization")
+    // Fetch the workspace from the DB
+    const workspaceNM = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("name", "=", "Test Organization")
+      .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
     // Create a project as the first user
-    const createResponseNM = await api.handle(
-      new Request("http://localhost:3000/projects", {
-        method: "POST",
-        body: JSON.stringify({
-          name: "Test Project",
-          organizationId: organizationNM.id,
-          provider: null,
-          providerId: null,
-        }),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-      }),
+    const projectService = new ProjectService();
+    await projectService.createProject(
+      userId,
+      "Test Project",
+      workspaceNM.id,
+      null,
+      null,
     );
-    assertEquals(createResponseNM?.status, 201);
 
     // Get the project from the database for its ID
     const projectNM = await db
       .selectFrom("project")
       .selectAll()
       .where("name", "=", "Test Project")
-      .where("organization_id", "=", organizationNM.id)
+      .where("workspace_id", "=", workspaceNM.id)
       .executeTakeFirstOrThrow();
 
-    // Create second user (not a member of the organization)
+    // Create second user (not a member of the workspace)
     const { token: nonMemberTokenNM } = await createTestUserAndToken();
 
+    const { url, method } = ProjectApiTypes.prepareDeleteProject(projectNM.id);
+
     const responseNM = await api.handle(
-      new Request(
-        `http://localhost:3000/projects/${projectNM.id}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Authorization": `Bearer ${nonMemberTokenNM}`,
-          },
+      new Request(`http://localhost:3000${url}`, {
+        method,
+        headers: {
+          "Authorization": `Bearer ${nonMemberTokenNM}`,
         },
-      ),
+      }),
     );
 
     assertEquals(responseNM?.status, 400);

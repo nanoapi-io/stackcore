@@ -7,7 +7,7 @@ import z from "zod";
 const invitationService = new InvitationService();
 const router = new Router();
 
-// Create invitation to join an organization
+// Create invitation to join a workspace
 router.post("/", authMiddleware, async (ctx) => {
   const body = await ctx.request.body.json();
 
@@ -22,7 +22,7 @@ router.post("/", authMiddleware, async (ctx) => {
   const { error } = await invitationService
     .createInvitation(
       ctx.state.session.userId,
-      parsedBody.data.organizationId,
+      parsedBody.data.workspaceId,
       parsedBody.data.email,
     );
 
@@ -36,7 +36,7 @@ router.post("/", authMiddleware, async (ctx) => {
   ctx.response.body = { message: "Invitation created successfully" };
 });
 
-// Claim an invitation to join an organization
+// Claim an invitation to join a workspace
 router.post("/:uuid/claim", authMiddleware, async (ctx) => {
   const paramSchema = z.object({
     uuid: z.string().uuid(),

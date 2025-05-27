@@ -3,7 +3,7 @@ import type { Project } from "../../db/models/project.ts";
 
 export const projectAlreadyExistsErrorCode = "project_already_exists";
 export const projectNotFoundError = "project_not_found";
-export const notAMemberOfOrganizationError = "not_a_member_of_organization";
+export const notAMemberOfWorkspaceError = "not_a_member_of_workspace";
 
 export class ProjectService {
   /**
@@ -12,28 +12,28 @@ export class ProjectService {
   public async createProject(
     userId: number,
     name: string,
-    organizationId: number,
+    workspaceId: number,
     provider: "github" | "gitlab" | null,
     providerId: string | null,
   ): Promise<{
     error?: string;
   }> {
-    // Check if user is a member of the organization
+    // Check if user is a member of the workspace
     const isMember = await db
-      .selectFrom("organization_member")
+      .selectFrom("member")
       .innerJoin(
-        "organization",
-        "organization.id",
-        "organization_member.organization_id",
+        "workspace",
+        "workspace.id",
+        "member.workspace_id",
       )
       .select("user_id")
       .where("user_id", "=", userId)
-      .where("organization_id", "=", organizationId)
-      .where("organization.deactivated", "=", false)
+      .where("workspace_id", "=", workspaceId)
+      .where("workspace.deactivated", "=", false)
       .executeTakeFirst();
 
     if (!isMember) {
-      return { error: notAMemberOfOrganizationError };
+      return { error: notAMemberOfWorkspaceError };
     }
 
     // Check if project with same name exists
@@ -41,7 +41,7 @@ export class ProjectService {
       .selectFrom("project")
       .select("id")
       .where("name", "=", name)
-      .where("organization_id", "=", organizationId)
+      .where("workspace_id", "=", workspaceId)
       .executeTakeFirst();
 
     if (existingProject) {
@@ -53,9 +53,9 @@ export class ProjectService {
       .insertInto("project")
       .values({
         name,
-        organization_id: organizationId,
-        provider: provider || null,
-        provider_id: providerId || null,
+        workspace_id: workspaceId,
+        provider: provider,
+        provider_id: providerId,
         created_at: new Date(),
       })
       .execute();
@@ -64,35 +64,35 @@ export class ProjectService {
   }
 
   /**
-   * Get all projects for an organization
+   * Get all projects for an workspace
    */
   public async getProjects(
     userId: number,
     page: number,
     limit: number,
     search?: string,
-    organizationId?: number,
+    workspaceId?: number,
   ): Promise<{
     results?: Project[];
     total?: number;
     error?: string;
   }> {
-    // First check if user has access to the organization
-    if (organizationId) {
+    // First check if user has access to the workspace
+    if (workspaceId) {
       const hasAccess = await db
-        .selectFrom("organization_member")
+        .selectFrom("member")
         .innerJoin(
-          "organization",
-          "organization.id",
-          "organization_member.organization_id",
+          "workspace",
+          "workspace.id",
+          "member.workspace_id",
         )
         .where("user_id", "=", userId)
-        .where("organization_id", "=", organizationId)
-        .where("organization.deactivated", "=", false)
+        .where("workspace_id", "=", workspaceId)
+        .where("workspace.deactivated", "=", false)
         .executeTakeFirst();
 
       if (!hasAccess) {
-        return { error: notAMemberOfOrganizationError };
+        return { error: notAMemberOfWorkspaceError };
       }
     }
 
@@ -100,16 +100,16 @@ export class ProjectService {
     const totalResult = await db
       .selectFrom("project")
       .innerJoin(
-        "organization_member",
-        "organization_member.organization_id",
-        "project.organization_id",
+        "member",
+        "member.workspace_id",
+        "project.workspace_id",
       )
       .select(({ fn }) => [fn.countAll().as("total")])
-      .where("organization_member.user_id", "=", userId)
+      .where("member.user_id", "=", userId)
       .where((eb) => {
-        if (organizationId) {
+        if (workspaceId) {
           return eb.and([
-            eb("project.organization_id", "=", organizationId),
+            eb("project.workspace_id", "=", workspaceId),
           ]);
         }
         return eb.and([]);
@@ -131,15 +131,15 @@ export class ProjectService {
       .selectFrom("project")
       .selectAll()
       .innerJoin(
-        "organization_member",
-        "organization_member.organization_id",
-        "project.organization_id",
+        "member",
+        "member.workspace_id",
+        "project.workspace_id",
       )
-      .where("organization_member.user_id", "=", userId)
+      .where("member.user_id", "=", userId)
       .where((eb) => {
-        if (organizationId) {
+        if (workspaceId) {
           return eb.and([
-            eb("project.organization_id", "=", organizationId),
+            eb("project.workspace_id", "=", workspaceId),
           ]);
         }
         return eb.and([]);
@@ -181,23 +181,23 @@ export class ProjectService {
     const project = await db
       .selectFrom("project")
       .innerJoin(
-        "organization",
-        "organization.id",
-        "project.organization_id",
+        "workspace",
+        "workspace.id",
+        "project.workspace_id",
       )
       .innerJoin(
-        "organization_member",
-        "organization_member.organization_id",
-        "project.organization_id",
+        "member",
+        "member.workspace_id",
+        "project.workspace_id",
       )
-      .where("organization_member.user_id", "=", userId)
+      .where("member.user_id", "=", userId)
       .where("project.id", "=", projectId)
-      .where("organization.deactivated", "=", false)
+      .where("workspace.deactivated", "=", false)
       .select([
         "project.name",
         "project.provider",
         "project.provider_id",
-        "project.organization_id",
+        "project.workspace_id",
       ])
       .executeTakeFirst();
 
@@ -211,7 +211,7 @@ export class ProjectService {
         .selectFrom("project")
         .select("id")
         .where("name", "=", updates.name)
-        .where("organization_id", "=", project.organization_id)
+        .where("workspace_id", "=", project.workspace_id)
         .executeTakeFirst();
 
       if (existingProject) {
@@ -244,18 +244,18 @@ export class ProjectService {
     const project = await db
       .selectFrom("project")
       .innerJoin(
-        "organization",
-        "organization.id",
-        "project.organization_id",
+        "workspace",
+        "workspace.id",
+        "project.workspace_id",
       )
       .innerJoin(
-        "organization_member",
-        "organization_member.organization_id",
-        "project.organization_id",
+        "member",
+        "member.workspace_id",
+        "project.workspace_id",
       )
-      .where("organization_member.user_id", "=", userId)
+      .where("member.user_id", "=", userId)
       .where("project.id", "=", projectId)
-      .where("organization.deactivated", "=", false)
+      .where("workspace.deactivated", "=", false)
       .executeTakeFirst();
 
     if (!project) {

@@ -2,20 +2,20 @@ import { assertEquals, assertNotEquals } from "@std/assert";
 import api from "../index.ts";
 import { db, destroyKyselyDb, initKyselyDb } from "../../db/database.ts";
 import { resetTables } from "../../testHelpers/db.ts";
-import { OrganizationService } from "./service.ts";
+import { WorkspaceService } from "./service.ts";
 import { createTestUserAndToken } from "../../testHelpers/auth.ts";
-import { OrganizationApiTypes } from "../responseType.ts";
+import { WorkspaceApiTypes } from "../responseType.ts";
 
-// POST / (create organization)
-Deno.test("create a team organization", async () => {
+// POST / (create workspace)
+Deno.test("create a team workspace", async () => {
   initKyselyDb();
   await resetTables();
 
   try {
     const { token } = await createTestUserAndToken();
 
-    const { url, method, body } = OrganizationApiTypes
-      .prepareCreateOrganization({
+    const { url, method, body } = WorkspaceApiTypes
+      .prepareCreateWorkspace({
         name: "Test Team",
       });
 
@@ -34,23 +34,23 @@ Deno.test("create a team organization", async () => {
 
     const responseBody = await response?.json();
 
-    // Verify organization exists in database
-    const org = await db
-      .selectFrom("organization")
+    // Verify workspace exists in database
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
       .where("name", "=", "Test Team")
       .executeTakeFirstOrThrow();
 
-    assertEquals(responseBody.id, org.id);
+    assertEquals(responseBody.id, workspace.id);
 
-    assertEquals(org.name, "Test Team");
-    assertEquals(org.isTeam, true);
+    assertEquals(workspace.name, "Test Team");
+    assertEquals(workspace.isTeam, true);
 
     // Verify creator is an admin
     const member = await db
-      .selectFrom("organization_member")
+      .selectFrom("member")
       .selectAll()
-      .where("organization_id", "=", org.id)
+      .where("workspace_id", "=", workspace.id)
       .executeTakeFirst();
 
     assertNotEquals(member, undefined);
@@ -61,18 +61,18 @@ Deno.test("create a team organization", async () => {
   }
 });
 
-Deno.test("create a team organization with a duplicate name should fail", async () => {
+Deno.test("create a team workspace with a duplicate name should fail", async () => {
   initKyselyDb();
   await resetTables();
 
   try {
     const { userId, token } = await createTestUserAndToken();
 
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization("Test Team", userId);
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace("Test Team", userId);
 
-    const { url, method, body } = OrganizationApiTypes
-      .prepareCreateOrganization({
+    const { url, method, body } = WorkspaceApiTypes
+      .prepareCreateWorkspace({
         name: "Test Team",
       });
 
@@ -90,31 +90,31 @@ Deno.test("create a team organization with a duplicate name should fail", async 
     assertEquals(response?.status, 400);
 
     const responseBody = await response?.json();
-    assertEquals(responseBody.error, "organization_already_exists");
+    assertEquals(responseBody.error, "workspace_already_exists");
   } finally {
     await resetTables();
     await destroyKyselyDb();
   }
 });
 
-// GET / (list organizations)
-Deno.test("get user organizations", async () => {
+// GET / (list workspaces)
+Deno.test("get user workspaces", async () => {
   initKyselyDb();
   await resetTables();
 
   try {
     const { userId, token } = await createTestUserAndToken();
 
-    // Create organizations for the user
-    const orgService = new OrganizationService();
+    // Create workspaces for the user
+    const workspaceService = new WorkspaceService();
     for (let i = 0; i < 10; i++) {
-      await orgService.createTeamOrganization(
-        `Org ${i}`,
+      await workspaceService.createTeamWorkspace(
+        `${i} Workspace`,
         userId,
       );
     }
 
-    const { url, method } = OrganizationApiTypes.prepareGetOrganizations({
+    const { url, method } = WorkspaceApiTypes.prepareGetWorkspaces({
       page: 1,
       limit: 5,
     });
@@ -130,10 +130,10 @@ Deno.test("get user organizations", async () => {
 
     assertEquals(response?.status, 200);
     const responseBody = await response?.json();
-    assertEquals(responseBody.total, 10 + 1); // +1 for personal organization
+    assertEquals(responseBody.total, 10 + 1); // +1 for personal workspace
     assertEquals(responseBody.results.length, 5);
     for (let i = 0; i < 5; i++) {
-      assertEquals(responseBody.results[i].name, `Org ${i}`);
+      assertEquals(responseBody.results[i].name, `${i} Workspace`);
       assertEquals(responseBody.results[i].isTeam, true);
       assertEquals(responseBody.results[i].role, "admin");
     }
@@ -143,23 +143,23 @@ Deno.test("get user organizations", async () => {
   }
 });
 
-Deno.test("get user organizations, pagination", async () => {
+Deno.test("get user workspaces, pagination", async () => {
   initKyselyDb();
   await resetTables();
 
   try {
     const { userId, token } = await createTestUserAndToken();
 
-    // Create organizations for the user
-    const orgService = new OrganizationService();
+    // Create workspaces for the user
+    const workspaceService = new WorkspaceService();
     for (let i = 0; i < 10; i++) {
-      await orgService.createTeamOrganization(
-        `Org ${i}`,
+      await workspaceService.createTeamWorkspace(
+        `${i} Workspace`,
         userId,
       );
     }
 
-    const { url, method } = OrganizationApiTypes.prepareGetOrganizations({
+    const { url, method } = WorkspaceApiTypes.prepareGetWorkspaces({
       page: 2,
       limit: 5,
     });
@@ -178,10 +178,10 @@ Deno.test("get user organizations, pagination", async () => {
 
     assertEquals(response?.status, 200);
     const responseBody = await response?.json();
-    assertEquals(responseBody.total, 10 + 1); // +1 for personal organization
+    assertEquals(responseBody.total, 10 + 1); // +1 for personal workspace
     assertEquals(responseBody.results.length, 5);
     for (let i = 0; i < 5; i++) {
-      assertEquals(responseBody.results[i].name, `Org ${i + 5}`);
+      assertEquals(responseBody.results[i].name, `${i + 5} Workspace`);
       assertEquals(responseBody.results[i].isTeam, true);
       assertEquals(responseBody.results[i].role, "admin");
     }
@@ -191,26 +191,26 @@ Deno.test("get user organizations, pagination", async () => {
   }
 });
 
-Deno.test("get user organizations, search by name", async () => {
+Deno.test("get user workspaces, search by name", async () => {
   initKyselyDb();
   await resetTables();
 
   try {
     const { userId, token } = await createTestUserAndToken();
 
-    // Create organizations for the user
-    const orgService = new OrganizationService();
+    // Create workspaces for the user
+    const workspaceService = new WorkspaceService();
     for (let i = 0; i < 10; i++) {
-      await orgService.createTeamOrganization(
-        `Test Org ${i}`,
+      await workspaceService.createTeamWorkspace(
+        `Test Workspace ${i}`,
         userId,
       );
     }
 
-    const { url, method } = OrganizationApiTypes.prepareGetOrganizations({
+    const { url, method } = WorkspaceApiTypes.prepareGetWorkspaces({
       page: 1,
       limit: 5,
-      search: "Test Org 0",
+      search: "Test Workspace 0",
     });
 
     const response = await api.handle(
@@ -229,44 +229,44 @@ Deno.test("get user organizations, search by name", async () => {
     const responseBody = await response?.json();
     assertEquals(responseBody.total, 1);
     assertEquals(responseBody.results.length, 1);
-    assertEquals(responseBody.results[0].name, "Test Org 0");
+    assertEquals(responseBody.results[0].name, "Test Workspace 0");
   } finally {
     await resetTables();
     await destroyKyselyDb();
   }
 });
 
-// PATCH /:organizationId (update organization)
-Deno.test("update an organization", async () => {
+// PATCH /:workspaceId (update workspace)
+Deno.test("update an workspace", async () => {
   initKyselyDb();
   await resetTables();
 
   try {
     const { userId, token } = await createTestUserAndToken();
 
-    // Create organization
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
+    // Create workspace
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
       "Original Name",
       userId,
     );
 
-    // Get the organization ID from the database
-    const org = await db
-      .selectFrom("organization")
+    // Get the workspace ID from the database
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
       .where("name", "=", "Original Name")
       .executeTakeFirstOrThrow();
 
-    const { url, method, body } = OrganizationApiTypes
-      .prepareUpdateOrganization(
-        org.id,
+    const { url, method, body } = WorkspaceApiTypes
+      .prepareUpdateWorkspace(
+        workspace.id,
         {
           name: "Updated Name",
         },
       );
 
-    // Update organization name
+    // Update workspace name
     const response = await api.handle(
       new Request(
         `http://localhost:3000${url}`,
@@ -283,49 +283,49 @@ Deno.test("update an organization", async () => {
 
     assertEquals(response?.status, 200);
     const responseBody = await response?.json();
-    assertEquals(responseBody.message, "Organization updated successfully");
+    assertEquals(responseBody.message, "Workspace updated successfully");
 
-    // Verify organization was updated in database
-    const updatedOrg = await db
-      .selectFrom("organization")
+    // Verify workspace was updated in database
+    const updatedWorkspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("id", "=", org.id)
+      .where("id", "=", workspace.id)
       .executeTakeFirstOrThrow();
 
-    assertEquals(updatedOrg.name, "Updated Name");
+    assertEquals(updatedWorkspace.name, "Updated Name");
   } finally {
     await resetTables();
     await destroyKyselyDb();
   }
 });
 
-Deno.test("update an organization - non-member", async () => {
+Deno.test("update an workspace - non-member", async () => {
   initKyselyDb();
   await resetTables();
 
   try {
-    // Create first user with organization
+    // Create first user with workspace
     const { userId } = await createTestUserAndToken();
 
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
       "Test Team",
       userId,
     );
 
-    // Get the organization ID from the database
-    const org = await db
-      .selectFrom("organization")
+    // Get the workspace ID from the database
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
       .where("name", "=", "Test Team")
       .executeTakeFirstOrThrow();
 
-    // Create second user (not a member of the organization)
+    // Create second user (not a member of the workspace)
     const { token: nonMemberToken } = await createTestUserAndToken();
 
-    const { url, method, body } = OrganizationApiTypes
-      .prepareUpdateOrganization(
-        org.id,
+    const { url, method, body } = WorkspaceApiTypes
+      .prepareUpdateWorkspace(
+        workspace.id,
         {
           name: "Unauthorized Update",
         },
@@ -347,40 +347,40 @@ Deno.test("update an organization - non-member", async () => {
 
     assertEquals(response?.status, 400);
     const responseBody = await response?.json();
-    assertEquals(responseBody.error, "organization_not_found");
+    assertEquals(responseBody.error, "workspace_not_found");
   } finally {
     await resetTables();
     await destroyKyselyDb();
   }
 });
 
-// DELETE /:organizationId (delete organization)
-Deno.test("delete an organization", async () => {
+// DELETE /:workspaceId (delete workspace)
+Deno.test("delete an workspace", async () => {
   initKyselyDb();
   await resetTables();
 
   try {
     const { userId, token } = await createTestUserAndToken();
 
-    // Create organization
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
+    // Create workspace
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
       "Test Team",
       userId,
     );
 
-    // Get the organization ID from the database
-    const org = await db
-      .selectFrom("organization")
+    // Get the workspace ID from the database
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
       .where("name", "=", "Test Team")
       .executeTakeFirstOrThrow();
 
-    const { url, method } = OrganizationApiTypes.prepareDeleteOrganization(
-      org.id,
+    const { url, method } = WorkspaceApiTypes.prepareDeleteWorkspace(
+      workspace.id,
     );
 
-    // Delete organization
+    // Delete workspace
     const response = await api.handle(
       new Request(
         `http://localhost:3000${url}`,
@@ -395,46 +395,46 @@ Deno.test("delete an organization", async () => {
 
     assertEquals(response?.status, 204);
 
-    // Verify organization was deleted from database
-    const deletedOrg = await db
-      .selectFrom("organization")
+    // Verify workspace was deleted from database
+    const deletedWorkspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("id", "=", org.id)
+      .where("id", "=", workspace.id)
       .executeTakeFirst();
 
-    assertEquals(deletedOrg, undefined);
+    assertEquals(deletedWorkspace, undefined);
   } finally {
     await resetTables();
     await destroyKyselyDb();
   }
 });
 
-Deno.test("delete an organization - non-member", async () => {
+Deno.test("delete an workspace - non-member", async () => {
   initKyselyDb();
   await resetTables();
 
   try {
-    // Create first user with organization
+    // Create first user with workspace
     const { userId } = await createTestUserAndToken();
 
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
       "Test Team",
       userId,
     );
 
-    // Get the organization ID from the database
-    const org = await db
-      .selectFrom("organization")
+    // Get the workspace ID from the database
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
       .where("name", "=", "Test Team")
       .executeTakeFirstOrThrow();
 
-    // Create second user (not a member of the organization)
+    // Create second user (not a member of the workspace)
     const { token: nonMemberToken } = await createTestUserAndToken();
 
-    const { url, method } = OrganizationApiTypes.prepareDeleteOrganization(
-      org.id,
+    const { url, method } = WorkspaceApiTypes.prepareDeleteWorkspace(
+      workspace.id,
     );
 
     const response = await api.handle(
@@ -451,16 +451,16 @@ Deno.test("delete an organization - non-member", async () => {
 
     assertEquals(response?.status, 400);
     const responseBody = await response?.json();
-    assertEquals(responseBody.error, "organization_not_found");
+    assertEquals(responseBody.error, "workspace_not_found");
 
-    // Verify organization still exists
-    const checkOrg = await db
-      .selectFrom("organization")
+    // Verify workspace still exists
+    const checkWorkspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("id", "=", org.id)
+      .where("id", "=", workspace.id)
       .executeTakeFirst();
 
-    assertNotEquals(checkOrg, undefined);
+    assertNotEquals(checkWorkspace, undefined);
   } finally {
     await resetTables();
     await destroyKyselyDb();
@@ -468,19 +468,19 @@ Deno.test("delete an organization - non-member", async () => {
 });
 
 Deno.test(
-  "delete organization - cannot delete personal organization",
+  "delete workspace - cannot delete personal workspace",
   async () => {
     initKyselyDb();
     await resetTables();
 
     try {
-      const { token, personalOrgId } = await createTestUserAndToken();
+      const { token, personalWorkspaceId } = await createTestUserAndToken();
 
-      const { url, method } = OrganizationApiTypes.prepareDeleteOrganization(
-        personalOrgId,
+      const { url, method } = WorkspaceApiTypes.prepareDeleteWorkspace(
+        personalWorkspaceId,
       );
 
-      // Try to delete personal organization
+      // Try to delete personal workspace
       const response = await api.handle(
         new Request(
           `http://localhost:3000${url}`,
@@ -495,7 +495,7 @@ Deno.test(
 
       assertEquals(response?.status, 400);
       const responseBody = await response?.json();
-      assertEquals(responseBody.error, "cannot_delete_personal_organization");
+      assertEquals(responseBody.error, "cannot_delete_personal_workspace");
     } finally {
       await resetTables();
       await destroyKyselyDb();

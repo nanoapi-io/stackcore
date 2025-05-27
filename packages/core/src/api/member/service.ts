@@ -1,11 +1,8 @@
 import { db } from "../../db/database.ts";
-import {
-  ADMIN_ROLE,
-  type OrganizationMemberRole,
-} from "../../db/models/organizationMember.ts";
+import { ADMIN_ROLE, type MemberRole } from "../../db/models/member.ts";
 
-export const notMemberOfOrganizationError = "not_member_of_organization";
-export const notAdminOfOrganizationError = "not_admin_of_organization";
+export const notMemberOfWorkspaceError = "not_member_of_workspace";
+export const notAdminOfWorkspaceError = "not_admin_of_workspace";
 export const memberNotFoundError = "member_not_found";
 export const cannotUpdateSelfError = "cannot_update_yourself";
 
@@ -15,7 +12,7 @@ export class MemberService {
    */
   public async getMembers(
     userId: number,
-    organizationId: number,
+    workspaceId: number,
     page: number,
     limit: number,
     search?: string,
@@ -25,31 +22,31 @@ export class MemberService {
         id: number;
         user_id: number;
         email: string;
-        role: OrganizationMemberRole | null;
+        role: MemberRole | null;
       }[];
       total: number;
     } | {
       error: string;
     }
   > {
-    // check if user is a member of the organization
+    // check if user is a member of the workspace
     const userMember = await db
-      .selectFrom("organization_member")
+      .selectFrom("member")
       .select(["id"])
       .where("user_id", "=", userId)
-      .where("organization_id", "=", organizationId)
+      .where("workspace_id", "=", workspaceId)
       .executeTakeFirst();
 
     if (!userMember) {
-      return { error: notMemberOfOrganizationError };
+      return { error: notMemberOfWorkspaceError };
     }
 
     // Get total count of members
     const totalResult = await db
-      .selectFrom("organization_member")
-      .innerJoin("user", "user.id", "organization_member.user_id")
+      .selectFrom("member")
+      .innerJoin("user", "user.id", "member.user_id")
       .select(({ fn }) => [fn.countAll().as("total")])
-      .where("organization_member.organization_id", "=", organizationId)
+      .where("member.workspace_id", "=", workspaceId)
       .where((eb) => {
         if (search) {
           return eb.and([
@@ -64,15 +61,15 @@ export class MemberService {
 
     // Get paginated members
     const members = await db
-      .selectFrom("organization_member")
-      .innerJoin("user", "user.id", "organization_member.user_id")
+      .selectFrom("member")
+      .innerJoin("user", "user.id", "member.user_id")
       .select([
-        "organization_member.id",
+        "member.id",
         "user.id as user_id",
         "user.email",
-        "organization_member.role",
+        "member.role",
       ])
-      .where("organization_member.organization_id", "=", organizationId)
+      .where("member.workspace_id", "=", workspaceId)
       .where((eb) => {
         if (search) {
           return eb.and([
@@ -81,7 +78,7 @@ export class MemberService {
         }
         return eb.and([]);
       })
-      .orderBy("organization_member.created_at", "desc")
+      .orderBy("member.created_at", "desc")
       .limit(limit)
       .offset((page - 1) * limit)
       .execute();
@@ -93,18 +90,18 @@ export class MemberService {
   }
 
   /**
-   * Update a member's role in an organization
+   * Update a member's role in an workspace
    */
   public async updateMemberRole(
     userId: number,
     memberId: number,
-    role: OrganizationMemberRole,
+    role: MemberRole,
   ): Promise<{ error?: string }> {
-    // First check if user is an admin of the organization of the member
+    // First check if user is an admin of the workspace of the member
 
     const member = await db
-      .selectFrom("organization_member")
-      .select(["id", "organization_id"])
+      .selectFrom("member")
+      .select(["id", "workspace_id"])
       .where("id", "=", memberId)
       .executeTakeFirst();
 
@@ -113,18 +110,18 @@ export class MemberService {
     }
 
     const userMember = await db
-      .selectFrom("organization_member")
+      .selectFrom("member")
       .select(["id", "role"])
       .where("user_id", "=", userId)
-      .where("organization_id", "=", member.organization_id)
+      .where("workspace_id", "=", member.workspace_id)
       .executeTakeFirst();
 
     if (!userMember) {
-      return { error: notMemberOfOrganizationError };
+      return { error: notMemberOfWorkspaceError };
     }
 
     if (userMember.role !== ADMIN_ROLE) {
-      return { error: notAdminOfOrganizationError };
+      return { error: notAdminOfWorkspaceError };
     }
 
     if (userMember.id === member.id) {
@@ -133,7 +130,7 @@ export class MemberService {
 
     // Update member role
     await db
-      .updateTable("organization_member")
+      .updateTable("member")
       .set({ role })
       .where("id", "=", memberId)
       .executeTakeFirstOrThrow();
@@ -142,15 +139,15 @@ export class MemberService {
   }
 
   /**
-   * Remove a member from an organization
+   * Remove a member from an workspace
    */
-  public async removeMemberFromOrganization(
+  public async removeMemberFromWorkspace(
     userId: number,
     memberId: number,
   ): Promise<{ error?: string }> {
     const member = await db
-      .selectFrom("organization_member")
-      .select(["id", "organization_id"])
+      .selectFrom("member")
+      .select(["id", "workspace_id"])
       .where("id", "=", memberId)
       .executeTakeFirst();
 
@@ -159,27 +156,27 @@ export class MemberService {
     }
 
     const userMember = await db
-      .selectFrom("organization_member")
+      .selectFrom("member")
       .select(["id", "role"])
       .where("user_id", "=", userId)
-      .where("organization_id", "=", member.organization_id)
+      .where("workspace_id", "=", member.workspace_id)
       .executeTakeFirst();
 
     if (!userMember) {
-      return { error: notMemberOfOrganizationError };
+      return { error: notMemberOfWorkspaceError };
     }
 
     if (userMember.role !== ADMIN_ROLE) {
-      return { error: notAdminOfOrganizationError };
+      return { error: notAdminOfWorkspaceError };
     }
 
     if (userMember.id === member.id) {
       return { error: cannotUpdateSelfError };
     }
 
-    // Remove member from organization
+    // Remove member from workspace
     await db
-      .deleteFrom("organization_member")
+      .deleteFrom("member")
       .where("id", "=", memberId)
       .executeTakeFirstOrThrow();
 

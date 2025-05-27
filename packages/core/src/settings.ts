@@ -4,7 +4,7 @@ import {
   PREMIUM_PRODUCT,
   PRO_PRODUCT,
   YEARLY_BILLING_CYCLE,
-} from "./db/models/organization.ts";
+} from "./db/models/workspace.ts";
 
 function getEnv(key: string, defaultValue: string) {
   const value = Deno.env.get(key);
@@ -24,11 +24,6 @@ export default {
   },
   JWT: {
     EXPIRY_DAYS: parseInt(getEnv("JWT_EXPIRY_DAYS", "7")),
-  },
-  ORGANIZATION: {
-    DEFAULT_MONTHLY_CREDITS: parseInt(
-      getEnv("ORGANIZATION_DEFAULT_MONTHLY_CREDITS", "1000"),
-    ),
   },
   INVITATION: {
     EXPIRY_DAYS: parseInt(getEnv("INVITATION_EXPIRY_DAYS", "7")),

@@ -16,8 +16,8 @@ router.get("/subscription", authMiddleware, async (ctx) => {
   const session = getSession(ctx);
 
   const searchParamsSchema = z.object({
-    organizationId: z.string().refine((val) => !isNaN(Number(val)), {
-      message: "Organization ID must be a number",
+    workspaceId: z.string().refine((val) => !isNaN(Number(val)), {
+      message: "Workspace ID must be a number",
     }).transform((val) => Number(val)),
   });
 
@@ -34,7 +34,7 @@ router.get("/subscription", authMiddleware, async (ctx) => {
   const billingService = new BillingService();
   const result = await billingService.getSubscription(
     session.userId,
-    parsedSearchParams.data.organizationId,
+    parsedSearchParams.data.workspaceId,
   );
 
   if (result.error) {
@@ -63,7 +63,7 @@ router.post("/subscription/upgrade", authMiddleware, async (ctx) => {
   const billingService = new BillingService();
   const { error } = await billingService.upgradeSubscription(
     session.userId,
-    parsedBody.data.organizationId,
+    parsedBody.data.workspaceId,
     parsedBody.data.product,
     parsedBody.data.billingCycle,
   );
@@ -94,7 +94,7 @@ router.post("/subscription/downgrade", authMiddleware, async (ctx) => {
   const billingService = new BillingService();
   const { error } = await billingService.downgradeSubscription(
     session.userId,
-    parsedBody.data.organizationId,
+    parsedBody.data.workspaceId,
     parsedBody.data.product,
     parsedBody.data.billingCycle,
   );
@@ -125,7 +125,7 @@ router.post("/portal", authMiddleware, async (ctx) => {
   const billingService = new BillingService();
   const { url, error } = await billingService.getPortalSession(
     session.userId,
-    parsedBody.data.organizationId,
+    parsedBody.data.workspaceId,
     parsedBody.data.returnUrl,
   );
 
@@ -159,7 +159,7 @@ router.post("/portal/paymentMethod", authMiddleware, async (ctx) => {
   const billingService = new BillingService();
   const { url, error } = await billingService.updatePaymentMethod(
     session.userId,
-    parsedBody.data.organizationId,
+    parsedBody.data.workspaceId,
     parsedBody.data.returnUrl,
   );
 

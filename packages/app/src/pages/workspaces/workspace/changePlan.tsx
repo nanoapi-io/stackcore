@@ -1,10 +1,7 @@
 import { useNavigate, useParams } from "react-router";
 import LoggedInLayout from "../../../layout/loggedIn.tsx";
 import { useEffect, useState } from "react";
-import {
-  type Organization,
-  useOrganization,
-} from "../../../contexts/Organization.tsx";
+import { useWorkspace, type Workspace } from "../../../contexts/Workspace.tsx";
 import {
   Card,
   CardContent,
@@ -14,10 +11,7 @@ import {
 } from "../../../components/shadcn/Card.tsx";
 import { Separator } from "../../../components/shadcn/Separator.tsx";
 import { Button } from "../../../components/shadcn/Button.tsx";
-import {
-  BillingApiTypes,
-  OrganizationApiTypes,
-} from "@stackcore/core/responses";
+import { BillingApiTypes, WorkspaceApiTypes } from "@stackcore/core/responses";
 import { Skeleton } from "../../../components/shadcn/Skeleton.tsx";
 import {
   ToggleGroup,
@@ -39,13 +33,13 @@ import { useCoreApi } from "../../../contexts/CoreApi.tsx";
 
 const PLANS = [
   {
-    product: OrganizationApiTypes
-      .BASIC_PRODUCT as OrganizationApiTypes.StripeProduct,
+    product: WorkspaceApiTypes
+      .BASIC_PRODUCT as WorkspaceApiTypes.StripeProduct,
     title: "Basic",
     description: "Perfect for trying out the platform",
     subscriptionPrice: {
-      [OrganizationApiTypes.MONTHLY_BILLING_CYCLE]: 0,
-      [OrganizationApiTypes.YEARLY_BILLING_CYCLE]: 0,
+      [WorkspaceApiTypes.MONTHLY_BILLING_CYCLE]: 0,
+      [WorkspaceApiTypes.YEARLY_BILLING_CYCLE]: 0,
     },
     features: [
       "50 credits included",
@@ -53,13 +47,13 @@ const PLANS = [
     ],
   },
   {
-    product: OrganizationApiTypes
-      .PRO_PRODUCT as OrganizationApiTypes.StripeProduct,
+    product: WorkspaceApiTypes
+      .PRO_PRODUCT as WorkspaceApiTypes.StripeProduct,
     title: "Pro",
     description: "Great for small teams and growing businesses",
     subscriptionPrice: {
-      [OrganizationApiTypes.MONTHLY_BILLING_CYCLE]: 10,
-      [OrganizationApiTypes.YEARLY_BILLING_CYCLE]: 100,
+      [WorkspaceApiTypes.MONTHLY_BILLING_CYCLE]: 10,
+      [WorkspaceApiTypes.YEARLY_BILLING_CYCLE]: 100,
     },
     features: [
       "500 credits included",
@@ -67,13 +61,13 @@ const PLANS = [
     ],
   },
   {
-    product: OrganizationApiTypes
-      .PREMIUM_PRODUCT as OrganizationApiTypes.StripeProduct,
+    product: WorkspaceApiTypes
+      .PREMIUM_PRODUCT as WorkspaceApiTypes.StripeProduct,
     title: "Premium",
     description: "Perfect for medium teams with high volume needs",
     subscriptionPrice: {
-      [OrganizationApiTypes.MONTHLY_BILLING_CYCLE]: 50,
-      [OrganizationApiTypes.YEARLY_BILLING_CYCLE]: 500,
+      [WorkspaceApiTypes.MONTHLY_BILLING_CYCLE]: 50,
+      [WorkspaceApiTypes.YEARLY_BILLING_CYCLE]: 500,
     },
     features: [
       "1,000 credits included",
@@ -87,42 +81,42 @@ export default function ChangePlanPage() {
   const coreApi = useCoreApi();
 
   const [billingCycle, setBillingCycle] = useState<
-    OrganizationApiTypes.StripeBillingCycle
+    WorkspaceApiTypes.StripeBillingCycle
   >(
-    OrganizationApiTypes.YEARLY_BILLING_CYCLE,
+    WorkspaceApiTypes.YEARLY_BILLING_CYCLE,
   );
 
   const [isBusy, setIsBusy] = useState(false);
-  const { organizationId } = useParams<{ organizationId: string }>();
-  const { organizations } = useOrganization();
-  const [organization, setOrganization] = useState<Organization | null>(null);
+  const { workspaceId } = useParams<{ workspaceId: string }>();
+  const { workspaces } = useWorkspace();
+  const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [subscription, setSubscription] = useState<
     BillingApiTypes.SubscriptionDetails | null
   >(null);
 
   useEffect(() => {
-    if (!organizationId) {
+    if (!workspaceId) {
       return;
     }
 
-    const organization = organizations.find(
-      (o) => o.id === parseInt(organizationId),
+    const workspace = workspaces.find(
+      (w) => w.id === parseInt(workspaceId),
     );
 
-    if (!organization) {
+    if (!workspace) {
       return;
     }
 
-    setOrganization(organization);
-    getSubscription(organization.id);
-  }, [organizations, organizationId]);
+    setWorkspace(workspace);
+    getSubscription(workspace.id);
+  }, [workspaces, workspaceId]);
 
-  async function getSubscription(organizationId: number) {
+  async function getSubscription(workspaceId: number) {
     setIsBusy(true);
 
     try {
       const { url, method } = BillingApiTypes.prepareGetSubscription(
-        organizationId,
+        workspaceId,
       );
 
       const response = await coreApi.handleRequest(url, method);
@@ -152,15 +146,13 @@ export default function ChangePlanPage() {
         <Card>
           <CardHeader>
             <CardTitle>
-              {organization
+              {workspace
                 ? (
                   <div className="flex items-center space-x-2">
                     <span>
-                      Change Plan for organization: {organization.name}
+                      Change Plan for workspace: {workspace.name}
                     </span>
-                    {organization.isTeam && (
-                      <Badge variant="outline">Team</Badge>
-                    )}
+                    {workspace.isTeam && <Badge variant="outline">Team</Badge>}
                   </div>
                 )
                 : <Skeleton className="h-6 w-full" />}
@@ -182,11 +174,11 @@ export default function ChangePlanPage() {
 
             <Separator />
 
-            {!isBusy && organization && subscription
+            {!isBusy && workspace && subscription
               ? (
                 <div>
                   {subscription.product ===
-                      OrganizationApiTypes.CUSTOM_PRODUCT
+                      WorkspaceApiTypes.CUSTOM_PRODUCT
                     ? <CustomPricingCard />
                     : (
                       <>
@@ -195,16 +187,16 @@ export default function ChangePlanPage() {
                           value={billingCycle}
                           onValueChange={(value) =>
                             setBillingCycle(
-                              value as OrganizationApiTypes.StripeBillingCycle,
+                              value as WorkspaceApiTypes.StripeBillingCycle,
                             )}
                         >
                           <ToggleGroupItem
-                            value={OrganizationApiTypes.MONTHLY_BILLING_CYCLE}
+                            value={WorkspaceApiTypes.MONTHLY_BILLING_CYCLE}
                           >
                             Monthly
                           </ToggleGroupItem>
                           <ToggleGroupItem
-                            value={OrganizationApiTypes.YEARLY_BILLING_CYCLE}
+                            value={WorkspaceApiTypes.YEARLY_BILLING_CYCLE}
                           >
                             Yearly (save 20%)
                           </ToggleGroupItem>
@@ -214,7 +206,7 @@ export default function ChangePlanPage() {
                           {PLANS.map((plan) => (
                             <StandardPricingCard
                               key={plan.product}
-                              organizationId={organization.id}
+                              workspaceId={workspace.id}
                               plan={plan}
                               selectedBillingCycle={billingCycle}
                               currentProduct={subscription.product}
@@ -264,37 +256,37 @@ function CustomPricingCard() {
 }
 
 function StandardPricingCard(props: {
-  organizationId: number;
+  workspaceId: number;
   plan: typeof PLANS[number];
-  selectedBillingCycle: OrganizationApiTypes.StripeBillingCycle;
-  currentProduct: OrganizationApiTypes.StripeProduct | null;
-  currentBillingCycle: OrganizationApiTypes.StripeBillingCycle | null;
+  selectedBillingCycle: WorkspaceApiTypes.StripeBillingCycle;
+  currentProduct: WorkspaceApiTypes.StripeProduct | null;
+  currentBillingCycle: WorkspaceApiTypes.StripeBillingCycle | null;
 }) {
   function getYearlySavingsPerMonth() {
     const monthlyPrice =
-      props.plan.subscriptionPrice[OrganizationApiTypes.MONTHLY_BILLING_CYCLE];
+      props.plan.subscriptionPrice[WorkspaceApiTypes.MONTHLY_BILLING_CYCLE];
     const yearlyPricePerMonth =
-      props.plan.subscriptionPrice[OrganizationApiTypes.YEARLY_BILLING_CYCLE] /
+      props.plan.subscriptionPrice[WorkspaceApiTypes.YEARLY_BILLING_CYCLE] /
       12;
     const savings = monthlyPrice - yearlyPricePerMonth;
     return savings.toFixed(2);
   }
 
   function determineChangeType(
-    currentProduct: OrganizationApiTypes.StripeProduct | null,
-    currentBillingCycle: OrganizationApiTypes.StripeBillingCycle | null,
-    newProduct: OrganizationApiTypes.StripeProduct,
-    newBillingCycle: OrganizationApiTypes.StripeBillingCycle,
+    currentProduct: WorkspaceApiTypes.StripeProduct | null,
+    currentBillingCycle: WorkspaceApiTypes.StripeBillingCycle | null,
+    newProduct: WorkspaceApiTypes.StripeProduct,
+    newBillingCycle: WorkspaceApiTypes.StripeBillingCycle,
   ): "upgrade" | "downgrade" | "same" {
     if (!currentProduct) return "upgrade";
 
     // Check if changing to a higher tier product
     const isUpgradingProduct =
-      (currentProduct === OrganizationApiTypes.BASIC_PRODUCT &&
-        [OrganizationApiTypes.PRO_PRODUCT, OrganizationApiTypes.PREMIUM_PRODUCT]
+      (currentProduct === WorkspaceApiTypes.BASIC_PRODUCT &&
+        [WorkspaceApiTypes.PRO_PRODUCT, WorkspaceApiTypes.PREMIUM_PRODUCT]
           .includes(newProduct)) ||
-      (currentProduct === OrganizationApiTypes.PRO_PRODUCT &&
-        newProduct === OrganizationApiTypes.PREMIUM_PRODUCT);
+      (currentProduct === WorkspaceApiTypes.PRO_PRODUCT &&
+        newProduct === WorkspaceApiTypes.PREMIUM_PRODUCT);
 
     // If products are different, determine if upgrade or downgrade
     if (currentProduct !== newProduct) {
@@ -306,8 +298,8 @@ function StandardPricingCard(props: {
       if (!currentBillingCycle) return "upgrade";
 
       const isUpgradingBilling =
-        currentBillingCycle === OrganizationApiTypes.MONTHLY_BILLING_CYCLE &&
-        newBillingCycle === OrganizationApiTypes.YEARLY_BILLING_CYCLE;
+        currentBillingCycle === WorkspaceApiTypes.MONTHLY_BILLING_CYCLE &&
+        newBillingCycle === WorkspaceApiTypes.YEARLY_BILLING_CYCLE;
 
       return isUpgradingBilling ? "upgrade" : "downgrade";
     }
@@ -336,8 +328,8 @@ function StandardPricingCard(props: {
           {props.plan.subscriptionPrice[props.selectedBillingCycle]} USD
           <span className="text-lg font-normal text-muted-foreground">
             /{{
-              [OrganizationApiTypes.YEARLY_BILLING_CYCLE]: "year",
-              [OrganizationApiTypes.MONTHLY_BILLING_CYCLE]: "month",
+              [WorkspaceApiTypes.YEARLY_BILLING_CYCLE]: "year",
+              [WorkspaceApiTypes.MONTHLY_BILLING_CYCLE]: "month",
             }[props.selectedBillingCycle]}
           </span>
         </div>
@@ -359,7 +351,7 @@ function StandardPricingCard(props: {
           ? <Button className="w-full" disabled>Current Plan</Button>
           : (
             <ChangePlanDialog
-              organizationId={props.organizationId}
+              workspaceId={props.workspaceId}
               changeType={changeType}
               newProduct={props.plan.product}
               newBillingCycle={props.selectedBillingCycle}
@@ -371,10 +363,10 @@ function StandardPricingCard(props: {
 }
 
 function ChangePlanDialog(props: {
-  organizationId: number;
+  workspaceId: number;
   changeType: "upgrade" | "downgrade";
-  newProduct: OrganizationApiTypes.StripeProduct;
-  newBillingCycle: OrganizationApiTypes.StripeBillingCycle;
+  newProduct: WorkspaceApiTypes.StripeProduct;
+  newBillingCycle: WorkspaceApiTypes.StripeBillingCycle;
 }) {
   const coreApi = useCoreApi();
   const navigate = useNavigate();
@@ -386,7 +378,7 @@ function ChangePlanDialog(props: {
 
     try {
       const { url, method, body } = BillingApiTypes.prepareCreatePortalSession({
-        organizationId: props.organizationId,
+        workspaceId: props.workspaceId,
         returnUrl: globalThis.location.href,
       });
 
@@ -415,14 +407,14 @@ function ChangePlanDialog(props: {
     setBusy(true);
 
     try {
-      if (props.newProduct === OrganizationApiTypes.CUSTOM_PRODUCT) {
+      if (props.newProduct === WorkspaceApiTypes.CUSTOM_PRODUCT) {
         throw new Error("Custom product is not supported");
       }
 
       if (props.changeType === "upgrade") {
         const { url, method, body } = BillingApiTypes
           .prepareUpgradeSubscription({
-            organizationId: props.organizationId,
+            workspaceId: props.workspaceId,
             product: props.newProduct,
             billingCycle: props.newBillingCycle,
           });
@@ -440,7 +432,7 @@ function ChangePlanDialog(props: {
       } else {
         const { url, method, body } = BillingApiTypes
           .prepareDowngradeSubscription({
-            organizationId: props.organizationId,
+            workspaceId: props.workspaceId,
             product: props.newProduct,
             billingCycle: props.newBillingCycle,
           });
@@ -456,7 +448,7 @@ function ChangePlanDialog(props: {
           description: "Plan downgraded successfully",
         });
       }
-      navigate(`/organizations/${props.organizationId}`);
+      navigate(`/workspaces/${props.workspaceId}`);
     } catch (error) {
       console.error(error);
       toast({

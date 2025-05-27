@@ -9,10 +9,10 @@ import { ThemeProvider } from "./contexts/ThemeProvider.tsx";
 import LoginPage from "./pages/login.tsx";
 import { CoreApiProvider } from "./contexts/CoreApi.tsx";
 import { RequireAuth } from "./guards/RequireAuth.tsx";
-import { OrganizationProvider } from "./contexts/Organization.tsx";
-import AddOrganizationPage from "./pages/organizations/add.tsx";
-import OrganizationPage from "./pages/organizations/organization/index.tsx";
-import ChangePlanPage from "./pages/organizations/organization/changePlan.tsx";
+import { WorkspaceProvider } from "./contexts/Workspace.tsx";
+import AddWorkspacePage from "./pages/workspaces/add.tsx";
+import WorkspacePage from "./pages/workspaces/workspace/index.tsx";
+import ChangePlanPage from "./pages/workspaces/workspace/changePlan.tsx";
 
 const router = createBrowserRouter([
   {
@@ -28,15 +28,15 @@ const router = createBrowserRouter([
     element: <LoginPage />,
   },
   {
-    path: "/organizations/new",
-    element: <AddOrganizationPage />,
+    path: "/workspaces/new",
+    element: <AddWorkspacePage />,
   },
   {
-    path: "/organizations/:organizationId",
-    element: <OrganizationPage />,
+    path: "/workspaces/:workspaceId",
+    element: <WorkspacePage />,
   },
   {
-    path: "/organizations/:organizationId/changePlan",
+    path: "/workspaces/:workspaceId/changePlan",
     element: <ChangePlanPage />,
   },
 ]);
@@ -51,10 +51,10 @@ ReactDOM.createRoot(rootElement).render(
   <StrictMode>
     <ThemeProvider>
       <CoreApiProvider>
-        <OrganizationProvider>
+        <WorkspaceProvider>
           <RouterProvider router={router} />
           <Toaster />
-        </OrganizationProvider>
+        </WorkspaceProvider>
       </CoreApiProvider>
     </ThemeProvider>
   </StrictMode>,

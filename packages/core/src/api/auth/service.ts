@@ -7,8 +7,8 @@ import {
   BASIC_PRODUCT,
   MONTHLY_BILLING_CYCLE,
   shouldHaveAccess,
-} from "../../db/models/organization.ts";
-import { ADMIN_ROLE } from "../../db/models/organizationMember.ts";
+} from "../../db/models/workspace.ts";
+import { ADMIN_ROLE } from "../../db/models/member.ts";
 import type { User } from "../../db/models/user.ts";
 import { type Session, sessionSchema } from "./types.ts";
 
@@ -123,24 +123,24 @@ export class AuthService {
       return { error: otpExpiredErrorCode };
     }
 
-    const personalOrganization = await db
-      .selectFrom("organization")
+    const personalWorkspace = await db
+      .selectFrom("workspace")
       .innerJoin(
-        "organization_member",
-        "organization_member.organization_id",
-        "organization.id",
+        "member",
+        "member.workspace_id",
+        "workspace.id",
       )
-      .selectAll("organization")
+      .selectAll("workspace")
       .where("isTeam", "=", false)
-      .where("organization_member.user_id", "=", user.id)
+      .where("member.user_id", "=", user.id)
       .executeTakeFirst();
 
-    if (!personalOrganization) {
-      // create a personal organization, membership and subscription
+    if (!personalWorkspace) {
+      // create a personal workspace, membership and subscription
       // everything in a transaction, so if something fails we do not end up in a broken state
       await db.transaction().execute(async (trx) => {
-        const newPersonalOrganization = await trx
-          .insertInto("organization")
+        const newPersonalWorkspace = await trx
+          .insertInto("workspace")
           .values({
             name: "Personal",
             isTeam: false,
@@ -153,10 +153,10 @@ export class AuthService {
           .executeTakeFirstOrThrow();
 
         await trx
-          .insertInto("organization_member")
+          .insertInto("member")
           .values({
             role: ADMIN_ROLE,
-            organization_id: newPersonalOrganization.id,
+            workspace_id: newPersonalWorkspace.id,
             user_id: user.id,
             created_at: new Date(),
           })
@@ -164,8 +164,8 @@ export class AuthService {
 
         const stripeService = new StripeService();
         const customer = await stripeService.createCustomer(
-          newPersonalOrganization.id,
-          newPersonalOrganization.name,
+          newPersonalWorkspace.id,
+          newPersonalWorkspace.name,
         );
         const subscription = await stripeService.createSubscription(
           customer.id,
@@ -176,12 +176,12 @@ export class AuthService {
         const accessEnabled = shouldHaveAccess(subscription.status);
 
         await trx
-          .updateTable("organization")
+          .updateTable("workspace")
           .set({
             stripe_customer_id: customer.id,
             access_enabled: accessEnabled,
           })
-          .where("id", "=", newPersonalOrganization.id)
+          .where("id", "=", newPersonalWorkspace.id)
           .execute();
       });
 

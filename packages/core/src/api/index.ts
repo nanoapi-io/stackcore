@@ -1,6 +1,6 @@
 import { Application } from "@oak/oak";
 import authRouter from "./auth/router.ts";
-import organizationRouter from "./organization/router.ts";
+import workspaceRouter from "./workspace/router.ts";
 import invitationRouter from "./invitation/router.ts";
 import memberRouter from "./member/router.ts";
 import projectRouter from "./project/router.ts";
@@ -10,7 +10,6 @@ import billingRouter from "./billing/router.ts";
 const api = new Application();
 
 api.use((ctx, next) => {
-  // Set CORS headers
   ctx.response.headers.set("Access-Control-Allow-Origin", "*");
   ctx.response.headers.set(
     "Access-Control-Allow-Headers",
@@ -41,8 +40,8 @@ api.use(healthRouter.allowedMethods());
 api.use(authRouter.prefix("/auth").routes());
 api.use(authRouter.allowedMethods());
 
-api.use(organizationRouter.prefix("/organizations").routes());
-api.use(organizationRouter.allowedMethods());
+api.use(workspaceRouter.prefix("/workspaces").routes());
+api.use(workspaceRouter.allowedMethods());
 
 api.use(invitationRouter.prefix("/invitations").routes());
 api.use(invitationRouter.allowedMethods());

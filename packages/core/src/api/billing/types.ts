@@ -7,7 +7,7 @@ import {
   type StripeBillingCycle,
   type StripeProduct,
   YEARLY_BILLING_CYCLE,
-} from "../../db/models/organization.ts";
+} from "../../db/models/workspace.ts";
 
 export type SubscriptionDetails = {
   product: StripeProduct;
@@ -18,10 +18,10 @@ export type SubscriptionDetails = {
 };
 
 export function prepareGetSubscription(
-  organizationId: number,
+  workspaceId: number,
 ) {
   const searchParams = new URLSearchParams();
-  searchParams.set("organizationId", organizationId.toString());
+  searchParams.set("workspaceId", workspaceId.toString());
 
   return {
     url: `/billing/subscription?${searchParams.toString()}`,
@@ -30,7 +30,7 @@ export function prepareGetSubscription(
 }
 
 export const upgradeSubscriptionRequestSchema = z.object({
-  organizationId: z.number(),
+  workspaceId: z.number(),
   product: z.enum([BASIC_PRODUCT, PRO_PRODUCT, PREMIUM_PRODUCT]),
   billingCycle: z.enum([MONTHLY_BILLING_CYCLE, YEARLY_BILLING_CYCLE]),
 });
@@ -50,7 +50,7 @@ export function prepareUpgradeSubscription(
 }
 
 export const downgradeSubscriptionRequestSchema = z.object({
-  organizationId: z.number(),
+  workspaceId: z.number(),
   product: z.enum([BASIC_PRODUCT, PRO_PRODUCT, PREMIUM_PRODUCT]),
   billingCycle: z.enum([MONTHLY_BILLING_CYCLE, YEARLY_BILLING_CYCLE]),
 });
@@ -70,7 +70,7 @@ export function prepareDowngradeSubscription(
 }
 
 export const createPortalSessionRequestSchema = z.object({
-  organizationId: z.number(),
+  workspaceId: z.number(),
   returnUrl: z.string(),
 });
 

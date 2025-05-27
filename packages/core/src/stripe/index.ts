@@ -8,7 +8,7 @@ import {
   type StripeBillingCycle,
   type StripeProduct,
   YEARLY_BILLING_CYCLE,
-} from "../db/models/organization.ts";
+} from "../db/models/workspace.ts";
 
 export function getStripe() {
   if (settings.STRIPE.USE_MOCK) {
@@ -29,13 +29,13 @@ export class StripeService {
   }
 
   public async createCustomer(
-    organizationId: number,
-    organizationName: string,
+    workspaceId: number,
+    workspaceName: string,
   ) {
     const customer = await this.stripe.customers.create({
       metadata: {
-        organization_id: organizationId,
-        organization_name: organizationName,
+        workspace_id: workspaceId,
+        workspace_name: workspaceName,
       },
     });
 

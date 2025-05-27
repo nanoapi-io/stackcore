@@ -12,7 +12,7 @@ import { Loader } from "lucide-react";
 import { useNavigate } from "react-router";
 import { toast } from "../../components/shadcn/hooks/use-toast.tsx";
 import { useCoreApi } from "../../contexts/CoreApi.tsx";
-import { useOrganization } from "../../contexts/Organization.tsx";
+import { useWorkspace } from "../../contexts/Workspace.tsx";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,13 +24,13 @@ import {
   FormLabel,
   FormMessage,
 } from "../../components/shadcn/Form.tsx";
-import { OrganizationApiTypes } from "@stackcore/core/responses";
+import { WorkspaceApiTypes } from "@stackcore/core/responses";
 
-export default function AddOrganizationPage() {
+export default function AddWorkspacePage() {
   const navigate = useNavigate();
 
   const coreApi = useCoreApi();
-  const { refreshOrganizations } = useOrganization();
+  const { refreshWorkspaces } = useWorkspace();
   const [isBusy, setIsBusy] = useState(false);
 
   const formSchema = z.object({
@@ -46,8 +46,8 @@ export default function AddOrganizationPage() {
     setIsBusy(true);
 
     try {
-      const { url, method, body } = OrganizationApiTypes
-        .prepareCreateOrganization({
+      const { url, method, body } = WorkspaceApiTypes
+        .prepareCreateWorkspace({
           name: values.name,
         });
 
@@ -55,33 +55,33 @@ export default function AddOrganizationPage() {
 
       if (!response.ok || response.status !== 201) {
         const { error } = await response.json();
-        if (error && error === "organization_already_exists") {
+        if (error && error === "workspace_already_exists") {
           form.setError("name", {
-            message: "Organization already exists",
+            message: "Workspace already exists",
           });
           setIsBusy(false);
           return;
         }
 
-        throw new Error("Failed to create organization");
+        throw new Error("Failed to create workspace");
       }
 
       toast({
-        title: "Organization created",
-        description: "You can now manage your organization",
+        title: "Workspace created",
+        description: "You can now manage your workspace",
       });
 
-      const organization = await response
-        .json() as OrganizationApiTypes.CreateOrganizationResponse;
+      const workspace = await response
+        .json() as WorkspaceApiTypes.CreateWorkspaceResponse;
 
-      await refreshOrganizations();
+      await refreshWorkspaces();
 
-      navigate(`/organizations/${organization.id}`);
+      navigate(`/workspaces/${workspace.id}`);
     } catch (error) {
       console.error(error);
       toast({
         title: "Error",
-        description: "Failed to create organization",
+        description: "Failed to create workspace",
         variant: "destructive",
       });
     } finally {
@@ -93,7 +93,7 @@ export default function AddOrganizationPage() {
     <LoggedInLayout>
       <Card className="mt-20 w-md mx-auto">
         <CardHeader>
-          <CardTitle>Create new organization</CardTitle>
+          <CardTitle>Create new workspace</CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>

@@ -7,7 +7,7 @@ import { getNumericDate, verify } from "djwt";
 import settings from "../../settings.ts";
 import type { User } from "../../db/models/user.ts";
 import { createTestUserAndToken } from "../../testHelpers/auth.ts";
-import { ADMIN_ROLE } from "../../db/models/organizationMember.ts";
+import { ADMIN_ROLE } from "../../db/models/member.ts";
 import { prepareMe, prepareRequestOtp, prepareVerifyOtp } from "./types.ts";
 
 Deno.test("request otp, invalid email", async () => {
@@ -82,20 +82,20 @@ Deno.test("request otp for new user", async () => {
     assertNotEquals(user?.otp, null);
     assertEquals(user?.otp?.length, 6);
 
-    const personalOrg = await db
-      .selectFrom("organization")
+    const personalWorkspace = await db
+      .selectFrom("workspace")
       .innerJoin(
-        "organization_member",
-        "organization_member.organization_id",
-        "organization.id",
+        "member",
+        "member.workspace_id",
+        "workspace.id",
       )
-      .selectAll("organization")
-      .where("organization.isTeam", "=", false)
-      .where("organization_member.user_id", "=", (user as User).id)
+      .selectAll("workspace")
+      .where("workspace.isTeam", "=", false)
+      .where("member.user_id", "=", (user as User).id)
       .executeTakeFirst();
 
-    // Personal organization should not exist
-    assertEquals(personalOrg, undefined);
+    // Personal workspace should not exist
+    assertEquals(personalWorkspace, undefined);
   } finally {
     await resetTables();
     await destroyKyselyDb();
@@ -193,33 +193,36 @@ Deno.test("verify otp for new user", async () => {
       getNumericDate(settings.JWT.EXPIRY_DAYS * 24 * 60 * 60),
     );
 
-    // check personal organization was created
-    const personalOrg = await db
-      .selectFrom("organization")
+    // check personal workspace was created
+    const personalWorkspace = await db
+      .selectFrom("workspace")
       .innerJoin(
-        "organization_member",
-        "organization_member.organization_id",
-        "organization.id",
+        "member",
+        "member.workspace_id",
+        "workspace.id",
       )
-      .selectAll("organization")
+      .selectAll("workspace")
       .where("isTeam", "=", false)
-      .where("organization_member.user_id", "=", user.id)
+      .where("member.user_id", "=", user.id)
       .executeTakeFirstOrThrow();
 
-    assertEquals(personalOrg.name, "Personal");
-    assertEquals(personalOrg.isTeam, false);
-    assertEquals(personalOrg.stripe_customer_id?.startsWith("cus_"), true);
-    assertEquals(personalOrg.access_enabled, true);
-    assertEquals(personalOrg.deactivated, false);
+    assertEquals(personalWorkspace.name, "Personal");
+    assertEquals(personalWorkspace.isTeam, false);
+    assertEquals(
+      personalWorkspace.stripe_customer_id?.startsWith("cus_"),
+      true,
+    );
+    assertEquals(personalWorkspace.access_enabled, true);
+    assertEquals(personalWorkspace.deactivated, false);
 
-    const personalOrgMember = await db
-      .selectFrom("organization_member")
+    const personalWorkspaceMember = await db
+      .selectFrom("member")
       .selectAll()
-      .where("organization_id", "=", personalOrg.id)
+      .where("workspace_id", "=", personalWorkspace.id)
       .where("user_id", "=", user.id)
       .executeTakeFirstOrThrow();
 
-    assertEquals(personalOrgMember.role, ADMIN_ROLE);
+    assertEquals(personalWorkspaceMember.role, ADMIN_ROLE);
   } finally {
     await resetTables();
     await destroyKyselyDb();
@@ -243,26 +246,29 @@ Deno.test("verify otp for existing user", async () => {
     assertEquals(user.otp, null);
     assertEquals(user.otp_expires_at, null);
 
-    const personalOrg = await db
-      .selectFrom("organization")
+    const personalWorkspace = await db
+      .selectFrom("workspace")
       .selectAll()
       .where("isTeam", "=", false)
       .executeTakeFirstOrThrow();
 
-    assertEquals(personalOrg.name, "Personal");
-    assertEquals(personalOrg.isTeam, false);
-    assertEquals(personalOrg.stripe_customer_id?.startsWith("cus_"), true);
-    assertEquals(personalOrg.access_enabled, true);
-    assertEquals(personalOrg.deactivated, false);
+    assertEquals(personalWorkspace.name, "Personal");
+    assertEquals(personalWorkspace.isTeam, false);
+    assertEquals(
+      personalWorkspace.stripe_customer_id?.startsWith("cus_"),
+      true,
+    );
+    assertEquals(personalWorkspace.access_enabled, true);
+    assertEquals(personalWorkspace.deactivated, false);
 
-    const personalOrgMember = await db
-      .selectFrom("organization_member")
+    const personalWorkspaceMember = await db
+      .selectFrom("member")
       .selectAll()
-      .where("organization_id", "=", personalOrg.id)
+      .where("workspace_id", "=", personalWorkspace.id)
       .where("user_id", "=", user.id)
       .executeTakeFirstOrThrow();
 
-    assertEquals(personalOrgMember.role, ADMIN_ROLE);
+    assertEquals(personalWorkspaceMember.role, ADMIN_ROLE);
 
     const authService = new AuthService();
     const otp = await authService.requestOtp(email);
@@ -293,24 +299,24 @@ Deno.test("verify otp for existing user", async () => {
       getNumericDate(settings.JWT.EXPIRY_DAYS * 24 * 60 * 60),
     );
 
-    // check personal organization was not created again
-    const newPersonalOrg = await db
-      .selectFrom("organization")
+    // check personal workspace was not created again
+    const newPersonalWorkspace = await db
+      .selectFrom("workspace")
       .selectAll()
       .where("isTeam", "=", false)
       .executeTakeFirst();
 
-    assertEquals(newPersonalOrg, personalOrg);
+    assertEquals(newPersonalWorkspace, personalWorkspace);
 
-    // check personal organization member was not created again
-    const newPersonalOrgMember = await db
-      .selectFrom("organization_member")
+    // check personal workspace member was not created again
+    const newPersonalWorkspaceMember = await db
+      .selectFrom("member")
       .selectAll()
-      .where("organization_id", "=", personalOrg.id)
+      .where("workspace_id", "=", personalWorkspace.id)
       .where("user_id", "=", user.id)
       .executeTakeFirst();
 
-    assertEquals(newPersonalOrgMember, personalOrgMember);
+    assertEquals(newPersonalWorkspaceMember, personalWorkspaceMember);
   } finally {
     await resetTables();
     await destroyKyselyDb();

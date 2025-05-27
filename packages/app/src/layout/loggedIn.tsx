@@ -22,7 +22,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../components/shadcn/Dropdownmenu.tsx";
-import { useOrganization } from "../contexts/Organization.tsx";
+import { useWorkspace } from "../contexts/Workspace.tsx";
 import { useEffect, useState } from "react";
 import {
   Popover,
@@ -49,16 +49,16 @@ export default function LoggedInLayout(
 ) {
   const { logout } = useCoreApi();
   const {
-    organizations,
-    selectedOrganizationId,
-    setSelectedOrganizationId,
+    workspaces,
+    selectedWorkspaceId,
+    setSelectedWorkspaceId,
     isBusy,
-    refreshOrganizations,
-  } = useOrganization();
+    refreshWorkspaces,
+  } = useWorkspace();
 
   useEffect(() => {
-    if (!selectedOrganizationId) {
-      refreshOrganizations();
+    if (!selectedWorkspaceId) {
+      refreshWorkspaces();
     }
   }, []);
 
@@ -87,12 +87,12 @@ export default function LoggedInLayout(
                 className="w-[200px] justify-between"
                 disabled={isBusy}
               >
-                {selectedOrganizationId
-                  ? organizations.find(
-                    (organization) =>
-                      organization.id === selectedOrganizationId,
+                {selectedWorkspaceId
+                  ? workspaces.find(
+                    (workspace) =>
+                      workspace.id === selectedWorkspaceId,
                   )?.name
-                  : "Select organization..."}
+                  : "Select workspace..."}
                 <ChevronsUpDown className="opacity-50" />
               </Button>
             </PopoverTrigger>
@@ -101,12 +101,12 @@ export default function LoggedInLayout(
                 <CommandGroup>
                   <Button variant="link" className="w-full">
                     <Link
-                      to="/organizations/new"
+                      to="/workspaces/new"
                       className="flex items-center space-x-2"
                     >
                       <Plus size={16} />
                       <div>
-                        Create new organization
+                        Create new workspace
                       </div>
                     </Link>
                   </Button>
@@ -114,42 +114,43 @@ export default function LoggedInLayout(
                 <CommandSeparator />
                 <CommandInput
                   disabled={isBusy}
-                  placeholder="Search organization..."
+                  placeholder="Search workspace..."
                   className="h-9"
                 />
                 <CommandList>
-                  <CommandEmpty>No organizations found.</CommandEmpty>
+                  <CommandEmpty>No workspaces found.</CommandEmpty>
                   <CommandGroup>
-                    {organizations.map((organization) => (
+                    {workspaces.map((workspace) => (
                       <div className="flex items-center space-x-2">
                         <CommandItem
-                          key={organization.id}
-                          value={organization.id.toString()}
+                          key={workspace.id}
+                          value={workspace.id.toString()}
                           disabled={isBusy}
                           onSelect={(currentValue) => {
-                            setSelectedOrganizationId(Number(currentValue));
+                            setSelectedWorkspaceId(Number(currentValue));
                             setOpen(false);
                           }}
                           className="w-full"
                         >
-                          {organization.name}
-                          {organization.isTeam && (
+                          {workspace.name}
+                          {workspace.isTeam && (
                             <Badge variant="outline">Team</Badge>
                           )}
                           <Check
                             className={cn(
                               "ml-auto",
-                              selectedOrganizationId === organization.id
+                              selectedWorkspaceId === workspace.id
                                 ? "opacity-100"
                                 : "opacity-0",
                             )}
                           />
                         </CommandItem>
-                        <Link to={`/organizations/${organization.id}`}>
+                        <Link to={`/workspaces/${workspace.id}`}>
                           <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => {
+                              setSelectedWorkspaceId(workspace.id);
                               setOpen(false);
                             }}
                           >

@@ -2,46 +2,46 @@ import { assertEquals, assertNotEquals } from "@std/assert";
 import api from "../index.ts";
 import { db, destroyKyselyDb, initKyselyDb } from "../../db/database.ts";
 import { resetTables } from "../../testHelpers/db.ts";
-import { OrganizationService } from "../organization/service.ts";
+import { WorkspaceService } from "../workspace/service.ts";
 import { createTestUserAndToken } from "../../testHelpers/auth.ts";
 import {
   cannotUpdateSelfError,
   memberNotFoundError,
-  notAdminOfOrganizationError,
-  notMemberOfOrganizationError,
+  notAdminOfWorkspaceError,
+  notMemberOfWorkspaceError,
 } from "./service.ts";
 import { MemberApiTypes } from "../responseType.ts";
-import type { OrganizationMemberRole } from "../../db/models/organizationMember.ts";
+import type { MemberRole } from "../../db/models/member.ts";
 
-// GET /:organizationId/members (list members)
-Deno.test("get organization members", async () => {
+// GET /:workspaceId/members (list members)
+Deno.test("get workspace members", async () => {
   initKyselyDb();
   await resetTables();
 
   try {
     const { userId, token } = await createTestUserAndToken();
 
-    // Create organization
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
-      "Test Team",
+    // Create workspace
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
+      "Test Workspace",
       userId,
     );
 
-    // Get the organization ID from the database
-    const org = await db
-      .selectFrom("organization")
+    // Get the workspace ID from the database
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("name", "=", "Test Team")
+      .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
-    // Create additional test users and add them to the organization
+    // Create additional test users and add them to the workspace
     for (let i = 0; i < 5; i++) {
       const { userId: memberId } = await createTestUserAndToken();
       await db
-        .insertInto("organization_member")
+        .insertInto("member")
         .values({
-          organization_id: org.id,
+          workspace_id: workspace.id,
           user_id: memberId,
           role: i === 0 ? "admin" : "member",
           created_at: new Date(),
@@ -50,7 +50,7 @@ Deno.test("get organization members", async () => {
     }
 
     const { url, method } = MemberApiTypes.prepareGetMembers({
-      organizationId: org.id,
+      workspaceId: workspace.id,
       page: 1,
       limit: 10,
     });
@@ -79,16 +79,16 @@ Deno.test("get organization members", async () => {
   }
 });
 
-Deno.test("get organization members - invalid parameters", async () => {
+Deno.test("get workspace members - invalid parameters", async () => {
   initKyselyDb();
   await resetTables();
 
   try {
     const { token } = await createTestUserAndToken();
 
-    // Invalid organization ID
+    // Invalid workspace ID
     const { url, method } = MemberApiTypes.prepareGetMembers({
-      organizationId: -1,
+      workspaceId: -1,
       page: 1,
       limit: 10,
     });
@@ -112,7 +112,7 @@ Deno.test("get organization members - invalid parameters", async () => {
   }
 });
 
-Deno.test("get organization members - invalid page/limit values", async () => {
+Deno.test("get workspace members - invalid page/limit values", async () => {
   initKyselyDb();
   await resetTables();
 
@@ -120,7 +120,7 @@ Deno.test("get organization members - invalid page/limit values", async () => {
     const { token } = await createTestUserAndToken();
 
     const { url, method } = MemberApiTypes.prepareGetMembers({
-      organizationId: 1,
+      workspaceId: 1,
       page: -1,
       limit: -10,
     });
@@ -145,29 +145,29 @@ Deno.test("get organization members - invalid page/limit values", async () => {
   }
 });
 
-Deno.test("get organization members - empty search", async () => {
+Deno.test("get workspace members - empty search", async () => {
   initKyselyDb();
   await resetTables();
 
   try {
     const { userId, token } = await createTestUserAndToken();
 
-    // Create organization
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
-      "Test Team",
+    // Create workspace
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
+      "Test Workspace",
       userId,
     );
 
-    // Get the organization ID from the database
-    const org = await db
-      .selectFrom("organization")
+    // Get the workspace ID from the database
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("name", "=", "Test Team")
+      .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
     const { url, method } = MemberApiTypes.prepareGetMembers({
-      organizationId: org.id,
+      workspaceId: workspace.id,
       page: 1,
       limit: 10,
     });
@@ -196,34 +196,34 @@ Deno.test("get organization members - empty search", async () => {
   }
 });
 
-Deno.test("get organization members - pagination", async () => {
+Deno.test("get workspace members - pagination", async () => {
   initKyselyDb();
   await resetTables();
 
   try {
     const { userId, token } = await createTestUserAndToken();
 
-    // Create organization
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
-      "Test Team",
+    // Create workspace
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
+      "Test Workspace",
       userId,
     );
 
-    // Get the organization ID from the database
-    const org = await db
-      .selectFrom("organization")
+    // Get the workspace ID from the database
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("name", "=", "Test Team")
+      .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
-    // Create additional test users and add them to the organization
+    // Create additional test users and add them to the workspace
     for (let i = 0; i < 15; i++) {
       const { userId: memberId } = await createTestUserAndToken();
       await db
-        .insertInto("organization_member")
+        .insertInto("member")
         .values({
-          organization_id: org.id,
+          workspace_id: workspace.id,
           user_id: memberId,
           role: "member",
           created_at: new Date(),
@@ -232,7 +232,7 @@ Deno.test("get organization members - pagination", async () => {
     }
 
     const { url: url1, method: method1 } = MemberApiTypes.prepareGetMembers({
-      organizationId: org.id,
+      workspaceId: workspace.id,
       page: 1,
       limit: 10,
     });
@@ -257,7 +257,7 @@ Deno.test("get organization members - pagination", async () => {
     assertEquals(responseBody1.results.length, 10);
 
     const { url: url2, method: method2 } = MemberApiTypes.prepareGetMembers({
-      organizationId: org.id,
+      workspaceId: workspace.id,
       page: 2,
       limit: 10,
     });
@@ -286,32 +286,32 @@ Deno.test("get organization members - pagination", async () => {
   }
 });
 
-Deno.test("get organization members - not a member", async () => {
+Deno.test("get workspace members - not a member", async () => {
   initKyselyDb();
   await resetTables();
 
   try {
-    // Create first user with organization
+    // Create first user with workspace
     const { userId } = await createTestUserAndToken();
 
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
-      "Test Team",
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
+      "Test Workspace",
       userId,
     );
 
-    // Get the organization ID from the database
-    const org = await db
-      .selectFrom("organization")
+    // Get the workspace ID from the database
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("name", "=", "Test Team")
+      .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
-    // Create second user (not a member of the organization)
+    // Create second user (not a member of the workspace)
     const { token: nonMemberToken } = await createTestUserAndToken();
 
     const { url, method } = MemberApiTypes.prepareGetMembers({
-      organizationId: org.id,
+      workspaceId: workspace.id,
       page: 1,
       limit: 10,
     });
@@ -331,35 +331,35 @@ Deno.test("get organization members - not a member", async () => {
     assertNotEquals(response, undefined);
     assertEquals(response?.status, 400);
     const responseBody = await response?.json();
-    assertEquals(responseBody.error, notMemberOfOrganizationError);
+    assertEquals(responseBody.error, notMemberOfWorkspaceError);
   } finally {
     await resetTables();
     await destroyKyselyDb();
   }
 });
 
-Deno.test("get organization members - with search", async () => {
+Deno.test("get workspace members - with search", async () => {
   initKyselyDb();
   await resetTables();
 
   try {
     const { userId, token } = await createTestUserAndToken();
 
-    // Create organization
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
-      "Test Team",
+    // Create workspace
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
+      "Test Workspace",
       userId,
     );
 
-    // Get the organization ID from the database
-    const org = await db
-      .selectFrom("organization")
+    // Get the workspace ID from the database
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("name", "=", "Test Team")
+      .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
-    // Create additional test users and add them to the organization
+    // Create additional test users and add them to the workspace
     const testEmails = [
       "user1@example.com",
       "user2@example.com",
@@ -369,9 +369,9 @@ Deno.test("get organization members - with search", async () => {
     for (const email of testEmails) {
       const { userId: memberId } = await createTestUserAndToken();
       await db
-        .insertInto("organization_member")
+        .insertInto("member")
         .values({
-          organization_id: org.id,
+          workspace_id: workspace.id,
           user_id: memberId,
           role: "member",
           created_at: new Date(),
@@ -388,7 +388,7 @@ Deno.test("get organization members - with search", async () => {
 
     // Search for members with "test" in their email
     const { url, method } = MemberApiTypes.prepareGetMembers({
-      organizationId: org.id,
+      workspaceId: workspace.id,
       page: 1,
       limit: 10,
       search: "user",
@@ -417,34 +417,34 @@ Deno.test("get organization members - with search", async () => {
   }
 });
 
-// PATCH /:organizationId/members/:memberId (update member role)
+// PATCH /:workspaceId/members/:memberId (update member role)
 Deno.test("update member role", async () => {
   initKyselyDb();
   await resetTables();
 
   try {
-    // Create admin user with organization
+    // Create admin user with workspace
     const { userId, token } = await createTestUserAndToken();
 
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
-      "Test Team",
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
+      "Test Workspace",
       userId,
     );
 
-    // Get the organization ID from the database
-    const org = await db
-      .selectFrom("organization")
+    // Get the workspace ID from the database
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("name", "=", "Test Team")
+      .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
     // Create a member
     const { userId: memberId } = await createTestUserAndToken();
     const memberRecord = await db
-      .insertInto("organization_member")
+      .insertInto("member")
       .values({
-        organization_id: org.id,
+        workspace_id: workspace.id,
         user_id: memberId,
         role: "member",
         created_at: new Date(),
@@ -480,7 +480,7 @@ Deno.test("update member role", async () => {
 
     // Verify role was updated in database
     const updatedMember = await db
-      .selectFrom("organization_member")
+      .selectFrom("member")
       .selectAll()
       .where("id", "=", memberRecord.id)
       .executeTakeFirstOrThrow();
@@ -497,29 +497,29 @@ Deno.test("update member role - non-admin user", async () => {
   await resetTables();
 
   try {
-    // Create admin user with organization
+    // Create admin user with workspace
     const { userId } = await createTestUserAndToken();
 
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
-      "Test Team",
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
+      "Test Workspace",
       userId,
     );
 
-    // Get the organization ID from the database
-    const org = await db
-      .selectFrom("organization")
+    // Get the workspace ID from the database
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("name", "=", "Test Team")
+      .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
     // Create a regular member
     const { userId: memberId, token: memberToken } =
       await createTestUserAndToken();
     await db
-      .insertInto("organization_member")
+      .insertInto("member")
       .values({
-        organization_id: org.id,
+        workspace_id: workspace.id,
         user_id: memberId,
         role: "member",
         created_at: new Date(),
@@ -529,9 +529,9 @@ Deno.test("update member role - non-admin user", async () => {
     // Create another member
     const { userId: targetMemberId } = await createTestUserAndToken();
     const targetMember = await db
-      .insertInto("organization_member")
+      .insertInto("member")
       .values({
-        organization_id: org.id,
+        workspace_id: workspace.id,
         user_id: targetMemberId,
         role: "member",
         created_at: new Date(),
@@ -564,7 +564,7 @@ Deno.test("update member role - non-admin user", async () => {
     assertNotEquals(response, undefined);
     assertEquals(response?.status, 400);
     const responseBody = await response?.json();
-    assertEquals(responseBody.error, notAdminOfOrganizationError);
+    assertEquals(responseBody.error, notAdminOfWorkspaceError);
   } finally {
     await resetTables();
     await destroyKyselyDb();
@@ -576,27 +576,27 @@ Deno.test("update member role - cannot update self", async () => {
   await resetTables();
 
   try {
-    // Create admin user with organization
+    // Create admin user with workspace
     const { userId, token } = await createTestUserAndToken();
 
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
-      "Test Team",
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
+      "Test Workspace",
       userId,
     );
 
-    // Get the organization ID from the database
-    const org = await db
-      .selectFrom("organization")
+    // Get the workspace ID from the database
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("name", "=", "Test Team")
+      .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
     // Get the admin's membership record
     const adminMember = await db
-      .selectFrom("organization_member")
+      .selectFrom("member")
       .selectAll()
-      .where("organization_id", "=", org.id)
+      .where("workspace_id", "=", workspace.id)
       .where("user_id", "=", userId)
       .executeTakeFirstOrThrow();
 
@@ -639,26 +639,26 @@ Deno.test("update member role - invalid role value", async () => {
   try {
     const { userId, token } = await createTestUserAndToken();
 
-    // Create organization
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
-      "Test Team",
+    // Create workspace
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
+      "Test Workspace",
       userId,
     );
 
-    // Get the organization ID from the database
-    const org = await db
-      .selectFrom("organization")
+    // Get the workspace ID from the database
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("name", "=", "Test Team")
+      .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
     // Create a member
     const { userId: memberId } = await createTestUserAndToken();
     const memberRecord = await db
-      .insertInto("organization_member")
+      .insertInto("member")
       .values({
-        organization_id: org.id,
+        workspace_id: workspace.id,
         user_id: memberId,
         role: "member",
         created_at: new Date(),
@@ -669,7 +669,7 @@ Deno.test("update member role - invalid role value", async () => {
     const { url, method, body } = MemberApiTypes.prepareUpdateMemberRole(
       memberRecord.id,
       {
-        role: "invalid_role" as OrganizationMemberRole,
+        role: "invalid_role" as MemberRole,
       },
     );
 
@@ -772,34 +772,34 @@ Deno.test("update member role - invalid member ID format", async () => {
   }
 });
 
-// DELETE /:organizationId/members/:memberId (remove member)
-Deno.test("remove member from organization", async () => {
+// DELETE /:workspaceId/members/:memberId (remove member)
+Deno.test("remove member from workspace", async () => {
   initKyselyDb();
   await resetTables();
 
   try {
-    // Create admin user with organization
+    // Create admin user with workspace
     const { userId, token } = await createTestUserAndToken();
 
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
-      "Test Team",
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
+      "Test Workspace",
       userId,
     );
 
-    // Get the organization ID from the database
-    const org = await db
-      .selectFrom("organization")
+    // Get the workspace ID from the database
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("name", "=", "Test Team")
+      .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
     // Create a member
     const { userId: memberId } = await createTestUserAndToken();
     const memberRecord = await db
-      .insertInto("organization_member")
+      .insertInto("member")
       .values({
-        organization_id: org.id,
+        workspace_id: workspace.id,
         user_id: memberId,
         role: "member",
         created_at: new Date(),
@@ -829,12 +829,12 @@ Deno.test("remove member from organization", async () => {
     const responseBody = await response?.json();
     assertEquals(
       responseBody.message,
-      "Member removed from organization successfully",
+      "Member removed from workspace successfully",
     );
 
     // Verify member was removed from database
     const removedMember = await db
-      .selectFrom("organization_member")
+      .selectFrom("member")
       .selectAll()
       .where("id", "=", memberRecord.id)
       .executeTakeFirst();
@@ -851,27 +851,27 @@ Deno.test("remove member - cannot remove self", async () => {
   await resetTables();
 
   try {
-    // Create admin user with organization
+    // Create admin user with workspace
     const { userId, token } = await createTestUserAndToken();
 
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
       "Test Team",
       userId,
     );
 
-    // Get the organization ID from the database
-    const org = await db
-      .selectFrom("organization")
+    // Get the workspace ID from the database
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
       .where("name", "=", "Test Team")
       .executeTakeFirstOrThrow();
 
     // Get the admin's membership record
     const adminMember = await db
-      .selectFrom("organization_member")
+      .selectFrom("member")
       .selectAll()
-      .where("organization_id", "=", org.id)
+      .where("workspace_id", "=", workspace.id)
       .where("user_id", "=", userId)
       .executeTakeFirstOrThrow();
 
@@ -973,29 +973,29 @@ Deno.test("remove member - not admin", async () => {
   await resetTables();
 
   try {
-    // Create admin user with organization
+    // Create admin user with workspace
     const { userId } = await createTestUserAndToken();
 
-    const orgService = new OrganizationService();
-    await orgService.createTeamOrganization(
-      "Test Team",
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace(
+      "Test Workspace",
       userId,
     );
 
-    // Get the organization ID from the database
-    const org = await db
-      .selectFrom("organization")
+    // Get the workspace ID from the database
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("name", "=", "Test Team")
+      .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
     // Create a regular member
     const { userId: memberId, token: memberToken } =
       await createTestUserAndToken();
     await db
-      .insertInto("organization_member")
+      .insertInto("member")
       .values({
-        organization_id: org.id,
+        workspace_id: workspace.id,
         user_id: memberId,
         role: "member",
         created_at: new Date(),
@@ -1005,9 +1005,9 @@ Deno.test("remove member - not admin", async () => {
     // Create another member
     const { userId: targetMemberId } = await createTestUserAndToken();
     const targetMember = await db
-      .insertInto("organization_member")
+      .insertInto("member")
       .values({
-        organization_id: org.id,
+        workspace_id: workspace.id,
         user_id: targetMemberId,
         role: "member",
         created_at: new Date(),
@@ -1035,7 +1035,7 @@ Deno.test("remove member - not admin", async () => {
     assertNotEquals(response, undefined);
     assertEquals(response?.status, 400);
     const responseBody = await response?.json();
-    assertEquals(responseBody.error, notAdminOfOrganizationError);
+    assertEquals(responseBody.error, notAdminOfWorkspaceError);
   } finally {
     await resetTables();
     await destroyKyselyDb();

@@ -1,20 +1,20 @@
 import { z } from "zod";
-import type { OrganizationMemberRole } from "../../db/models/organizationMember.ts";
+import type { MemberRole } from "../../db/models/member.ts";
 
 export {
   ADMIN_ROLE,
   MEMBER_ROLE,
-  type OrganizationMemberRole,
-} from "../../db/models/organizationMember.ts";
+  type MemberRole,
+} from "../../db/models/member.ts";
 
 export function prepareGetMembers(payload: {
-  organizationId: number;
+  workspaceId: number;
   page: number;
   limit: number;
   search?: string;
 }) {
   const searchParams = new URLSearchParams();
-  searchParams.set("organizationId", payload.organizationId.toString());
+  searchParams.set("workspaceId", payload.workspaceId.toString());
   searchParams.set("page", payload.page.toString());
   searchParams.set("limit", payload.limit.toString());
   if (payload.search) {
@@ -33,7 +33,7 @@ export type GetMembersResponse = {
     id: number;
     user_id: number;
     email: string;
-    role: OrganizationMemberRole | null;
+    role: MemberRole | null;
   }[];
 };
 

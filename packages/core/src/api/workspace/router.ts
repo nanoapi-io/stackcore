@@ -1,22 +1,22 @@
 import { Router, Status } from "@oak/oak";
-import { OrganizationService } from "./service.ts";
+import { WorkspaceService } from "./service.ts";
 import { authMiddleware } from "../auth/middleware.ts";
 import {
-  createOrganizationPayloadSchema,
-  type CreateOrganizationResponse,
-  type GetOrganizationsResponse,
-  updateOrganizationSchema,
+  createWorkspacePayloadSchema,
+  type CreateWorkspaceResponse,
+  type GetWorkspacesResponse,
+  updateWorkspaceSchema,
 } from "./types.ts";
 import z from "zod";
 
-const organizationService = new OrganizationService();
+const workspaceService = new WorkspaceService();
 const router = new Router();
 
-// Create a new team organization for the current user
+// Create a new team workspace for the current user
 router.post("/", authMiddleware, async (ctx) => {
   const body = await ctx.request.body.json();
 
-  const parsedBody = createOrganizationPayloadSchema.safeParse(body);
+  const parsedBody = createWorkspacePayloadSchema.safeParse(body);
 
   if (!parsedBody.success) {
     ctx.response.status = Status.BadRequest;
@@ -25,8 +25,8 @@ router.post("/", authMiddleware, async (ctx) => {
   }
 
   const userId = ctx.state.session.userId;
-  const result = await organizationService
-    .createTeamOrganization(
+  const result = await workspaceService
+    .createTeamWorkspace(
       parsedBody.data.name,
       userId,
     );
@@ -38,10 +38,10 @@ router.post("/", authMiddleware, async (ctx) => {
   }
 
   ctx.response.status = Status.Created;
-  ctx.response.body = result as CreateOrganizationResponse;
+  ctx.response.body = result as CreateWorkspaceResponse;
 });
 
-// Get all organizations for current user
+// Get all workspaces for current user
 router.get("/", authMiddleware, async (ctx) => {
   const userId = ctx.state.session.userId;
 
@@ -67,8 +67,8 @@ router.get("/", authMiddleware, async (ctx) => {
     return;
   }
 
-  const response: GetOrganizationsResponse = await organizationService
-    .getOrganizations(
+  const response: GetWorkspacesResponse = await workspaceService
+    .getWorkspaces(
       userId,
       parsedSearchParams.data.page,
       parsedSearchParams.data.limit,
@@ -79,11 +79,11 @@ router.get("/", authMiddleware, async (ctx) => {
   ctx.response.body = response;
 });
 
-// Update a organization
-router.patch("/:organizationId", authMiddleware, async (ctx) => {
+// Update a workspace
+router.patch("/:workspaceId", authMiddleware, async (ctx) => {
   const paramSchema = z.object({
-    organizationId: z.string().refine((val) => !isNaN(Number(val)), {
-      message: "Organization ID must be a number",
+    workspaceId: z.string().refine((val) => !isNaN(Number(val)), {
+      message: "Workspace ID must be a number",
     }).transform((val) => Number(val)),
   });
 
@@ -97,7 +97,7 @@ router.patch("/:organizationId", authMiddleware, async (ctx) => {
 
   const body = await ctx.request.body.json();
 
-  const parsedBody = updateOrganizationSchema.safeParse(body);
+  const parsedBody = updateWorkspaceSchema.safeParse(body);
 
   if (!parsedBody.success) {
     ctx.response.status = Status.BadRequest;
@@ -105,9 +105,9 @@ router.patch("/:organizationId", authMiddleware, async (ctx) => {
     return;
   }
 
-  const { error } = await organizationService.updateOrganization(
+  const { error } = await workspaceService.updateWorkspace(
     ctx.state.session.userId,
-    parsedParams.data.organizationId,
+    parsedParams.data.workspaceId,
     parsedBody.data.name,
   );
 
@@ -118,14 +118,14 @@ router.patch("/:organizationId", authMiddleware, async (ctx) => {
   }
 
   ctx.response.status = Status.OK;
-  ctx.response.body = { message: "Organization updated successfully" };
+  ctx.response.body = { message: "Workspace updated successfully" };
 });
 
-// Delete an organization
-router.delete("/:organizationId", authMiddleware, async (ctx) => {
+// Delete an workspace
+router.delete("/:workspaceId", authMiddleware, async (ctx) => {
   const paramSchema = z.object({
-    organizationId: z.string().refine((val) => !isNaN(Number(val)), {
-      message: "Organization ID must be a number",
+    workspaceId: z.string().refine((val) => !isNaN(Number(val)), {
+      message: "Workspace ID must be a number",
     }).transform((val) => Number(val)),
   });
 
@@ -137,9 +137,9 @@ router.delete("/:organizationId", authMiddleware, async (ctx) => {
     return;
   }
 
-  const { error } = await organizationService.deleteOrganization(
+  const { error } = await workspaceService.deleteWorkspace(
     ctx.state.session.userId,
-    parsedParams.data.organizationId,
+    parsedParams.data.workspaceId,
   );
 
   if (error) {

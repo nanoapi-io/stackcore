@@ -23,7 +23,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .execute();
 
   await db.schema
-    .createTable("organization")
+    .createTable("workspace")
     .addColumn("id", "serial", (col) => col.primaryKey())
     .addColumn("name", "varchar(255)", (col) => col.notNull())
     .addColumn("isTeam", "boolean", (col) => col.notNull())
@@ -42,9 +42,9 @@ export async function up(db: Kysely<any>): Promise<void> {
     .execute();
 
   await db.schema
-    .createTable("organization_member")
+    .createTable("member")
     .addColumn("id", "serial", (col) => col.primaryKey())
-    .addColumn("organization_id", "integer", (col) => col.notNull())
+    .addColumn("workspace_id", "integer", (col) => col.notNull())
     .addColumn("user_id", "integer", (col) => col.notNull())
     .addColumn(
       "role",
@@ -56,18 +56,18 @@ export async function up(db: Kysely<any>): Promise<void> {
       "timestamp",
       (col) => col.defaultTo(sql`now()`).notNull(),
     )
-    .addUniqueConstraint("organization_member_org_user_unique", [
-      "organization_id",
+    .addUniqueConstraint("member_workspace_user_unique", [
+      "workspace_id",
       "user_id",
     ])
     .addForeignKeyConstraint(
-      "organization_member_org_fk",
-      ["organization_id"],
-      "organization",
+      "member_workspace_fk",
+      ["workspace_id"],
+      "workspace",
       ["id"],
     )
     .addForeignKeyConstraint(
-      "organization_member_user_fk",
+      "member_user_fk",
       ["user_id"],
       "user",
       ["id"],
@@ -75,14 +75,14 @@ export async function up(db: Kysely<any>): Promise<void> {
     .execute();
 
   await db.schema
-    .createTable("organization_invitation")
+    .createTable("invitation")
     .addColumn("id", "serial", (col) => col.primaryKey())
     .addColumn(
       "uuid",
       "varchar(255)",
       (col) => col.defaultTo(sql`gen_random_uuid()`).unique(),
     )
-    .addColumn("organization_id", "integer", (col) => col.notNull())
+    .addColumn("workspace_id", "integer", (col) => col.notNull())
     .addColumn("expires_at", "timestamp", (col) => col.notNull())
     .addColumn(
       "created_at",
@@ -90,9 +90,9 @@ export async function up(db: Kysely<any>): Promise<void> {
       (col) => col.defaultTo(sql`now()`).notNull(),
     )
     .addForeignKeyConstraint(
-      "organization_invitation_org_fk",
-      ["organization_id"],
-      "organization",
+      "invitation_workspace_fk",
+      ["workspace_id"],
+      "workspace",
       ["id"],
     )
     .execute();
@@ -104,19 +104,20 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn(
       "provider",
       "varchar(255)",
-      (col) => col.check(sql`provider IN ('github', 'gitlab')`),
+      (col) =>
+        col.check(sql`provider IN ('github', 'gitlab') OR provider IS NULL`),
     )
     .addColumn("provider_id", "varchar(255)")
-    .addColumn("organization_id", "integer", (col) => col.notNull())
+    .addColumn("workspace_id", "integer", (col) => col.notNull())
     .addColumn(
       "created_at",
       "timestamp",
       (col) => col.defaultTo(sql`now()`).notNull(),
     )
     .addForeignKeyConstraint(
-      "project_org_fk",
-      ["organization_id"],
-      "organization",
+      "project_workspace_fk",
+      ["workspace_id"],
+      "workspace",
       ["id"],
     )
     .execute();
@@ -125,8 +126,8 @@ export async function up(db: Kysely<any>): Promise<void> {
 // deno-lint-ignore no-explicit-any
 export async function down(db: Kysely<any>): Promise<void> {
   await db.schema.dropTable("project").execute();
-  await db.schema.dropTable("organization_invitation").execute();
-  await db.schema.dropTable("organization_member").execute();
-  await db.schema.dropTable("organization").execute();
+  await db.schema.dropTable("invitation").execute();
+  await db.schema.dropTable("member").execute();
+  await db.schema.dropTable("workspace").execute();
   await db.schema.dropTable("user").execute();
 }

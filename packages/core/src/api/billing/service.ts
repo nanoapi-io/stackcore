@@ -11,9 +11,9 @@ import {
   type StripeBillingCycle,
   type StripeProduct,
   YEARLY_BILLING_CYCLE,
-} from "../../db/models/organization.ts";
-import { shouldHaveAccess } from "../../db/models/organization.ts";
-import { ADMIN_ROLE } from "../../db/models/organizationMember.ts";
+} from "../../db/models/workspace.ts";
+import { shouldHaveAccess } from "../../db/models/workspace.ts";
+import { ADMIN_ROLE } from "../../db/models/member.ts";
 import {
   sendSubscriptionDowngradedEmail,
   sendSubscriptionUpgradedEmail,
@@ -21,7 +21,7 @@ import {
 import settings from "../../settings.ts";
 import type { SubscriptionDetails } from "./types.ts";
 
-const notAMemberOfOrganizationError = "not_a_member_of_organization";
+const notAMemberOfWorkspaceError = "not_a_member_of_workspace";
 const notAnAdminError = "not_an_admin";
 const cannotChangeCustomProductError = "cannot_change_custom_product";
 const cannotUpgradeToInferiorProductError =
@@ -35,32 +35,32 @@ const couldNotChangeSubscriptionError = "could_not_change_subscription";
 export class BillingService {
   public async getSubscription(
     userId: number,
-    organizationId: number,
+    workspaceId: number,
   ): Promise<{ subscription?: SubscriptionDetails; error?: string }> {
     const isMember = await db
-      .selectFrom("organization_member")
+      .selectFrom("member")
       .select("user_id")
       .where("user_id", "=", userId)
-      .where("organization_id", "=", organizationId)
+      .where("workspace_id", "=", workspaceId)
       .executeTakeFirst();
 
     if (!isMember) {
-      return { error: notAMemberOfOrganizationError };
+      return { error: notAMemberOfWorkspaceError };
     }
 
-    const organization = await db
-      .selectFrom("organization")
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("id", "=", organizationId)
+      .where("id", "=", workspaceId)
       .executeTakeFirstOrThrow();
 
-    if (!organization.stripe_customer_id) {
+    if (!workspace.stripe_customer_id) {
       throw new Error("Stripe customer ID is not set");
     }
 
     const stripeService = new StripeService();
     const subscription = await stripeService.getCustomerSubscription(
-      organization.stripe_customer_id,
+      workspace.stripe_customer_id,
     );
 
     if (subscription.items.data.length !== 1) {
@@ -137,33 +137,33 @@ export class BillingService {
 
   public async getPortalSession(
     userId: number,
-    organizationId: number,
+    workspaceId: number,
     returnUrl: string,
   ): Promise<{ url?: string; error?: string }> {
     const isMember = await db
-      .selectFrom("organization_member")
+      .selectFrom("member")
       .select("user_id")
       .where("user_id", "=", userId)
-      .where("organization_id", "=", organizationId)
+      .where("workspace_id", "=", workspaceId)
       .executeTakeFirst();
 
     if (!isMember) {
-      return { error: notAMemberOfOrganizationError };
+      return { error: notAMemberOfWorkspaceError };
     }
 
-    const organization = await db
-      .selectFrom("organization")
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("id", "=", organizationId)
+      .where("id", "=", workspaceId)
       .executeTakeFirstOrThrow();
 
-    if (!organization.stripe_customer_id) {
+    if (!workspace.stripe_customer_id) {
       throw new Error("Stripe customer ID is not set");
     }
 
     const stripeService = new StripeService();
     const session = await stripeService.getPortalSession(
-      organization.stripe_customer_id,
+      workspace.stripe_customer_id,
       returnUrl,
     );
 
@@ -174,33 +174,33 @@ export class BillingService {
 
   public async updatePaymentMethod(
     userId: number,
-    organizationId: number,
+    workspaceId: number,
     returnUrl: string,
   ): Promise<{ url?: string; error?: string }> {
     const isMember = await db
-      .selectFrom("organization_member")
+      .selectFrom("member")
       .select("user_id")
       .where("user_id", "=", userId)
-      .where("organization_id", "=", organizationId)
+      .where("workspace_id", "=", workspaceId)
       .executeTakeFirst();
 
     if (!isMember) {
-      return { error: notAMemberOfOrganizationError };
+      return { error: notAMemberOfWorkspaceError };
     }
 
-    const organization = await db
-      .selectFrom("organization")
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("id", "=", organizationId)
+      .where("id", "=", workspaceId)
       .executeTakeFirstOrThrow();
 
-    if (!organization.stripe_customer_id) {
+    if (!workspace.stripe_customer_id) {
       throw new Error("Stripe customer ID is not set");
     }
 
     const stripeService = new StripeService();
     const session = await stripeService.updatePaymentMethod(
-      organization.stripe_customer_id,
+      workspace.stripe_customer_id,
       returnUrl,
     );
 
@@ -211,39 +211,39 @@ export class BillingService {
 
   public async upgradeSubscription(
     userId: number,
-    organizationId: number,
+    workspaceId: number,
     product: StripeProduct,
     billingCycle: StripeBillingCycle,
   ): Promise<{ error?: string }> {
     const isMember = await db
-      .selectFrom("organization_member")
+      .selectFrom("member")
       .innerJoin(
-        "organization",
-        "organization.id",
-        "organization_member.organization_id",
+        "workspace",
+        "workspace.id",
+        "member.workspace_id",
       )
       .select(["user_id", "role"])
       .where("user_id", "=", userId)
-      .where("organization_id", "=", organizationId)
-      .where("organization.deactivated", "=", false)
+      .where("workspace_id", "=", workspaceId)
+      .where("workspace.deactivated", "=", false)
       .executeTakeFirst();
 
     if (!isMember) {
-      return { error: notAMemberOfOrganizationError };
+      return { error: notAMemberOfWorkspaceError };
     }
 
     if (isMember.role !== ADMIN_ROLE) {
       return { error: notAnAdminError };
     }
 
-    const organization = await db
-      .selectFrom("organization")
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("id", "=", organizationId)
+      .where("id", "=", workspaceId)
       .executeTakeFirstOrThrow();
 
     const { subscription: currentSubscription, error } = await this
-      .getSubscription(userId, organizationId);
+      .getSubscription(userId, workspaceId);
     if (error || !currentSubscription) {
       return { error };
     }
@@ -283,7 +283,7 @@ export class BillingService {
       return { error: cannotChangeToSameProductAndBillingCycleError };
     }
 
-    if (!organization.stripe_customer_id) {
+    if (!workspace.stripe_customer_id) {
       throw new Error("Stripe customer ID is not set");
     }
 
@@ -291,7 +291,7 @@ export class BillingService {
 
     try {
       await stripeService.switchSubscription(
-        organization.stripe_customer_id,
+        workspace.stripe_customer_id,
         product,
         billingCycle,
         "upgrade",
@@ -320,18 +320,18 @@ export class BillingService {
       .selectFrom("user")
       .select("email")
       .innerJoin(
-        "organization_member",
-        "organization_member.user_id",
+        "member",
+        "member.user_id",
         "user.id",
       )
-      .where("organization_member.organization_id", "=", organizationId)
-      .where("organization_member.role", "=", ADMIN_ROLE)
+      .where("member.workspace_id", "=", workspaceId)
+      .where("member.role", "=", ADMIN_ROLE)
       .execute();
 
     for (const email of emails) {
       sendSubscriptionUpgradedEmail({
         email: email.email,
-        organizationName: organization.name,
+        workspaceName: workspace.name,
         oldSubscription,
         newSubscription,
       });
@@ -342,39 +342,39 @@ export class BillingService {
 
   public async downgradeSubscription(
     userId: number,
-    organizationId: number,
+    workspaceId: number,
     product: StripeProduct,
     billingCycle: StripeBillingCycle,
   ) {
     const isMember = await db
-      .selectFrom("organization_member")
+      .selectFrom("member")
       .innerJoin(
-        "organization",
-        "organization.id",
-        "organization_member.organization_id",
+        "workspace",
+        "workspace.id",
+        "member.workspace_id",
       )
       .select(["user_id", "role"])
       .where("user_id", "=", userId)
-      .where("organization_id", "=", organizationId)
-      .where("organization.deactivated", "=", false)
+      .where("workspace_id", "=", workspaceId)
+      .where("workspace.deactivated", "=", false)
       .executeTakeFirst();
 
     if (!isMember) {
-      return { error: notAMemberOfOrganizationError };
+      return { error: notAMemberOfWorkspaceError };
     }
 
     if (isMember.role !== ADMIN_ROLE) {
       return { error: notAnAdminError };
     }
 
-    const organization = await db
-      .selectFrom("organization")
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
-      .where("id", "=", organizationId)
+      .where("id", "=", workspaceId)
       .executeTakeFirstOrThrow();
 
     const { subscription: currentSubscription, error } = await this
-      .getSubscription(userId, organizationId);
+      .getSubscription(userId, workspaceId);
     if (error || !currentSubscription) {
       return { error };
     }
@@ -417,7 +417,7 @@ export class BillingService {
       return { error: cannotChangeToSameProductAndBillingCycleError };
     }
 
-    if (!organization.stripe_customer_id) {
+    if (!workspace.stripe_customer_id) {
       throw new Error("Stripe customer ID is not set");
     }
 
@@ -425,7 +425,7 @@ export class BillingService {
 
     try {
       await stripeService.switchSubscription(
-        organization.stripe_customer_id,
+        workspace.stripe_customer_id,
         product,
         billingCycle,
         "downgrade",
@@ -454,12 +454,12 @@ export class BillingService {
       .selectFrom("user")
       .select("email")
       .innerJoin(
-        "organization_member",
-        "organization_member.user_id",
+        "member",
+        "member.user_id",
         "user.id",
       )
-      .where("organization_member.organization_id", "=", organizationId)
-      .where("organization_member.role", "=", ADMIN_ROLE)
+      .where("member.workspace_id", "=", workspaceId)
+      .where("member.role", "=", ADMIN_ROLE)
       .execute();
 
     const newSubscriptionDate = currentSubscription.cancelAt
@@ -469,7 +469,7 @@ export class BillingService {
     for (const email of emails) {
       sendSubscriptionDowngradedEmail({
         email: email.email,
-        organizationName: organization.name,
+        workspaceName: workspace.name,
         oldSubscription,
         newSubscription,
         newSubscriptionDate,
@@ -562,8 +562,8 @@ export class BillingService {
       throw new Error(`Invalid license period: ${newLicensePeriod}`);
     }
 
-    const organization = await db
-      .selectFrom("organization")
+    const workspace = await db
+      .selectFrom("workspace")
       .selectAll()
       .where("stripe_customer_id", "=", customer.id)
       .executeTakeFirstOrThrow();
@@ -579,11 +579,11 @@ export class BillingService {
     const accessEnabled = shouldHaveAccess(newSubscription.status);
 
     await db
-      .updateTable("organization")
+      .updateTable("workspace")
       .set({
         access_enabled: accessEnabled,
       })
-      .where("id", "=", organization.id)
+      .where("id", "=", workspace.id)
       .execute();
   }
 
@@ -598,7 +598,7 @@ export class BillingService {
     const accessEnabled = shouldHaveAccess(subscription.status);
 
     await db
-      .updateTable("organization")
+      .updateTable("workspace")
       .set({
         access_enabled: accessEnabled,
       })
@@ -619,7 +619,7 @@ export class BillingService {
     const accessEnabled = shouldHaveAccess(subscription.status);
 
     await db
-      .updateTable("organization")
+      .updateTable("workspace")
       .set({
         access_enabled: accessEnabled,
       })

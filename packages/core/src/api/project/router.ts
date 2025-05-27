@@ -24,7 +24,7 @@ router.post("/", authMiddleware, async (ctx) => {
   const { error } = await projectService.createProject(
     session.userId,
     parsedBody.data.name,
-    parsedBody.data.organizationId,
+    parsedBody.data.workspaceId,
     parsedBody.data.provider,
     parsedBody.data.providerId,
   );
@@ -39,14 +39,14 @@ router.post("/", authMiddleware, async (ctx) => {
   ctx.response.body = { message: "Project created successfully" };
 });
 
-// Get all projects for an organization
+// Get all projects for an workspace
 router.get("/", authMiddleware, async (ctx) => {
   const session = getSession(ctx);
 
   const searchParamsSchema = z.object({
     search: z.string().optional(),
-    organizationId: z.string().refine((val) => !isNaN(Number(val)), {
-      message: "Organization ID must be a number",
+    workspaceId: z.string().refine((val) => !isNaN(Number(val)), {
+      message: "Workspace ID must be a number",
     }).transform((val) => Number(val)).optional(),
     page: z.string().refine((val) => !isNaN(Number(val)), {
       message: "Page must be a number",
@@ -73,7 +73,7 @@ router.get("/", authMiddleware, async (ctx) => {
     parsedSearchParams.data.page,
     parsedSearchParams.data.limit,
     parsedSearchParams.data.search,
-    parsedSearchParams.data.organizationId,
+    parsedSearchParams.data.workspaceId,
   );
 
   if (response.error) {

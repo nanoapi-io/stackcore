@@ -1,10 +1,7 @@
 import { Link, useNavigate, useParams } from "react-router";
 import LoggedInLayout from "../../../layout/loggedIn.tsx";
 import { useEffect, useState } from "react";
-import {
-  type Organization,
-  useOrganization,
-} from "../../../contexts/Organization.tsx";
+import { useWorkspace, type Workspace } from "../../../contexts/Workspace.tsx";
 import {
   Card,
   CardContent,
@@ -64,52 +61,52 @@ import {
 import {
   BillingApiTypes,
   MemberApiTypes,
-  OrganizationApiTypes,
+  WorkspaceApiTypes,
 } from "@stackcore/core/responses";
 import { Skeleton } from "../../../components/shadcn/Skeleton.tsx";
 
 type Member = {
   id: number;
   email: string;
-  role: MemberApiTypes.OrganizationMemberRole;
+  role: MemberApiTypes.MemberRole;
 };
 
-export default function OrganizationPage() {
+export default function WorkspacePage() {
   const coreApi = useCoreApi();
 
   const [isBusy, setIsBusy] = useState(false);
-  const { organizationId } = useParams<{ organizationId: string }>();
-  const { organizations } = useOrganization();
-  const [organization, setOrganization] = useState<Organization | null>(null);
+  const { workspaceId } = useParams<{ workspaceId: string }>();
+  const { workspaces } = useWorkspace();
+  const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [subscription, setSubscription] = useState<
     BillingApiTypes.SubscriptionDetails | null
   >(null);
 
   useEffect(() => {
-    if (!organizationId) {
+    if (!workspaceId) {
       return;
     }
 
-    const organization = organizations.find(
-      (o) => o.id === parseInt(organizationId),
+    const workspace = workspaces.find(
+      (w) => w.id === parseInt(workspaceId),
     );
 
-    if (!organization) {
-      console.error("Organization not found", organizations.length);
+    if (!workspace) {
+      console.error("Workspace not found", workspaces.length);
       return;
     }
 
-    setOrganization(organization);
+    setWorkspace(workspace);
 
-    getSubscription(organization.id);
-  }, [organizations, organizationId]);
+    getSubscription(workspace.id);
+  }, [workspaces, workspaceId]);
 
-  async function getSubscription(organizationId: number) {
+  async function getSubscription(workspaceId: number) {
     setIsBusy(true);
 
     try {
       const { url, method } = BillingApiTypes.prepareGetSubscription(
-        organizationId,
+        workspaceId,
       );
 
       const response = await coreApi.handleRequest(url, method);
@@ -134,7 +131,7 @@ export default function OrganizationPage() {
   }
 
   async function goToStripePortal() {
-    if (!organization) {
+    if (!workspace) {
       return;
     }
 
@@ -142,7 +139,7 @@ export default function OrganizationPage() {
 
     try {
       const { url, method, body } = BillingApiTypes.prepareCreatePortalSession({
-        organizationId: organization.id,
+        workspaceId: workspace.id,
         returnUrl: globalThis.location.href,
       });
 
@@ -170,20 +167,20 @@ export default function OrganizationPage() {
     <LoggedInLayout>
       <Card className="w-full max-w-7xl mx-auto mt-5 mb-5">
         <CardHeader>
-          {organization
+          {workspace
             ? (
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center space-x-1">
-                  <span>Organization: {organization.name}</span>
-                  {organization.isTeam && (
+                  <span>Workspace: {workspace.name}</span>
+                  {workspace.isTeam && (
                     <Badge variant="outline" className="ml-2">Team</Badge>
                   )}
                 </CardTitle>
-                {(organization &&
-                  organization.role === MemberApiTypes.ADMIN_ROLE &&
-                  organization.isTeam) && (
-                  <DeleteOrganizationDialog
-                    organization={organization}
+                {(workspace &&
+                  workspace.role === MemberApiTypes.ADMIN_ROLE &&
+                  workspace.isTeam) && (
+                  <DeleteWorkspaceDialog
+                    workspace={workspace}
                   />
                 )}
               </div>
@@ -200,12 +197,12 @@ export default function OrganizationPage() {
             </TableHeader>
             <TableBody>
               <TableRow>
-                {organization && subscription
+                {workspace && subscription
                   ? (
                     <>
                       <TableCell>
                         <div className="flex flex-col items-start space-y-2">
-                          {organization.access_enabled
+                          {workspace.access_enabled
                             ? (
                               <Badge variant="outline">
                                 Up to date
@@ -233,7 +230,7 @@ export default function OrganizationPage() {
                             {subscription.product}{" "}
                             ({subscription.billingCycle || "unknown"})
                           </Badge>
-                          {organization.role === MemberApiTypes.ADMIN_ROLE && (
+                          {workspace.role === MemberApiTypes.ADMIN_ROLE && (
                             <Link
                               to={`changePlan`}
                             >
@@ -281,7 +278,7 @@ export default function OrganizationPage() {
             </TableBody>
           </Table>
         </CardContent>
-        {organization && organization.isTeam && (
+        {workspace && workspace.isTeam && (
           <>
             <Separator className="my-3" />
             <CardHeader>
@@ -290,9 +287,7 @@ export default function OrganizationPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {organization && (
-                <OrganizationMembersTable organization={organization} />
-              )}
+              {workspace && <WorkspaceMembersTable workspace={workspace} />}
             </CardContent>
           </>
         )}
@@ -301,8 +296,8 @@ export default function OrganizationPage() {
   );
 }
 
-function OrganizationMembersTable(
-  props: { organization: Organization },
+function WorkspaceMembersTable(
+  props: { workspace: Workspace },
 ) {
   const coreApi = useCoreApi();
 
@@ -323,7 +318,7 @@ function OrganizationMembersTable(
 
     try {
       const { url, method } = MemberApiTypes.prepareGetMembers({
-        organizationId: props.organization.id,
+        workspaceId: props.workspace.id,
         page,
         limit: pageSize,
       });
@@ -364,7 +359,7 @@ function OrganizationMembersTable(
 
   useEffect(() => {
     getMembers(pagination);
-  }, [props.organization]);
+  }, [props.workspace]);
 
   const columns: ColumnDef<Member>[] = [
     {
@@ -379,7 +374,7 @@ function OrganizationMembersTable(
           ? "default"
           : "outline";
 
-        if (props.organization.role === MemberApiTypes.ADMIN_ROLE) {
+        if (props.workspace.role === MemberApiTypes.ADMIN_ROLE) {
           return (
             <div className="flex items-center space-x-2">
               <Badge
@@ -388,7 +383,7 @@ function OrganizationMembersTable(
                 {row.original.role}
               </Badge>
               <EditMemberDialog
-                organization={props.organization}
+                workspace={props.workspace}
                 member={row.original}
                 onEdited={() => {
                   getMembers(pagination);
@@ -487,19 +482,19 @@ function OrganizationMembersTable(
   );
 }
 
-function DeleteOrganizationDialog(
-  props: { organization: Organization },
+function DeleteWorkspaceDialog(
+  props: { workspace: Workspace },
 ) {
   const navigate = useNavigate();
 
   const coreApi = useCoreApi();
-  const { refreshOrganizations } = useOrganization();
+  const { refreshWorkspaces } = useWorkspace();
 
   const [isBusy, setIsBusy] = useState(false);
 
   const formSchema = z.object({
     name: z.string().refine(
-      (value) => value === `delete ${props.organization.name}`,
+      (value) => value === `delete ${props.workspace.name}`,
       {
         message: "must match for confirmation",
       },
@@ -517,8 +512,8 @@ function DeleteOrganizationDialog(
   async function onSubmit() {
     setIsBusy(true);
     try {
-      const { url, method } = OrganizationApiTypes.prepareDeleteOrganization(
-        props.organization.id,
+      const { url, method } = WorkspaceApiTypes.prepareDeleteWorkspace(
+        props.workspace.id,
       );
 
       const response = await coreApi.handleRequest(
@@ -529,14 +524,14 @@ function DeleteOrganizationDialog(
       if (!response.ok || response.status !== 204) {
         toast({
           title: "Error",
-          description: "Failed to delete organization",
+          description: "Failed to delete workspace",
           variant: "destructive",
         });
         setIsBusy(false);
-        throw new Error("Failed to delete organization");
+        throw new Error("Failed to delete workspace");
       }
 
-      await refreshOrganizations();
+      await refreshWorkspaces();
 
       navigate("/");
     } catch (error) {
@@ -557,20 +552,20 @@ function DeleteOrganizationDialog(
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Delete organization</DialogTitle>
+          <DialogTitle>Delete workspace</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div>
               <div>
-                You are about to delete the organization{" "}
+                You are about to delete the workspace{" "}
                 <span className="font-bold">
-                  {props.organization.name}
+                  {props.workspace.name}
                 </span>.
               </div>
               <br />
               <span>
-                All data associated with this organization will be lost
+                All data associated with this workspace will be lost
                 (products,manifests, reports...).
               </span>
               <Separator className="my-2" />
@@ -584,7 +579,7 @@ function DeleteOrganizationDialog(
                   <FormLabel>
                     To confirm, type "
                     <span className="font-bold">
-                      delete {props.organization.name}
+                      delete {props.workspace.name}
                     </span>
                     "
                   </FormLabel>
@@ -615,7 +610,7 @@ function DeleteOrganizationDialog(
 
 function EditMemberDialog(
   props: {
-    organization: Organization;
+    workspace: Workspace;
     member: Member;
     onEdited: () => void;
     disable: boolean;

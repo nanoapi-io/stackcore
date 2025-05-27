@@ -7,11 +7,11 @@ import z from "zod";
 const memberService = new MemberService();
 const router = new Router();
 
-// Get all members of an organization
+// Get all members of a workspace
 router.get("/", authMiddleware, async (ctx) => {
   const searchParamsSchema = z.object({
-    organizationId: z.string().refine((val) => !isNaN(Number(val)), {
-      message: "Organization ID must be a number",
+    workspaceId: z.string().refine((val) => !isNaN(Number(val)), {
+      message: "Workspace ID must be a number",
     }).transform((val) => Number(val)),
     search: z.string().optional(),
     page: z.string().refine((val) => !isNaN(Number(val)), {
@@ -34,7 +34,7 @@ router.get("/", authMiddleware, async (ctx) => {
 
   const response = await memberService.getMembers(
     ctx.state.session.userId,
-    parsedSearchParams.data.organizationId,
+    parsedSearchParams.data.workspaceId,
     parsedSearchParams.data.page,
     parsedSearchParams.data.limit,
     parsedSearchParams.data.search,
@@ -95,7 +95,7 @@ router.patch(
   },
 );
 
-// Remove a member from an organization
+// Remove a member from an workspace
 router.delete(
   "/:memberId",
   authMiddleware,
@@ -114,7 +114,7 @@ router.delete(
       return;
     }
 
-    const { error } = await memberService.removeMemberFromOrganization(
+    const { error } = await memberService.removeMemberFromWorkspace(
       ctx.state.session.userId,
       parsedParams.data.memberId,
     );
@@ -127,7 +127,7 @@ router.delete(
 
     ctx.response.status = Status.OK;
     ctx.response.body = {
-      message: "Member removed from organization successfully",
+      message: "Member removed from workspace successfully",
     };
   },
 );

@@ -11,7 +11,7 @@ export interface ProjectTable {
   name: string;
   provider: "github" | "gitlab" | null;
   provider_id: string | null;
-  organization_id: number;
+  workspace_id: number;
   created_at: ColumnType<Date>;
 }
 
