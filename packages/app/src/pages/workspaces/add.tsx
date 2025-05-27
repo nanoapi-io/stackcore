@@ -6,7 +6,6 @@ import {
   CardTitle,
 } from "../../components/shadcn/Card.tsx";
 import { Input } from "../../components/shadcn/Input.tsx";
-import LoggedInLayout from "../../layout/loggedIn.tsx";
 import { Button } from "../../components/shadcn/Button.tsx";
 import { Loader } from "lucide-react";
 import { useNavigate } from "react-router";
@@ -90,44 +89,42 @@ export default function AddWorkspacePage() {
   }
 
   return (
-    <LoggedInLayout>
-      <Card className="mt-20 w-md mx-auto">
-        <CardHeader>
-          <CardTitle>Create new workspace</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(onSubmit)}
-              className="flex flex-col space-y-4"
+    <Card className="mt-20 w-md mx-auto">
+      <CardHeader>
+        <CardTitle>Create new workspace</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex flex-col space-y-4"
+          >
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button
+              type="submit"
+              disabled={isBusy}
+              className="flex items-center space-x-2"
             >
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button
-                type="submit"
-                disabled={isBusy}
-                className="flex items-center space-x-2"
-              >
-                {isBusy && <Loader className="animate-spin" />}
-                <div>
-                  Create
-                </div>
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-    </LoggedInLayout>
+              {isBusy && <Loader className="animate-spin" />}
+              <div>
+                Create
+              </div>
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 }

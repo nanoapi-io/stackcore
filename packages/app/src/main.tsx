@@ -2,42 +2,46 @@
 
 import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
-import { createBrowserRouter, RouterProvider } from "react-router";
+import { createBrowserRouter, Navigate, RouterProvider } from "react-router";
 import IndexPage from "./pages/index.tsx";
 import { Toaster } from "./components/shadcn/Toaster.tsx";
 import { ThemeProvider } from "./contexts/ThemeProvider.tsx";
 import LoginPage from "./pages/login.tsx";
 import { CoreApiProvider } from "./contexts/CoreApi.tsx";
-import { RequireAuth } from "./guards/RequireAuth.tsx";
 import { WorkspaceProvider } from "./contexts/Workspace.tsx";
 import AddWorkspacePage from "./pages/workspaces/add.tsx";
-import WorkspacePage from "./pages/workspaces/workspace/index.tsx";
-import ChangeSubscriptionPage from "./pages/workspaces/workspace/changeSubscription.tsx";
+import WorkspaceBase from "./pages/workspaces/workspace/base.tsx";
+import WorkspaceMembers from "./pages/workspaces/workspace/members.tsx";
+import LoggedInLayout from "./layout/loggedIn.tsx";
+import { RequireAuth } from "./guards/RequireAuth.tsx";
+import WorkspaceSubscription from "./pages/workspaces/workspace/subscription.tsx";
 
 const router = createBrowserRouter([
+  { path: "/login", Component: LoginPage },
   {
-    path: "/",
     element: (
       <RequireAuth>
-        <IndexPage />
+        <WorkspaceProvider>
+          <LoggedInLayout />
+        </WorkspaceProvider>
       </RequireAuth>
     ),
-  },
-  {
-    path: "/login",
-    element: <LoginPage />,
-  },
-  {
-    path: "/workspaces/new",
-    element: <AddWorkspacePage />,
-  },
-  {
-    path: "/workspaces/:workspaceId",
-    element: <WorkspacePage />,
-  },
-  {
-    path: "/workspaces/:workspaceId/changeSubscription",
-    element: <ChangeSubscriptionPage />,
+    children: [
+      { index: true, Component: IndexPage },
+      { path: "workspaces/new", element: <AddWorkspacePage /> },
+      {
+        path: "workspaces/:workspaceId",
+        Component: WorkspaceBase,
+        children: [
+          { index: true, element: <Navigate to="members" replace /> },
+          { path: "members", Component: WorkspaceMembers },
+          {
+            path: "subscription",
+            Component: WorkspaceSubscription,
+          },
+        ],
+      },
+    ],
   },
 ]);
 
@@ -51,10 +55,8 @@ ReactDOM.createRoot(rootElement).render(
   <StrictMode>
     <ThemeProvider>
       <CoreApiProvider>
-        <WorkspaceProvider>
-          <RouterProvider router={router} />
-          <Toaster />
-        </WorkspaceProvider>
+        <RouterProvider router={router} />
+        <Toaster />
       </CoreApiProvider>
     </ThemeProvider>
   </StrictMode>,

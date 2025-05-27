@@ -1,6 +1,7 @@
 import {
   Check,
   ChevronsUpDown,
+  Home,
   LogOut,
   Menu,
   Moon,
@@ -12,7 +13,7 @@ import {
 import { Button } from "../components/shadcn/Button.tsx";
 import { useTheme } from "../contexts/ThemeProvider.tsx";
 import { cn } from "../lib/utils.ts";
-import { Link } from "react-router";
+import { Link, Outlet } from "react-router";
 import { useCoreApi } from "../contexts/CoreApi.tsx";
 import {
   DropdownMenu,
@@ -40,13 +41,7 @@ import {
 } from "../components/shadcn/Command.tsx";
 import { Badge } from "../components/shadcn/Badge.tsx";
 
-export default function LoggedInLayout(
-  { children, className, navChildren, ...props }: {
-    navChildren?: React.ReactNode;
-    children: React.ReactNode;
-    className?: string;
-  },
-) {
+export default function LoggedInLayout() {
   const { logout } = useCoreApi();
   const {
     workspaces,
@@ -67,7 +62,7 @@ export default function LoggedInLayout(
   const [open, setOpen] = useState(false);
 
   return (
-    <div {...props} className={cn("min-h-screen flex flex-col", className)}>
+    <div className="min-h-screen flex flex-col">
       <div className="flex items-center justify-between space-x-2 border-b px-2 py-1">
         <div className="flex items-center space-x-2">
           <Link
@@ -76,6 +71,12 @@ export default function LoggedInLayout(
           >
             <img src="/logo.png" alt="NanoAPI" width={48} height={48} />
             <span className="text-2xl font-bold">NanoAPI</span>
+          </Link>
+
+          <Link to="/">
+            <Button variant="outline" size="icon">
+              <Home />
+            </Button>
           </Link>
 
           <Popover open={open} onOpenChange={setOpen}>
@@ -89,8 +90,7 @@ export default function LoggedInLayout(
               >
                 {selectedWorkspaceId
                   ? workspaces.find(
-                    (workspace) =>
-                      workspace.id === selectedWorkspaceId,
+                    (workspace) => workspace.id === selectedWorkspaceId,
                   )?.name
                   : "Select workspace..."}
                 <ChevronsUpDown className="opacity-50" />
@@ -121,7 +121,10 @@ export default function LoggedInLayout(
                   <CommandEmpty>No workspaces found.</CommandEmpty>
                   <CommandGroup>
                     {workspaces.map((workspace) => (
-                      <div className="flex items-center space-x-2">
+                      <div
+                        key={workspace.id}
+                        className="flex items-center space-x-2"
+                      >
                         <CommandItem
                           key={workspace.id}
                           value={workspace.id.toString()}
@@ -164,16 +167,13 @@ export default function LoggedInLayout(
               </Command>
             </PopoverContent>
           </Popover>
-
-          {navChildren}
         </div>
 
         <div className="flex items-center space-x-2">
           <Button
             variant="ghost"
             size="icon"
-            onClick={() =>
-              setTheme(theme === "light" ? "dark" : "light")}
+            onClick={() => setTheme(theme === "light" ? "dark" : "light")}
           >
             {theme === "light" ? <Moon /> : <Sun />}
           </Button>
@@ -206,7 +206,7 @@ export default function LoggedInLayout(
           </DropdownMenu>
         </div>
       </div>
-      {children}
+      <Outlet />
     </div>
   );
 }

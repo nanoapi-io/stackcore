@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { toast } from "../components/shadcn/hooks/use-toast.tsx";
 import { useCoreApi } from "./CoreApi.tsx";
 import { WorkspaceApiTypes } from "@stackcore/core/responses";
@@ -12,6 +12,7 @@ type WorkspaceContextType = {
   selectedWorkspaceId: number | undefined;
   setSelectedWorkspaceId: (id: number | undefined) => void;
   refreshWorkspaces: () => Promise<void>;
+  isInitialized: boolean;
 };
 
 const initialState: WorkspaceContextType = {
@@ -20,6 +21,7 @@ const initialState: WorkspaceContextType = {
   selectedWorkspaceId: undefined,
   setSelectedWorkspaceId: () => {},
   refreshWorkspaces: () => Promise.resolve(),
+  isInitialized: false,
 };
 
 const WorkspaceContext = createContext<WorkspaceContextType>(
@@ -36,6 +38,7 @@ export function WorkspaceProvider(
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<
     number | undefined
   >(undefined);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   async function getAllWorkspaces() {
     const limit = 100;
@@ -96,6 +99,7 @@ export function WorkspaceProvider(
           }
         }
       }
+      setIsInitialized(true);
     } catch (error) {
       console.error(error);
       toast({
@@ -108,6 +112,12 @@ export function WorkspaceProvider(
     }
   }
 
+  useEffect(() => {
+    if (!isInitialized) {
+      refreshWorkspaces();
+    }
+  }, [isInitialized]);
+
   return (
     <WorkspaceContext.Provider
       {...props}
@@ -117,6 +127,7 @@ export function WorkspaceProvider(
         selectedWorkspaceId,
         setSelectedWorkspaceId,
         refreshWorkspaces,
+        isInitialized,
       }}
     >
       {children}
