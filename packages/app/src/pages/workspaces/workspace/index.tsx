@@ -73,6 +73,7 @@ type Member = {
 
 export default function WorkspacePage() {
   const coreApi = useCoreApi();
+  const navigate = useNavigate();
 
   const [isBusy, setIsBusy] = useState(false);
   const { workspaceId } = useParams<{ workspaceId: string }>();
@@ -87,12 +88,17 @@ export default function WorkspacePage() {
       return;
     }
 
+    if (workspaces.length === 0) {
+      return;
+    }
+
     const workspace = workspaces.find(
       (w) => w.id === parseInt(workspaceId),
     );
 
     if (!workspace) {
-      console.error("Workspace not found", workspaces.length);
+      console.error("Workspace not found");
+      navigate("/");
       return;
     }
 
@@ -179,7 +185,7 @@ export default function WorkspacePage() {
                 {(workspace &&
                   workspace.role === MemberApiTypes.ADMIN_ROLE &&
                   workspace.isTeam) && (
-                  <DeleteWorkspaceDialog
+                  <DeactivateWorkspaceDialog
                     workspace={workspace}
                   />
                 )}
@@ -192,7 +198,7 @@ export default function WorkspacePage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Subscription status</TableHead>
-                <TableHead>Current Plan</TableHead>
+                <TableHead>Current Subscription</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -232,11 +238,11 @@ export default function WorkspacePage() {
                           </Badge>
                           {workspace.role === MemberApiTypes.ADMIN_ROLE && (
                             <Link
-                              to={`changePlan`}
+                              to={`changeSubascription`}
                             >
                               <Button>
                                 <CalendarCog />
-                                Update current plan
+                                Update current subscription
                               </Button>
                             </Link>
                           )}
@@ -482,7 +488,7 @@ function WorkspaceMembersTable(
   );
 }
 
-function DeleteWorkspaceDialog(
+function DeactivateWorkspaceDialog(
   props: { workspace: Workspace },
 ) {
   const navigate = useNavigate();
@@ -494,7 +500,7 @@ function DeleteWorkspaceDialog(
 
   const formSchema = z.object({
     name: z.string().refine(
-      (value) => value === `delete ${props.workspace.name}`,
+      (value) => value === `deactivate ${props.workspace.name}`,
       {
         message: "must match for confirmation",
       },
@@ -512,7 +518,7 @@ function DeleteWorkspaceDialog(
   async function onSubmit() {
     setIsBusy(true);
     try {
-      const { url, method } = WorkspaceApiTypes.prepareDeleteWorkspace(
+      const { url, method } = WorkspaceApiTypes.prepareDeactivateWorkspace(
         props.workspace.id,
       );
 
@@ -524,11 +530,11 @@ function DeleteWorkspaceDialog(
       if (!response.ok || response.status !== 204) {
         toast({
           title: "Error",
-          description: "Failed to delete workspace",
+          description: "Failed to deactivate workspace",
           variant: "destructive",
         });
         setIsBusy(false);
-        throw new Error("Failed to delete workspace");
+        throw new Error("Failed to deactivate workspace");
       }
 
       await refreshWorkspaces();
@@ -552,21 +558,21 @@ function DeleteWorkspaceDialog(
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Delete workspace</DialogTitle>
+          <DialogTitle>Deactivate workspace</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div>
               <div>
-                You are about to delete the workspace{" "}
+                You are about to deactivate the workspace{" "}
                 <span className="font-bold">
                   {props.workspace.name}
                 </span>.
               </div>
               <br />
               <span>
-                All data associated with this workspace will be lost
-                (products,manifests, reports...).
+                All data associated with this workspace will be inaccessible
+                (projects, manifests, reports...).
               </span>
               <Separator className="my-2" />
               <span className="font-bold">This action is irreversible.</span>
@@ -579,7 +585,7 @@ function DeleteWorkspaceDialog(
                   <FormLabel>
                     To confirm, type "
                     <span className="font-bold">
-                      delete {props.workspace.name}
+                      deactivate {props.workspace.name}
                     </span>
                     "
                   </FormLabel>
@@ -598,7 +604,7 @@ function DeleteWorkspaceDialog(
               </DialogClose>
               <Button type="submit" variant="destructive" disabled={isBusy}>
                 {isBusy && <Loader className="animate-spin" />}
-                Permanently delete
+                Deactivate
               </Button>
             </div>
           </form>

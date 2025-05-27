@@ -113,7 +113,7 @@ New subscription: ${payload.newSubscription.product} (${
       payload.newSubscription.billingCycle ?? "Custom billing cycle"
     })
 
-This change is effective immediately, and you now have access to all the features included in your new plan.
+This change is effective immediately, and you now have access to all the features included in your new subscription.
 
 If you have any questions about your upgraded subscription, please don't hesitate to contact our support team.
 

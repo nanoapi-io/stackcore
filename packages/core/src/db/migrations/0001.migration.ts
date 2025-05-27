@@ -11,11 +11,6 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn("otp_expires_at", "timestamp")
     .addColumn("last_login_at", "timestamp")
     .addColumn(
-      "deactivated",
-      "boolean",
-      (col) => col.notNull().defaultTo(false),
-    )
-    .addColumn(
       "created_at",
       "timestamp",
       (col) => col.defaultTo(sql`now()`).notNull(),

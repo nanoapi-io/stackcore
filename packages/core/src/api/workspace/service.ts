@@ -7,8 +7,8 @@ export const workspaceAlreadyExistsErrorCode = "workspace_already_exists";
 export const workspaceNotFoundError = "workspace_not_found";
 export const notAMemberOfWorkspaceError = "not_a_member_of_workspace";
 export const notAnAdminOfWorkspaceError = "not_an_admin_of_workspace";
-export const cannotDeletePersonalWorkspaceError =
-  "cannot_delete_personal_workspace";
+export const cannotDeactivatePersonalWorkspaceError =
+  "cannot_deactivate_personal_workspace";
 export const alreadyAMemberOfWorkspaceError = "already_a_member_of_workspace";
 export const cannotCreateInvitationForPersonalWorkspaceError =
   "cannot_create_invitation_for_personal_workspace";
@@ -230,14 +230,14 @@ export class WorkspaceService {
   /**
    * Delete an workspace
    */
-  public async deleteWorkspace(
+  public async deactivateWorkspace(
     userId: number,
     workspaceId: number,
   ): Promise<
     {
       error?:
         | typeof workspaceNotFoundError
-        | typeof cannotDeletePersonalWorkspaceError
+        | typeof cannotDeactivatePersonalWorkspaceError
         | typeof notAnAdminOfWorkspaceError;
     }
   > {
@@ -271,10 +271,10 @@ export class WorkspaceService {
       .executeTakeFirstOrThrow();
 
     if (!workspace.isTeam) {
-      return { error: cannotDeletePersonalWorkspaceError };
+      return { error: cannotDeactivatePersonalWorkspaceError };
     }
 
-    // Delete workspace members and workspace in a transaction
+    // Deactivate workspace members and workspace in a transaction
     await db.transaction().execute(async (trx) => {
       // First delete all workspace members
       await trx
@@ -282,9 +282,10 @@ export class WorkspaceService {
         .where("workspace_id", "=", workspaceId)
         .execute();
 
-      // Then delete the workspace
+      // Then deactivate the workspace
       await trx
-        .deleteFrom("workspace")
+        .updateTable("workspace")
+        .set({ deactivated: true })
         .where("id", "=", workspaceId)
         .execute();
 

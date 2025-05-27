@@ -103,9 +103,9 @@ if (shouldCreateMeter === "y") {
 
 console.info("\nCreating products...");
 // Create products
-const basicProduct = await createProduct("Basic", "Basic plan");
-const proProduct = await createProduct("Pro", "Pro plan");
-const premiumProduct = await createProduct("Premium", "Premium plan");
+const basicProduct = await createProduct("Basic", "Basic subscription");
+const proProduct = await createProduct("Pro", "Pro subscription");
+const premiumProduct = await createProduct("Premium", "Premium subscription");
 console.info("✓ All products created successfully\n");
 
 console.info("Creating prices...");

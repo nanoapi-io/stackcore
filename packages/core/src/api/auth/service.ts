@@ -69,7 +69,6 @@ export class AuthService {
           otp_attempts: 0,
           otp_expires_at: expiresAt,
           created_at: new Date(),
-          deactivated: false,
         })
         .execute();
     }
@@ -250,10 +249,6 @@ export class AuthService {
         .executeTakeFirst();
 
       if (!user) {
-        return false;
-      }
-
-      if (user.deactivated) {
         return false;
       }
 

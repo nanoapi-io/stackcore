@@ -2,7 +2,12 @@ import { assertEquals, assertNotEquals } from "@std/assert";
 import api from "../index.ts";
 import { db, destroyKyselyDb, initKyselyDb } from "../../db/database.ts";
 import { resetTables } from "../../testHelpers/db.ts";
-import { WorkspaceService } from "./service.ts";
+import {
+  cannotDeactivatePersonalWorkspaceError,
+  workspaceAlreadyExistsErrorCode,
+  workspaceNotFoundError,
+  WorkspaceService,
+} from "./service.ts";
 import { createTestUserAndToken } from "../../testHelpers/auth.ts";
 import { WorkspaceApiTypes } from "../responseType.ts";
 
@@ -90,7 +95,7 @@ Deno.test("create a team workspace with a duplicate name should fail", async () 
     assertEquals(response?.status, 400);
 
     const responseBody = await response?.json();
-    assertEquals(responseBody.error, "workspace_already_exists");
+    assertEquals(responseBody.error, workspaceAlreadyExistsErrorCode);
   } finally {
     await resetTables();
     await destroyKyselyDb();
@@ -347,15 +352,15 @@ Deno.test("update an workspace - non-member", async () => {
 
     assertEquals(response?.status, 400);
     const responseBody = await response?.json();
-    assertEquals(responseBody.error, "workspace_not_found");
+    assertEquals(responseBody.error, workspaceNotFoundError);
   } finally {
     await resetTables();
     await destroyKyselyDb();
   }
 });
 
-// DELETE /:workspaceId (delete workspace)
-Deno.test("delete an workspace", async () => {
+// POST /:workspaceId/deactivate (deactivate workspace)
+Deno.test("deactivate an workspace", async () => {
   initKyselyDb();
   await resetTables();
 
@@ -376,11 +381,11 @@ Deno.test("delete an workspace", async () => {
       .where("name", "=", "Test Team")
       .executeTakeFirstOrThrow();
 
-    const { url, method } = WorkspaceApiTypes.prepareDeleteWorkspace(
+    const { url, method } = WorkspaceApiTypes.prepareDeactivateWorkspace(
       workspace.id,
     );
 
-    // Delete workspace
+    // Deactivate workspace
     const response = await api.handle(
       new Request(
         `http://localhost:3000${url}`,
@@ -395,21 +400,21 @@ Deno.test("delete an workspace", async () => {
 
     assertEquals(response?.status, 204);
 
-    // Verify workspace was deleted from database
-    const deletedWorkspace = await db
+    // Verify workspace was deactivated in database
+    const deactivatedWorkspace = await db
       .selectFrom("workspace")
       .selectAll()
       .where("id", "=", workspace.id)
-      .executeTakeFirst();
+      .executeTakeFirstOrThrow();
 
-    assertEquals(deletedWorkspace, undefined);
+    assertEquals(deactivatedWorkspace.deactivated, true);
   } finally {
     await resetTables();
     await destroyKyselyDb();
   }
 });
 
-Deno.test("delete an workspace - non-member", async () => {
+Deno.test("deactivate an workspace - non-member", async () => {
   initKyselyDb();
   await resetTables();
 
@@ -433,7 +438,7 @@ Deno.test("delete an workspace - non-member", async () => {
     // Create second user (not a member of the workspace)
     const { token: nonMemberToken } = await createTestUserAndToken();
 
-    const { url, method } = WorkspaceApiTypes.prepareDeleteWorkspace(
+    const { url, method } = WorkspaceApiTypes.prepareDeactivateWorkspace(
       workspace.id,
     );
 
@@ -451,7 +456,7 @@ Deno.test("delete an workspace - non-member", async () => {
 
     assertEquals(response?.status, 400);
     const responseBody = await response?.json();
-    assertEquals(responseBody.error, "workspace_not_found");
+    assertEquals(responseBody.error, workspaceNotFoundError);
 
     // Verify workspace still exists
     const checkWorkspace = await db
@@ -468,7 +473,7 @@ Deno.test("delete an workspace - non-member", async () => {
 });
 
 Deno.test(
-  "delete workspace - cannot delete personal workspace",
+  "deactivate workspace - cannot deactivate personal workspace",
   async () => {
     initKyselyDb();
     await resetTables();
@@ -476,11 +481,11 @@ Deno.test(
     try {
       const { token, personalWorkspaceId } = await createTestUserAndToken();
 
-      const { url, method } = WorkspaceApiTypes.prepareDeleteWorkspace(
+      const { url, method } = WorkspaceApiTypes.prepareDeactivateWorkspace(
         personalWorkspaceId,
       );
 
-      // Try to delete personal workspace
+      // Try to deactivate personal workspace
       const response = await api.handle(
         new Request(
           `http://localhost:3000${url}`,
@@ -495,7 +500,7 @@ Deno.test(
 
       assertEquals(response?.status, 400);
       const responseBody = await response?.json();
-      assertEquals(responseBody.error, "cannot_delete_personal_workspace");
+      assertEquals(responseBody.error, cannotDeactivatePersonalWorkspaceError);
     } finally {
       await resetTables();
       await destroyKyselyDb();

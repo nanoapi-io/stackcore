@@ -13,7 +13,6 @@ export interface UserTable {
   otp_attempts: number;
   otp_expires_at: ColumnType<Date | null>;
   last_login_at: ColumnType<Date | null>;
-  deactivated: boolean;
   created_at: ColumnType<Date>;
 }
 

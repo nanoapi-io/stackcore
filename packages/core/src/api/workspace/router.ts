@@ -121,8 +121,8 @@ router.patch("/:workspaceId", authMiddleware, async (ctx) => {
   ctx.response.body = { message: "Workspace updated successfully" };
 });
 
-// Delete an workspace
-router.delete("/:workspaceId", authMiddleware, async (ctx) => {
+// Deactivate an workspace
+router.post("/:workspaceId/deactivate", authMiddleware, async (ctx) => {
   const paramSchema = z.object({
     workspaceId: z.string().refine((val) => !isNaN(Number(val)), {
       message: "Workspace ID must be a number",
@@ -137,7 +137,7 @@ router.delete("/:workspaceId", authMiddleware, async (ctx) => {
     return;
   }
 
-  const { error } = await workspaceService.deleteWorkspace(
+  const { error } = await workspaceService.deactivateWorkspace(
     ctx.state.session.userId,
     parsedParams.data.workspaceId,
   );

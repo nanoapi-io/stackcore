@@ -55,7 +55,7 @@ export function shouldHaveAccess(
     // once stripe has exhausted all retry (can be configured)
     case "past_due":
       return true;
-    // most likely user changed their plan.
+    // most likely user changed their subscription.
     // We block access, when new subscription is created,
     // another event is triggered and access is restored
     case "canceled":

@@ -79,10 +79,10 @@ export function prepareUpdateWorkspace(
   };
 }
 
-export function prepareDeleteWorkspace(workspaceId: number) {
+export function prepareDeactivateWorkspace(workspaceId: number) {
   return {
-    url: `/workspaces/${workspaceId}`,
-    method: "DELETE",
+    url: `/workspaces/${workspaceId}/deactivate`,
+    method: "POST",
     body: undefined,
   };
 }

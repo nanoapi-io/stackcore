@@ -12,7 +12,7 @@ import { RequireAuth } from "./guards/RequireAuth.tsx";
 import { WorkspaceProvider } from "./contexts/Workspace.tsx";
 import AddWorkspacePage from "./pages/workspaces/add.tsx";
 import WorkspacePage from "./pages/workspaces/workspace/index.tsx";
-import ChangePlanPage from "./pages/workspaces/workspace/changePlan.tsx";
+import ChangeSubscriptionPage from "./pages/workspaces/workspace/changeSubscription.tsx";
 
 const router = createBrowserRouter([
   {
@@ -36,8 +36,8 @@ const router = createBrowserRouter([
     element: <WorkspacePage />,
   },
   {
-    path: "/workspaces/:workspaceId/changePlan",
-    element: <ChangePlanPage />,
+    path: "/workspaces/:workspaceId/changeSubscription",
+    element: <ChangeSubscriptionPage />,
   },
 ]);
 
