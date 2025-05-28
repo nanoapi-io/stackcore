@@ -9,7 +9,11 @@ import {
   CardTitle,
 } from "../../../components/shadcn/Card.tsx";
 import { Button } from "../../../components/shadcn/Button.tsx";
-import { BillingApiTypes, WorkspaceApiTypes } from "@stackcore/core/responses";
+import {
+  BillingApiTypes,
+  MemberApiTypes,
+  WorkspaceApiTypes,
+} from "@stackcore/core/responses";
 import { Check, CreditCard, Loader, Loader2 } from "lucide-react";
 import {
   Dialog,
@@ -172,7 +176,7 @@ export default function WorkspaceSubscription() {
         <CardHeader>
           <CardTitle>Current Subscription</CardTitle>
           <CardDescription>
-            Manage your workspace subscription and billing
+            View and manage your workspace subscription and billing
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -198,14 +202,16 @@ export default function WorkspaceSubscription() {
                           Access disabled. Update your payment method
                         </Badge>
                       )}
-                    <Button
-                      onClick={goToStripePortal}
-                      disabled={stripePortalBusy}
-                      size="sm"
-                    >
-                      {stripePortalBusy ? <Loader /> : <CreditCard />}
-                      Invoices and payment method
-                    </Button>
+                    {context.workspace.role === MemberApiTypes.ADMIN_ROLE && (
+                      <Button
+                        onClick={goToStripePortal}
+                        disabled={stripePortalBusy}
+                        size="sm"
+                      >
+                        {stripePortalBusy ? <Loader /> : <CreditCard />}
+                        Invoices and payment method
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell>
@@ -322,6 +328,7 @@ export default function WorkspaceSubscription() {
                         WorkspaceApiTypes.BASIC_PRODUCT,
                         WorkspaceApiTypes.MONTHLY_BILLING_CYCLE,
                       )}
+                      role={context.workspace.role}
                     />
                     <SubscriptionCard
                       workspaceId={context.workspace.id}
@@ -342,6 +349,7 @@ export default function WorkspaceSubscription() {
                         WorkspaceApiTypes.PRO_PRODUCT,
                         WorkspaceApiTypes.MONTHLY_BILLING_CYCLE,
                       )}
+                      role={context.workspace.role}
                     />
                     <SubscriptionCard
                       workspaceId={context.workspace.id}
@@ -363,6 +371,7 @@ export default function WorkspaceSubscription() {
                         WorkspaceApiTypes.PREMIUM_PRODUCT,
                         WorkspaceApiTypes.MONTHLY_BILLING_CYCLE,
                       )}
+                      role={context.workspace.role}
                     />
                     <SubscriptionCard
                       workspaceId={context.workspace.id}
@@ -380,6 +389,7 @@ export default function WorkspaceSubscription() {
                         WorkspaceApiTypes.CUSTOM_PRODUCT,
                         WorkspaceApiTypes.MONTHLY_BILLING_CYCLE,
                       )}
+                      role={context.workspace.role}
                     />
                   </div>
                 )
@@ -405,6 +415,7 @@ export default function WorkspaceSubscription() {
                         WorkspaceApiTypes.PRO_PRODUCT,
                         WorkspaceApiTypes.YEARLY_BILLING_CYCLE,
                       )}
+                      role={context.workspace.role}
                     />
                     <SubscriptionCard
                       workspaceId={context.workspace.id}
@@ -427,6 +438,7 @@ export default function WorkspaceSubscription() {
                         WorkspaceApiTypes.PREMIUM_PRODUCT,
                         WorkspaceApiTypes.YEARLY_BILLING_CYCLE,
                       )}
+                      role={context.workspace.role}
                     />
                     <SubscriptionCard
                       workspaceId={context.workspace.id}
@@ -444,6 +456,7 @@ export default function WorkspaceSubscription() {
                         WorkspaceApiTypes.CUSTOM_PRODUCT,
                         WorkspaceApiTypes.YEARLY_BILLING_CYCLE,
                       )}
+                      role={context.workspace.role}
                     />
                   </div>
                 )}
@@ -464,6 +477,7 @@ function SubscriptionCard(props: {
   subscriptionPrice: string;
   billingCycle: WorkspaceApiTypes.StripeBillingCycle;
   changeType: "upgrade" | "downgrade" | "same" | "custom";
+  role: MemberApiTypes.MemberRole | null;
 }) {
   return (
     <Card className="flex flex-col">
@@ -503,6 +517,12 @@ function SubscriptionCard(props: {
                 Contact us support@nanoapi.io
               </Button>
             </Link>
+          )
+          : props.role === MemberApiTypes.MEMBER_ROLE
+          ? (
+            <Button className="w-full" disabled>
+              Contact your workspace admin
+            </Button>
           )
           : (
             <ChangeSubscriptionDialog

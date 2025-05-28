@@ -22,7 +22,7 @@ import {
 } from "../../../components/shadcn/Form.tsx";
 import { useCoreApi } from "../../../contexts/CoreApi.tsx";
 import { toast } from "../../../components/shadcn/hooks/use-toast.tsx";
-import { Edit, Loader } from "lucide-react";
+import { Edit, Loader, Plus } from "lucide-react";
 import { Badge } from "../../../components/shadcn/Badge.tsx";
 import {
   Table,
@@ -48,7 +48,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../../components/shadcn/Select.tsx";
-import { MemberApiTypes } from "@stackcore/core/responses";
+import { InvitationApiTypes, MemberApiTypes } from "@stackcore/core/responses";
 import { useOutletContext } from "react-router";
 import type { WorkspacePageContext } from "./base.tsx";
 import { Separator } from "../../../components/shadcn/Separator.tsx";
@@ -59,6 +59,7 @@ import {
   CardHeader,
   CardTitle,
 } from "../../../components/shadcn/Card.tsx";
+import { Input } from "../../../components/shadcn/Input.tsx";
 
 type Member = {
   id: number;
@@ -191,10 +192,19 @@ export default function WorkspaceMembers() {
       <CardHeader>
         <CardTitle>Workspace Members</CardTitle>
         <CardDescription>
-          Manage members and their roles in this workspace
+          View and manage members and their roles in this workspace
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {context.workspace.role === MemberApiTypes.ADMIN_ROLE && (
+          <InviteMemberDialog
+            workspace={context.workspace}
+            onInvited={() => {
+              getMembers(pagination);
+            }}
+            disable={isBusy}
+          />
+        )}
         <div className="border rounded-md">
           <Table>
             <TableHeader>
@@ -261,6 +271,111 @@ export default function WorkspaceMembers() {
         <DataTablePagination table={table} />
       </CardContent>
     </Card>
+  );
+}
+
+function InviteMemberDialog(
+  props: {
+    workspace: Workspace;
+    onInvited: () => void;
+    disable: boolean;
+  },
+) {
+  const [isBusy, setIsBusy] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  const coreApi = useCoreApi();
+
+  const formSchema = z.object({
+    email: z.string().email(),
+  });
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: "",
+    },
+    disabled: isBusy,
+  });
+
+  async function onSubmit() {
+    setIsBusy(true);
+    try {
+      const { url, method, body } = InvitationApiTypes.prepareCreateInvitation(
+        {
+          workspaceId: props.workspace.id,
+          email: form.getValues("email"),
+          returnUrl: `${globalThis.location.origin}/invitations/claim`,
+        },
+      );
+
+      const response = await coreApi.handleRequest(
+        url,
+        method,
+        body,
+      );
+
+      if (!response.ok || response.status !== 200) {
+        throw new Error("Failed to edit member");
+      }
+
+      toast({
+        title: "Invitation sent",
+        description: "Invitation sent successfully",
+      });
+      props.onInvited();
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "Failed to send invitation",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBusy(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button disabled={props.disable}>
+          <Plus />
+          Invite someone to join this workspace
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Invite a new member</DialogTitle>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <Input {...field} />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="flex justify-end space-x-2">
+              <DialogClose asChild>
+                <Button type="button" variant="secondary" disabled={isBusy}>
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button type="submit" disabled={isBusy}>
+                {isBusy && <Loader className="animate-spin" />}
+                Invite
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 }
 

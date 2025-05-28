@@ -153,8 +153,8 @@ export default function LoginPage() {
       coreApiContext.login(token);
 
       // Redirect to the location parameter or the root page
-      const location = searchParams.get("from") || "/";
-      navigate(location);
+      const redirectLocation = searchParams.get("from") || "/";
+      navigate(redirectLocation);
     } catch (error) {
       toast({
         title: "Unexpected error",

@@ -9,8 +9,11 @@ export const RequireAuth: React.FC<{ children: React.ReactNode }> = (
   const location = useLocation();
 
   if (!isAuthenticated) {
-    // Redirect to login page, preserving the current location
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    // Redirect to login page with current location as URL parameter
+    const searchParams = new URLSearchParams();
+    searchParams.set("from", location.pathname + location.search);
+    const redirectUrl = `/login?${searchParams.toString()}`;
+    return <Navigate to={redirectUrl} replace />;
   }
 
   return children;

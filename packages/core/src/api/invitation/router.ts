@@ -24,6 +24,7 @@ router.post("/", authMiddleware, async (ctx) => {
       ctx.state.session.userId,
       parsedBody.data.workspaceId,
       parsedBody.data.email,
+      parsedBody.data.returnUrl,
     );
 
   if (error) {

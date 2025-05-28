@@ -19,6 +19,7 @@ export class InvitationService {
     userId: number,
     workspaceId: number,
     email: string,
+    returnUrl: string,
   ): Promise<{ error?: string }> {
     const userMember = await db
       .selectFrom("member")
@@ -70,6 +71,7 @@ export class InvitationService {
       email,
       workspace.name,
       invitation.uuid,
+      returnUrl,
     );
 
     return {};
@@ -81,7 +83,16 @@ export class InvitationService {
   public async claimInvitation(
     uuid: string,
     userId: number,
-  ): Promise<{ error?: string }> {
+  ): Promise<
+    {
+      error?:
+        | typeof invitationNotFoundError
+        | typeof invitationExpiredError
+        | typeof workspaceNotFoundError
+        | typeof workspaceNotTeamError
+        | typeof alreadyAMemberOfWorkspaceError;
+    }
+  > {
     // First get the invitation
     const invitation = await db
       .selectFrom("invitation")

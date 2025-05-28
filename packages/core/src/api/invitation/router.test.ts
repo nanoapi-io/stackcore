@@ -40,6 +40,7 @@ Deno.test("create invitation - with invalid email", async () => {
     const { url, method, body } = prepareCreateInvitation({
       workspaceId: workspace.id,
       email: "invalid-email",
+      returnUrl: "http://localhost:3000/invitations/claim",
     });
 
     const response = await api.handle(
@@ -84,6 +85,7 @@ Deno.test("create invitation - with personal workspace", async () => {
     const { url, method, body } = prepareCreateInvitation({
       workspaceId: personalWorkspaceId,
       email: inviteeEmail,
+      returnUrl: "http://localhost:3000/invitations/claim",
     });
 
     const response = await api.handle(
@@ -149,6 +151,7 @@ Deno.test("create invitation - with non-admin user", async () => {
     const { url, method, body } = prepareCreateInvitation({
       workspaceId: workspace.id,
       email: "test@example.com",
+      returnUrl: "http://localhost:3000/invitations/claim",
     });
 
     const response = await api.handle(
@@ -202,6 +205,7 @@ Deno.test("create invitation - with non-member user", async () => {
     const { url, method, body } = prepareCreateInvitation({
       workspaceId: workspace.id,
       email: "test@example.com",
+      returnUrl: "http://localhost:3000/invitations/claim",
     });
 
     const response = await api.handle(
@@ -239,6 +243,7 @@ Deno.test("create invitation - with non-existent workspace", async () => {
     const { url, method, body } = prepareCreateInvitation({
       workspaceId: 999999,
       email: "test@example.com",
+      returnUrl: "http://localhost:3000/invitations/claim",
     });
 
     const response = await api.handle(
@@ -291,6 +296,7 @@ Deno.test("create invitation - success", async () => {
     const { url, method, body } = prepareCreateInvitation({
       workspaceId: workspace.id,
       email: inviteeEmail,
+      returnUrl: "http://localhost:3000/invitations/claim",
     });
 
     const response = await api.handle(
@@ -353,6 +359,7 @@ Deno.test("claim  invitation - success", async () => {
       userId,
       workspace.id,
       inviteeEmail,
+      "http://localhost:3000/invitations/claim",
     );
 
     const invitation = await db
@@ -434,6 +441,7 @@ Deno.test("claim invitation - already a member", async () => {
       userId,
       workspace.id,
       inviteeEmail,
+      "http://localhost:3000/invitations/claim",
     );
 
     const invitation = await db

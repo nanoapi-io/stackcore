@@ -16,6 +16,7 @@ import LoggedInLayout from "./layout/loggedIn.tsx";
 import { RequireAuth } from "./guards/RequireAuth.tsx";
 import WorkspaceSubscription from "./pages/workspaces/workspace/subscription.tsx";
 import LoggedOutLayout from "./layout/loggedOut.tsx";
+import InvitationClaimPage from "./pages/invitations/claim.tsx";
 
 const router = createBrowserRouter([
   {
@@ -35,6 +36,7 @@ const router = createBrowserRouter([
     ),
     children: [
       { index: true, Component: IndexPage },
+      { path: "invitations/claim", Component: InvitationClaimPage },
       { path: "workspaces/add", element: <AddWorkspacePage /> },
       {
         path: "workspaces/:workspaceId",

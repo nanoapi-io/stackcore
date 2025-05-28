@@ -58,11 +58,14 @@ export function sendInvitationEmail(
   email: string,
   workspaceName: string,
   invitationUuid: string,
+  returnUrl: string,
 ) {
   const emailService = getEmailService();
 
-  const invitationLink =
-    `${settings.FRONTEND.URL}/invitations/${invitationUuid}/claim`;
+  const searchParams = new URLSearchParams();
+  searchParams.set("invitationUuid", invitationUuid);
+
+  const invitationLink = `${returnUrl}?${searchParams.toString()}`;
 
   emailService.sendEmail(
     email,
