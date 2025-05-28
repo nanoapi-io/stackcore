@@ -1,6 +1,7 @@
 import { db } from "../db/database.ts";
 
 export async function resetTables() {
+  await db.deleteFrom("manifest").execute();
   await db.deleteFrom("project").execute();
   await db.deleteFrom("invitation").execute();
   await db.deleteFrom("member").execute();

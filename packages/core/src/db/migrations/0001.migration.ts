@@ -109,10 +109,33 @@ export async function up(db: Kysely<any>): Promise<void> {
       ["id"],
     )
     .execute();
+
+  await db.schema
+    .createTable("manifest")
+    .addColumn("id", "serial", (col) => col.primaryKey())
+    .addColumn("project_id", "integer", (col) => col.notNull())
+    .addColumn(
+      "created_at",
+      "timestamp",
+      (col) => col.defaultTo(sql`now()`).notNull(),
+    )
+    .addColumn("branch", "varchar(255)")
+    .addColumn("commitSha", "varchar(255)")
+    .addColumn("commitShaDate", "timestamp")
+    .addColumn("version", "integer", (col) => col.notNull())
+    .addColumn("manifest", "jsonb", (col) => col.notNull())
+    .addForeignKeyConstraint(
+      "manifest_project_fk",
+      ["project_id"],
+      "project",
+      ["id"],
+    )
+    .execute();
 }
 
 // deno-lint-ignore no-explicit-any
 export async function down(db: Kysely<any>): Promise<void> {
+  await db.schema.dropTable("manifest").execute();
   await db.schema.dropTable("project").execute();
   await db.schema.dropTable("invitation").execute();
   await db.schema.dropTable("member").execute();

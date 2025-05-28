@@ -3,6 +3,7 @@ import type { UserTable } from "./models/user.ts";
 import type { MemberTable } from "./models/member.ts";
 import type { InvitationTable } from "./models/invitation.ts";
 import type { ProjectTable } from "./models/project.ts";
+import type { ManifestTable } from "./models/manifest.ts";
 
 export interface Database {
   user: UserTable;
@@ -10,4 +11,5 @@ export interface Database {
   member: MemberTable;
   invitation: InvitationTable;
   project: ProjectTable;
+  manifest: ManifestTable;
 }

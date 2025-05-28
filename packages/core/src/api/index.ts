@@ -4,6 +4,7 @@ import workspaceRouter from "./workspace/router.ts";
 import invitationRouter from "./invitation/router.ts";
 import memberRouter from "./member/router.ts";
 import projectRouter from "./project/router.ts";
+import manifestRouter from "./manifest/router.ts";
 import healthRouter from "./health/router.ts";
 import billingRouter from "./billing/router.ts";
 
@@ -51,6 +52,9 @@ api.use(memberRouter.allowedMethods());
 
 api.use(projectRouter.prefix("/projects").routes());
 api.use(projectRouter.allowedMethods());
+
+api.use(manifestRouter.prefix("/manifests").routes());
+api.use(manifestRouter.allowedMethods());
 
 api.use(billingRouter.prefix("/billing").routes());
 api.use(billingRouter.allowedMethods());
