@@ -5,6 +5,7 @@ import * as MemberApiTypes from "./member/types.ts";
 import * as BillingApiTypes from "./billing/types.ts";
 import * as ProjectApiTypes from "./project/types.ts";
 import * as ManifestApiTypes from "./manifest/types.ts";
+import * as TokenApiTypes from "./token/types.ts";
 
 export {
   AuthApiTypes,
@@ -13,5 +14,6 @@ export {
   ManifestApiTypes,
   MemberApiTypes,
   ProjectApiTypes,
+  TokenApiTypes,
   WorkspaceApiTypes,
 };

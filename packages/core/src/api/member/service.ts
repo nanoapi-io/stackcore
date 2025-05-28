@@ -1,5 +1,6 @@
 import { db } from "../../db/database.ts";
 import { ADMIN_ROLE, type MemberRole } from "../../db/models/member.ts";
+import type { GetMembersResponse } from "./types.ts";
 
 export const notMemberOfWorkspaceError = "not_member_of_workspace";
 export const notAdminOfWorkspaceError = "not_admin_of_workspace";
@@ -16,19 +17,7 @@ export class MemberService {
     page: number,
     limit: number,
     search?: string,
-  ): Promise<
-    {
-      results: {
-        id: number;
-        user_id: number;
-        email: string;
-        role: MemberRole | null;
-      }[];
-      total: number;
-    } | {
-      error: string;
-    }
-  > {
+  ): Promise<{ error: string } | GetMembersResponse> {
     // check if user is a member of the workspace
     const userMember = await db
       .selectFrom("member")

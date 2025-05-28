@@ -18,6 +18,31 @@ export async function up(db: Kysely<any>): Promise<void> {
     .execute();
 
   await db.schema
+    .createTable("token")
+    .addColumn("id", "serial", (col) => col.primaryKey())
+    .addColumn(
+      "uuid",
+      "varchar(255)",
+      (col) => col.defaultTo(sql`gen_random_uuid()`).unique(),
+    )
+    .addColumn("name", "varchar(255)", (col) => col.notNull())
+    .addColumn("user_id", "integer", (col) => col.notNull())
+    .addColumn("last_used_at", "timestamp")
+    .addColumn(
+      "created_at",
+      "timestamp",
+      (col) => col.defaultTo(sql`now()`).notNull(),
+    )
+    .addForeignKeyConstraint(
+      "token_user_fk",
+      ["user_id"],
+      "user",
+      ["id"],
+      (cb) => cb.onDelete("cascade"),
+    )
+    .execute();
+
+  await db.schema
     .createTable("workspace")
     .addColumn("id", "serial", (col) => col.primaryKey())
     .addColumn("name", "varchar(255)", (col) => col.notNull())
@@ -60,12 +85,14 @@ export async function up(db: Kysely<any>): Promise<void> {
       ["workspace_id"],
       "workspace",
       ["id"],
+      (cb) => cb.onDelete("cascade"),
     )
     .addForeignKeyConstraint(
       "member_user_fk",
       ["user_id"],
       "user",
       ["id"],
+      (cb) => cb.onDelete("cascade"),
     )
     .execute();
 
@@ -89,6 +116,7 @@ export async function up(db: Kysely<any>): Promise<void> {
       ["workspace_id"],
       "workspace",
       ["id"],
+      (cb) => cb.onDelete("cascade"),
     )
     .execute();
 
@@ -107,6 +135,7 @@ export async function up(db: Kysely<any>): Promise<void> {
       ["workspace_id"],
       "workspace",
       ["id"],
+      (cb) => cb.onDelete("cascade"),
     )
     .execute();
 
@@ -129,6 +158,7 @@ export async function up(db: Kysely<any>): Promise<void> {
       ["project_id"],
       "project",
       ["id"],
+      (cb) => cb.onDelete("cascade"),
     )
     .execute();
 }
@@ -140,5 +170,6 @@ export async function down(db: Kysely<any>): Promise<void> {
   await db.schema.dropTable("invitation").execute();
   await db.schema.dropTable("member").execute();
   await db.schema.dropTable("workspace").execute();
+  await db.schema.dropTable("token").execute();
   await db.schema.dropTable("user").execute();
 }

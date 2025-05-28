@@ -1,5 +1,5 @@
 import { db } from "../../db/database.ts";
-import type { Project } from "../../db/models/project.ts";
+import type { GetProjectsResponse } from "./types.ts";
 
 export const projectAlreadyExistsErrorCode = "project_already_exists";
 export const projectNotFoundError = "project_not_found";
@@ -68,11 +68,7 @@ export class ProjectService {
     limit: number,
     search?: string,
     workspaceId?: number,
-  ): Promise<{
-    results?: Project[];
-    total?: number;
-    error?: string;
-  }> {
+  ): Promise<{ error: string } | GetProjectsResponse> {
     // First check if user has access to the workspace
     if (workspaceId) {
       const hasAccess = await db

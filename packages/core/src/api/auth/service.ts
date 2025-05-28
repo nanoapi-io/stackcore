@@ -107,15 +107,21 @@ export class AuthService {
       return { error: otpMaxAttemptsErrorCode };
     }
 
-    if (user.otp !== otp) {
-      await db
-        .updateTable("user")
-        .set({
-          otp_attempts: user.otp_attempts + 1,
-        })
-        .where("id", "=", user.id)
-        .execute();
-      return { error: invalidOtpErrorCode };
+    if (settings.OTP.SKIP_OTP) {
+      console.error(
+        "OTP verification skipped. This should not happen in production!",
+      );
+    } else {
+      if (user.otp !== otp) {
+        await db
+          .updateTable("user")
+          .set({
+            otp_attempts: user.otp_attempts + 1,
+          })
+          .where("id", "=", user.id)
+          .execute();
+        return { error: invalidOtpErrorCode };
+      }
     }
 
     if (!user.otp_expires_at || user.otp_expires_at < now) {

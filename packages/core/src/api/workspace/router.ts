@@ -8,6 +8,7 @@ import {
   updateWorkspaceSchema,
 } from "./types.ts";
 import z from "zod";
+import settings from "../../settings.ts";
 
 const workspaceService = new WorkspaceService();
 const router = new Router();
@@ -47,19 +48,17 @@ router.get("/", authMiddleware, async (ctx) => {
 
   const searchParamsSchema = z.object({
     search: z.string().optional(),
-    page: z.string().refine((val) => !isNaN(Number(val)), {
-      message: "Page must be a number",
-    }).transform((val) => parseInt(val)),
-    limit: z.string().refine((val) => !isNaN(Number(val)), {
-      message: "Limit must be a number",
-    }).transform((val) => parseInt(val)),
+    page: z.number().int().min(1),
+    limit: z.number().int().min(1).max(settings.PAGINATION.MAX_LIMIT),
   });
 
   const searchParams = Object.fromEntries(ctx.request.url.searchParams);
 
-  const parsedSearchParams = searchParamsSchema.safeParse(
-    searchParams,
-  );
+  const parsedSearchParams = searchParamsSchema.safeParse({
+    ...searchParams,
+    page: Number(searchParams.page),
+    limit: Number(searchParams.limit),
+  });
 
   if (!parsedSearchParams.success) {
     ctx.response.status = Status.BadRequest;
@@ -82,12 +81,12 @@ router.get("/", authMiddleware, async (ctx) => {
 // Update a workspace
 router.patch("/:workspaceId", authMiddleware, async (ctx) => {
   const paramSchema = z.object({
-    workspaceId: z.string().refine((val) => !isNaN(Number(val)), {
-      message: "Workspace ID must be a number",
-    }).transform((val) => Number(val)),
+    workspaceId: z.number().int().min(1),
   });
 
-  const parsedParams = paramSchema.safeParse(ctx.params);
+  const parsedParams = paramSchema.safeParse({
+    workspaceId: Number(ctx.params.workspaceId),
+  });
 
   if (!parsedParams.success) {
     ctx.response.status = Status.BadRequest;
@@ -124,12 +123,12 @@ router.patch("/:workspaceId", authMiddleware, async (ctx) => {
 // Deactivate an workspace
 router.post("/:workspaceId/deactivate", authMiddleware, async (ctx) => {
   const paramSchema = z.object({
-    workspaceId: z.string().refine((val) => !isNaN(Number(val)), {
-      message: "Workspace ID must be a number",
-    }).transform((val) => Number(val)),
+    workspaceId: z.number().int().min(1),
   });
 
-  const parsedParams = paramSchema.safeParse(ctx.params);
+  const parsedParams = paramSchema.safeParse({
+    workspaceId: Number(ctx.params.workspaceId),
+  });
 
   if (!parsedParams.success) {
     ctx.response.status = Status.BadRequest;

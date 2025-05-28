@@ -7,6 +7,7 @@ import projectRouter from "./project/router.ts";
 import manifestRouter from "./manifest/router.ts";
 import healthRouter from "./health/router.ts";
 import billingRouter from "./billing/router.ts";
+import tokenRouter from "./token/router.ts";
 
 const api = new Application();
 
@@ -40,6 +41,9 @@ api.use(healthRouter.allowedMethods());
 
 api.use(authRouter.prefix("/auth").routes());
 api.use(authRouter.allowedMethods());
+
+api.use(tokenRouter.prefix("/tokens").routes());
+api.use(tokenRouter.allowedMethods());
 
 api.use(workspaceRouter.prefix("/workspaces").routes());
 api.use(workspaceRouter.allowedMethods());

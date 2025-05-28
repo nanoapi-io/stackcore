@@ -1,7 +1,11 @@
 import { db } from "../../db/database.ts";
 import { shouldHaveAccess } from "../../db/models/workspace.ts";
-import { ADMIN_ROLE, type MemberRole } from "../../db/models/member.ts";
+import { ADMIN_ROLE } from "../../db/models/member.ts";
 import { StripeService } from "../../stripe/index.ts";
+import type {
+  CreateWorkspaceResponse,
+  GetWorkspacesResponse,
+} from "./types.ts";
 
 export const workspaceAlreadyExistsErrorCode = "workspace_already_exists";
 export const workspaceNotFoundError = "workspace_not_found";
@@ -27,9 +31,7 @@ export class WorkspaceService {
     name: string,
     userId: number,
   ): Promise<
-    {
-      id: number;
-    } | {
+    CreateWorkspaceResponse | {
       error: typeof workspaceAlreadyExistsErrorCode;
     }
   > {
@@ -118,16 +120,7 @@ export class WorkspaceService {
     page: number,
     limit: number,
     search?: string,
-  ): Promise<{
-    results: {
-      id: number;
-      name: string;
-      isTeam: boolean;
-      role: MemberRole | null;
-      access_enabled: boolean;
-    }[];
-    total: number;
-  }> {
+  ): Promise<GetWorkspacesResponse> {
     // Get total count of workspaces
     const totalResult = await db
       .selectFrom("member")
@@ -233,14 +226,7 @@ export class WorkspaceService {
   public async deactivateWorkspace(
     userId: number,
     workspaceId: number,
-  ): Promise<
-    {
-      error?:
-        | typeof workspaceNotFoundError
-        | typeof cannotDeactivatePersonalWorkspaceError
-        | typeof notAnAdminOfWorkspaceError;
-    }
-  > {
+  ): Promise<{ error?: string }> {
     // First check if user is a member of the workspace
     const memberCheck = await db
       .selectFrom("member")

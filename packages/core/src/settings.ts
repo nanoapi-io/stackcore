@@ -19,24 +19,22 @@ function getEnv(key: string, defaultValue: string) {
 export default {
   SECRET_KEY: getEnv("SECRET_KEY", "secret"),
   OTP: {
-    EXPIRY_MINUTES: parseInt(getEnv("OTP_EXPIRY_MINUTES", "5")),
-    MAX_ATTEMPTS: parseInt(getEnv("OTP_MAX_ATTEMPTS", "3")),
+    EXPIRY_MINUTES: 5,
+    MAX_ATTEMPTS: 3,
+    SKIP_OTP: getEnv("SKIP_OTP", "false") === "true",
   },
   JWT: {
-    EXPIRY_DAYS: parseInt(getEnv("JWT_EXPIRY_DAYS", "7")),
+    EXPIRY_DAYS: 7,
   },
   INVITATION: {
-    EXPIRY_DAYS: parseInt(getEnv("INVITATION_EXPIRY_DAYS", "7")),
+    EXPIRY_DAYS: 7,
   },
   STRIPE: {
     SECRET_KEY: getEnv("STRIPE_API_KEY", "sk_test_secret"),
     WEBHOOK_SECRET: getEnv("STRIPE_WEBHOOK_SECRET", "whsec_secret"),
     USE_MOCK: getEnv("STRIPE_USE_MOCK", "false") === "true",
     METER: {
-      CREDIT_USAGE_EVENT_NAME: getEnv(
-        "STRIPE_METER_CREDIT_USAGE_EVENT_NAME",
-        "credits-usage",
-      ),
+      CREDIT_USAGE_EVENT_NAME: "credits-usage",
     },
     PRODUCTS: {
       [BASIC_PRODUCT]: {
@@ -76,6 +74,9 @@ export default {
         },
       },
     },
+  },
+  PAGINATION: {
+    MAX_LIMIT: 100,
   },
   DATABASE: {
     HOST: getEnv("DATABASE_HOST", "localhost"),

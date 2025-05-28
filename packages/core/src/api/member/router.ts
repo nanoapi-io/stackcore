@@ -3,6 +3,7 @@ import { MemberService } from "./service.ts";
 import { authMiddleware } from "../auth/middleware.ts";
 import { type GetMembersResponse, updateMemberRoleSchema } from "./types.ts";
 import z from "zod";
+import settings from "../../settings.ts";
 
 const memberService = new MemberService();
 const router = new Router();
@@ -10,21 +11,20 @@ const router = new Router();
 // Get all members of a workspace
 router.get("/", authMiddleware, async (ctx) => {
   const searchParamsSchema = z.object({
-    workspaceId: z.string().refine((val) => !isNaN(Number(val)), {
-      message: "Workspace ID must be a number",
-    }).transform((val) => Number(val)),
+    workspaceId: z.number().int().min(1),
     search: z.string().optional(),
-    page: z.string().refine((val) => !isNaN(Number(val)), {
-      message: "Page must be a number",
-    }).transform((val) => parseInt(val)),
-    limit: z.string().refine((val) => !isNaN(Number(val)), {
-      message: "Limit must be a number",
-    }).transform((val) => parseInt(val)),
+    page: z.number().int().min(1),
+    limit: z.number().int().min(1).max(settings.PAGINATION.MAX_LIMIT),
   });
 
   const searchParams = Object.fromEntries(ctx.request.url.searchParams);
 
-  const parsedSearchParams = searchParamsSchema.safeParse(searchParams);
+  const parsedSearchParams = searchParamsSchema.safeParse({
+    ...searchParams,
+    workspaceId: Number(searchParams.workspaceId),
+    page: Number(searchParams.page),
+    limit: Number(searchParams.limit),
+  });
 
   if (!parsedSearchParams.success) {
     ctx.response.status = Status.BadRequest;
@@ -55,12 +55,12 @@ router.patch(
   authMiddleware,
   async (ctx) => {
     const paramSchema = z.object({
-      memberId: z.string().refine((val) => !isNaN(Number(val)), {
-        message: "Member ID must be a number",
-      }).transform((val) => Number(val)),
+      memberId: z.number().int().min(1),
     });
 
-    const parsedParams = paramSchema.safeParse(ctx.params);
+    const parsedParams = paramSchema.safeParse({
+      memberId: Number(ctx.params.memberId),
+    });
 
     if (!parsedParams.success) {
       ctx.response.status = Status.BadRequest;
@@ -101,12 +101,12 @@ router.delete(
   authMiddleware,
   async (ctx) => {
     const paramSchema = z.object({
-      memberId: z.string().refine((val) => !isNaN(Number(val)), {
-        message: "Member ID must be a number",
-      }).transform((val) => Number(val)),
+      memberId: z.number().int().min(1),
     });
 
-    const parsedParams = paramSchema.safeParse(ctx.params);
+    const parsedParams = paramSchema.safeParse({
+      memberId: Number(ctx.params.memberId),
+    });
 
     if (!parsedParams.success) {
       ctx.response.status = Status.BadRequest;

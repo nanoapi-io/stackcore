@@ -1,5 +1,8 @@
 import { db } from "../../db/database.ts";
-import type { Manifest } from "../../db/models/manifest.ts";
+import type {
+  GetManifestDetailsResponse,
+  GetManifestsResponse,
+} from "./types.ts";
 
 export const manifestNotFoundError = "manifest_not_found";
 export const projectNotFoundError = "project_not_found";
@@ -63,11 +66,11 @@ export class ManifestService {
     search?: string,
     projectId?: number,
     workspaceId?: number,
-  ): Promise<{
-    results?: Omit<Manifest, "manifest">[];
-    total?: number;
-    error?: string;
-  }> {
+  ): Promise<
+    GetManifestsResponse | {
+      error?: string;
+    }
+  > {
     // Build base query for accessible manifests
     let baseQuery = db
       .selectFrom("manifest")
@@ -161,10 +164,7 @@ export class ManifestService {
   public async getManifestDetails(
     userId: number,
     manifestId: number,
-  ): Promise<{
-    manifest?: Manifest;
-    error?: string;
-  }> {
+  ): Promise<GetManifestDetailsResponse | { error?: string }> {
     // Get manifest with access check
     const manifest = await db
       .selectFrom("manifest")
@@ -181,7 +181,7 @@ export class ManifestService {
       return { error: manifestNotFoundError };
     }
 
-    return { manifest };
+    return manifest;
   }
 
   /**

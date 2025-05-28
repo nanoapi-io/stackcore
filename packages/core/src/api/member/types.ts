@@ -35,6 +35,7 @@ export type GetMembersResponse = {
     email: string;
     role: MemberRole | null;
   }[];
+  total: number;
 };
 
 export const updateMemberRoleSchema = z.object({
