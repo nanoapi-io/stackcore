@@ -4,8 +4,6 @@ import type { Project } from "../../db/models/project.ts";
 export const createProjectPayloadSchema = z.object({
   name: z.string(),
   workspaceId: z.number(),
-  provider: z.enum(["github", "gitlab"]).nullable(),
-  providerId: z.string().nullable(),
 });
 
 export type CreateProjectPayload = z.infer<
@@ -44,9 +42,7 @@ export function prepareGetProjects(payload: {
 }
 
 export const updateProjectSchema = z.object({
-  name: z.string().optional(),
-  provider: z.enum(["github", "gitlab"]).optional().nullable(),
-  providerId: z.string().optional().nullable(),
+  name: z.string(),
 });
 
 export type UpdateProjectPayload = z.infer<

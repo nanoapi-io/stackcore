@@ -32,8 +32,6 @@ Deno.test("create a project", async () => {
     const { url, method, body } = ProjectApiTypes.prepareCreateProject({
       name: "Test Project",
       workspaceId: workspace.id,
-      provider: "github",
-      providerId: "123456",
     });
 
     const createResponse = await api.handle(
@@ -58,8 +56,6 @@ Deno.test("create a project", async () => {
 
     assertEquals(project.name, "Test Project");
     assertEquals(project.workspace_id, workspace.id);
-    assertEquals(project.provider, "github");
-    assertEquals(project.provider_id, "123456");
   } finally {
     await resetTables();
     await destroyKyselyDb();
@@ -92,16 +88,12 @@ Deno.test("create a project with a duplicate name should fail", async () => {
       userId,
       "Test Project",
       workspace.id,
-      "github",
-      "123456",
     );
 
     // Try to create a project with the same name
     const { url, method, body } = ProjectApiTypes.prepareCreateProject({
       name: "Test Project",
       workspaceId: workspace.id,
-      provider: "github",
-      providerId: "123456",
     });
 
     const response = await api.handle(
@@ -152,8 +144,6 @@ Deno.test("create a project - non-member of workspace", async () => {
     const { url, method, body } = ProjectApiTypes.prepareCreateProject({
       name: "Unauthorized Project",
       workspaceId: workspace.id,
-      provider: null,
-      providerId: null,
     });
 
     const response = await api.handle(
@@ -187,8 +177,6 @@ Deno.test("create project - invalid input validation", async () => {
     const { url, method, body } = ProjectApiTypes.prepareCreateProject({
       name: "Test Project",
       workspaceId: 1,
-      provider: "github",
-      providerId: "123456",
     });
 
     const response = await api.handle(
@@ -208,8 +196,6 @@ Deno.test("create project - invalid input validation", async () => {
       .prepareCreateProject({
         name: "Test Project",
         workspaceId: 1,
-        provider: "github",
-        providerId: "123456",
       });
 
     const response2 = await api.handle(
@@ -257,8 +243,6 @@ Deno.test("get user projects", async () => {
         userId,
         `Project ${i}`,
         workspace.id,
-        null,
-        null,
       );
     }
 
@@ -319,8 +303,6 @@ Deno.test("get user projects, pagination", async () => {
         userId,
         `Project ${i}`,
         workspace.id,
-        null,
-        null,
       );
     }
 
@@ -381,8 +363,6 @@ Deno.test("get user projects, search by name", async () => {
         userId,
         `Test Project ${i}`,
         workspace.id,
-        null,
-        null,
       );
     }
 
@@ -495,8 +475,6 @@ Deno.test("update a project", async () => {
     const { url, method, body } = ProjectApiTypes.prepareCreateProject({
       name: "Original Project Name",
       workspaceId: workspace.id,
-      provider: "github",
-      providerId: "123456",
     });
 
     const createResponse = await api.handle(
@@ -523,8 +501,6 @@ Deno.test("update a project", async () => {
     const { url: url2, method: method2, body: body2 } = ProjectApiTypes
       .prepareUpdateProject(project.id, {
         name: "Updated Project Name",
-        provider: "gitlab",
-        providerId: "654321",
       });
 
     const response = await api.handle(
@@ -550,8 +526,6 @@ Deno.test("update a project", async () => {
       .executeTakeFirstOrThrow();
 
     assertEquals(updatedProject.name, "Updated Project Name");
-    assertEquals(updatedProject.provider, "gitlab");
-    assertEquals(updatedProject.provider_id, "654321");
   } finally {
     await resetTables();
     await destroyKyselyDb();
@@ -584,8 +558,6 @@ Deno.test("update a project - non-member", async () => {
       userId,
       "Test Project",
       workspaceNM.id,
-      null,
-      null,
     );
 
     // Get the project from the database for its ID
@@ -651,15 +623,11 @@ Deno.test("update project - duplicate name in same workspace", async () => {
       userId,
       "Project 1",
       workspace.id,
-      null,
-      null,
     );
     await projectService.createProject(
       userId,
       "Project 2",
       workspace.id,
-      null,
-      null,
     );
 
     // Get the second project
@@ -724,8 +692,6 @@ Deno.test("delete a project", async () => {
       userId,
       "Test Project",
       workspace.id,
-      null,
-      null,
     );
 
     // Get the project from the database for its ID
@@ -790,8 +756,6 @@ Deno.test("delete a project - non-member", async () => {
       userId,
       "Test Project",
       workspaceNM.id,
-      null,
-      null,
     );
 
     // Get the project from the database for its ID

@@ -9,8 +9,6 @@ import type {
 export interface ProjectTable {
   id: Generated<number>;
   name: string;
-  provider: "github" | "gitlab" | null;
-  provider_id: string | null;
   workspace_id: number;
   created_at: ColumnType<Date>;
 }

@@ -154,7 +154,12 @@ export default function LoginPage() {
 
       // Redirect to the location parameter or the root page
       const redirectLocation = searchParams.get("from") || "/";
-      navigate(redirectLocation);
+
+      // Small delay to ensure all auth state is updated before redirecting
+      // Should be small enough to not be noticeable to the user
+      setTimeout(() => {
+        navigate(redirectLocation);
+      }, 100);
     } catch (error) {
       toast({
         title: "Unexpected error",
@@ -250,10 +255,7 @@ export default function LoginPage() {
                     className="space-y-5"
                   >
                     <FormDescription className="text-center">
-                      We sent a 6-digit code to
-                      <div className="text-foreground">
-                        {emailForm.getValues("email")}
-                      </div>
+                      We sent a 6-digit code to {emailForm.getValues("email")}
                     </FormDescription>
 
                     <FormField

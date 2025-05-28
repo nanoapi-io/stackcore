@@ -13,8 +13,6 @@ export class ProjectService {
     userId: number,
     name: string,
     workspaceId: number,
-    provider: "github" | "gitlab" | null,
-    providerId: string | null,
   ): Promise<{
     error?: string;
   }> {
@@ -54,8 +52,6 @@ export class ProjectService {
       .values({
         name,
         workspace_id: workspaceId,
-        provider: provider,
-        provider_id: providerId,
         created_at: new Date(),
       })
       .execute();
@@ -170,9 +166,7 @@ export class ProjectService {
     userId: number,
     projectId: number,
     updates: {
-      name?: string;
-      provider?: "github" | "gitlab" | null;
-      providerId?: string | null;
+      name: string;
     },
   ): Promise<{
     error?: string;
@@ -195,8 +189,6 @@ export class ProjectService {
       .where("workspace.deactivated", "=", false)
       .select([
         "project.name",
-        "project.provider",
-        "project.provider_id",
         "project.workspace_id",
       ])
       .executeTakeFirst();
@@ -223,9 +215,7 @@ export class ProjectService {
     await db
       .updateTable("project")
       .set({
-        name: updates.name ?? project.name,
-        provider: updates.provider ?? project.provider,
-        provider_id: updates.providerId ?? project.provider_id,
+        name: updates.name,
       })
       .where("id", "=", projectId)
       .execute();

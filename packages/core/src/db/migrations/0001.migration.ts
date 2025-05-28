@@ -96,13 +96,6 @@ export async function up(db: Kysely<any>): Promise<void> {
     .createTable("project")
     .addColumn("id", "serial", (col) => col.primaryKey())
     .addColumn("name", "varchar(255)", (col) => col.notNull())
-    .addColumn(
-      "provider",
-      "varchar(255)",
-      (col) =>
-        col.check(sql`provider IN ('github', 'gitlab') OR provider IS NULL`),
-    )
-    .addColumn("provider_id", "varchar(255)")
     .addColumn("workspace_id", "integer", (col) => col.notNull())
     .addColumn(
       "created_at",

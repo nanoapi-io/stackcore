@@ -151,7 +151,8 @@ export default function WorkspaceMembers() {
             >
               {row.original.role}
             </Badge>
-            {context.workspace.role === MemberApiTypes.ADMIN_ROLE && (
+            {(context.workspace.role === MemberApiTypes.ADMIN_ROLE &&
+              row.original.email !== coreApi.getUserFromToken()?.email) && (
               <EditMemberDialog
                 workspace={context.workspace}
                 member={row.original}

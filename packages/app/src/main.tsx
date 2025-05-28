@@ -17,6 +17,8 @@ import { RequireAuth } from "./guards/RequireAuth.tsx";
 import WorkspaceSubscription from "./pages/workspaces/workspace/subscription.tsx";
 import LoggedOutLayout from "./layout/loggedOut.tsx";
 import InvitationClaimPage from "./pages/invitations/claim.tsx";
+import ProjectsPage from "./pages/projects/index.tsx";
+import AddProjectPage from "./pages/projects/add.tsx";
 
 const router = createBrowserRouter([
   {
@@ -50,6 +52,8 @@ const router = createBrowserRouter([
           },
         ],
       },
+      { path: "projects", Component: ProjectsPage },
+      { path: "projects/add", Component: AddProjectPage },
     ],
   },
 ]);

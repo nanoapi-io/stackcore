@@ -27,7 +27,7 @@ export default function IndexPage() {
   const coreApi = useCoreApi();
   const { workspaces, selectedWorkspaceId, isInitialized } = useWorkspace();
 
-  const [user, setUser] = useState<{ userId: string; email: string } | null>(
+  const [user, setUser] = useState<{ userId: number; email: string } | null>(
     coreApi.getUserFromToken(),
   );
   const [recentProjects, setRecentProjects] = useState<Project[]>([]);

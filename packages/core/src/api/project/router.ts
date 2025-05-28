@@ -25,8 +25,6 @@ router.post("/", authMiddleware, async (ctx) => {
     session.userId,
     parsedBody.data.name,
     parsedBody.data.workspaceId,
-    parsedBody.data.provider,
-    parsedBody.data.providerId,
   );
 
   if (error) {
@@ -122,8 +120,6 @@ router.patch("/:projectId", authMiddleware, async (ctx) => {
     parsedParams.data.projectId,
     {
       name: parsedBody.data.name,
-      provider: parsedBody.data.provider,
-      providerId: parsedBody.data.providerId,
     },
   );
 

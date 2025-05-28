@@ -5,7 +5,7 @@ type CoreApiContextType = {
   token: string | null;
   login: (token: string) => void;
   logout: () => void;
-  getUserFromToken: () => { userId: string; email: string } | null;
+  getUserFromToken: () => { userId: number; email: string } | null;
   handleRequest: (
     url: string,
     method: string,
@@ -56,7 +56,7 @@ export function CoreApiProvider(
       const payload = JSON.parse(atob(payloadBase64));
 
       return {
-        userId: payload.userId, // subject claim contains user ID
+        userId: Number(payload.userId), // subject claim contains user ID
         email: payload.email,
       };
     } catch (error) {
