@@ -5,6 +5,7 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -199,9 +200,6 @@ export default function WorkspaceMembers() {
         {context.workspace.role === MemberApiTypes.ADMIN_ROLE && (
           <InviteMemberDialog
             workspace={context.workspace}
-            onInvited={() => {
-              getMembers(pagination);
-            }}
             disable={isBusy}
           />
         )}
@@ -277,7 +275,6 @@ export default function WorkspaceMembers() {
 function InviteMemberDialog(
   props: {
     workspace: Workspace;
-    onInvited: () => void;
     disable: boolean;
   },
 ) {
@@ -323,7 +320,7 @@ function InviteMemberDialog(
         title: "Invitation sent",
         description: "Invitation sent successfully",
       });
-      props.onInvited();
+      setOpen(false);
     } catch (error) {
       console.error(error);
       toast({
@@ -347,6 +344,11 @@ function InviteMemberDialog(
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Invite a new member</DialogTitle>
+          <DialogDescription>
+            Send an email invitation to someone to join this workspace. They
+            will receive an email with a link to accept the invitation and join
+            as a member.
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -454,6 +456,11 @@ function EditMemberDialog(
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Update role for {props.member.email}</DialogTitle>
+          <DialogDescription>
+            Change the member's role in this workspace. Admins can manage
+            workspace settings, invite new members, and modify member roles.
+            Members have standard access to workspace resources.
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
