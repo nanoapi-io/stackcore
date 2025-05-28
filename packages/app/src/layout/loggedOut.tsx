@@ -1,18 +1,13 @@
 import { Moon, Sun } from "lucide-react";
 import { Button } from "../components/shadcn/Button.tsx";
 import { useTheme } from "../contexts/ThemeProvider.tsx";
-import { cn } from "../lib/utils.ts";
+import { Outlet } from "react-router";
 
-export default function LoggedOutLayout(
-  { children, className, ...props }: {
-    children: React.ReactNode;
-    className?: string;
-  },
-) {
+export default function LoggedOutLayout() {
   const { theme, setTheme } = useTheme();
 
   return (
-    <div {...props} className={cn("min-h-screen", className)}>
+    <div>
       <Button
         variant="ghost"
         size="icon"
@@ -21,7 +16,7 @@ export default function LoggedOutLayout(
       >
         {theme === "light" ? <Moon /> : <Sun />}
       </Button>
-      {children}
+      <Outlet />
     </div>
   );
 }

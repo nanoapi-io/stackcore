@@ -15,9 +15,16 @@ import WorkspaceMembers from "./pages/workspaces/workspace/members.tsx";
 import LoggedInLayout from "./layout/loggedIn.tsx";
 import { RequireAuth } from "./guards/RequireAuth.tsx";
 import WorkspaceSubscription from "./pages/workspaces/workspace/subscription.tsx";
+import LoggedOutLayout from "./layout/loggedOut.tsx";
 
 const router = createBrowserRouter([
-  { path: "/login", Component: LoginPage },
+  {
+    element: <LoggedOutLayout />,
+    children: [
+      { path: "/login", Component: LoginPage },
+    ],
+  },
+
   {
     element: (
       <RequireAuth>
@@ -28,7 +35,7 @@ const router = createBrowserRouter([
     ),
     children: [
       { index: true, Component: IndexPage },
-      { path: "workspaces/new", element: <AddWorkspacePage /> },
+      { path: "workspaces/add", element: <AddWorkspacePage /> },
       {
         path: "workspaces/:workspaceId",
         Component: WorkspaceBase,

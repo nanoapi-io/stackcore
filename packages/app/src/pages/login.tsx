@@ -3,6 +3,7 @@ import { Button } from "../components/shadcn/Button.tsx";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from "../components/shadcn/Card.tsx";
@@ -13,8 +14,7 @@ import {
   InputOTPSlot,
 } from "../components/shadcn/InputOTP.tsx";
 import { toast } from "../components/shadcn/hooks/use-toast.tsx";
-import { ChevronLeft, Loader } from "lucide-react";
-import LoggedOutLayout from "../layout/loggedOut.tsx";
+import { ArrowRight, ChevronLeft, Loader, Mail, Shield } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router";
 import { useCoreApi } from "../contexts/CoreApi.tsx";
 import z from "zod";
@@ -168,103 +168,174 @@ export default function LoginPage() {
   }
 
   return (
-    <LoggedOutLayout className="flex h-screen items-center justify-center">
-      <Card className="w-full max-w-md m-5">
-        <CardHeader>
-          <CardTitle className="flex justify-center items-center gap-2">
-            <img src="/logo.png" alt="Logo" width={32} height={32} />
-            Sign in / up
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {step === "email"
-            ? (
-              <Form {...emailForm}>
-                <form
-                  onSubmit={emailForm.handleSubmit(onEmailSubmit)}
-                  className="flex flex-col items-center space-y-4"
-                >
-                  <FormField
-                    control={emailForm.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button
-                    type="submit"
-                    disabled={isBusy}
-                    className="flex items-center space-x-2"
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="w-full max-w-md space-y-6">
+        {/* Welcome Card */}
+        <Card>
+          <CardHeader className="flex flex-col items-center gap-2">
+            <CardTitle className="flex flex-col items-center gap-2">
+              <img src="/logo.png" alt="Logo" width={32} height={32} />
+              <div className="text-2xl">
+                Welcome to Stackcore
+              </div>
+            </CardTitle>
+            <CardDescription>
+              {step === "email"
+                ? "Enter your email to get started with secure passwordless authentication"
+                : "Check your email for the verification code"}
+            </CardDescription>
+          </CardHeader>
+        </Card>
+
+        {/* Auth Card */}
+        <Card>
+          <CardHeader className="flex flex-col items-center gap-2">
+            <CardTitle className="flex items-center gap-2">
+              {step === "email"
+                ? (
+                  <>
+                    <Mail />
+                    Sign In / Sign Up
+                  </>
+                )
+                : (
+                  <>
+                    <Shield />
+                    Verify Your Email
+                  </>
+                )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {step === "email"
+              ? (
+                <Form {...emailForm}>
+                  <form
+                    onSubmit={emailForm.handleSubmit(onEmailSubmit)}
+                    className="space-y-5"
                   >
-                    {isBusy && <Loader className="animate-spin" />}
-                    Send one time password
-                  </Button>
-                </form>
-              </Form>
-            )
-            : (
-              <Form {...otpForm}>
-                <form
-                  onSubmit={otpForm.handleSubmit(handleOtpSubmit)}
-                  className="flex flex-col items-center space-y-4"
-                >
-                  <FormDescription>
-                    A one-time password was sent to
-                    <br />
-                    {emailForm.getValues("email")}.
-                  </FormDescription>
-                  <FormField
-                    control={otpForm.control}
-                    name="otp"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>One-Time Password</FormLabel>
-                        <FormControl>
-                          <InputOTP maxLength={6} {...field}>
-                            <InputOTPGroup>
-                              <InputOTPSlot index={0} />
-                              <InputOTPSlot index={1} />
-                              <InputOTPSlot index={2} />
-                              <InputOTPSlot index={3} />
-                              <InputOTPSlot index={4} />
-                              <InputOTPSlot index={5} />
-                            </InputOTPGroup>
-                          </InputOTP>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="secondary"
-                      type="button"
-                      disabled={isBusy}
-                      onClick={handleOtpBack}
-                    >
-                      <ChevronLeft />
-                      Back
-                    </Button>
+                    <FormField
+                      control={emailForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Email Address
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              placeholder="your@email.com"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     <Button
                       type="submit"
                       disabled={isBusy}
-                      className="w-full flex items-center space-x-2"
+                      className="w-full"
                     >
-                      {isBusy && <Loader className="animate-spin" />}
-                      Login
+                      {isBusy ? <Loader /> : <ArrowRight />}
+                      {isBusy ? "Sending..." : "Send Verification Code"}
                     </Button>
-                  </div>
-                </form>
-              </Form>
+                  </form>
+                </Form>
+              )
+              : (
+                <Form {...otpForm}>
+                  <form
+                    onSubmit={otpForm.handleSubmit(handleOtpSubmit)}
+                    className="space-y-5"
+                  >
+                    <FormDescription className="text-center">
+                      We sent a 6-digit code to
+                      <div className="text-foreground">
+                        {emailForm.getValues("email")}
+                      </div>
+                    </FormDescription>
+
+                    <FormField
+                      control={otpForm.control}
+                      name="otp"
+                      render={({ field }) => (
+                        <div className="flex justify-center">
+                          <FormItem>
+                            <div className="text-center">
+                              <FormLabel>
+                                Verification Code
+                              </FormLabel>
+                            </div>
+                            <FormControl>
+                              <InputOTP maxLength={6} {...field}>
+                                <InputOTPGroup>
+                                  <InputOTPSlot index={0} />
+                                  <InputOTPSlot index={1} />
+                                  <InputOTPSlot index={2} />
+                                  <InputOTPSlot index={3} />
+                                  <InputOTPSlot index={4} />
+                                  <InputOTPSlot index={5} />
+                                </InputOTPGroup>
+                              </InputOTP>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        </div>
+                      )}
+                    />
+
+                    <div className="space-y-4">
+                      <Button
+                        type="submit"
+                        disabled={isBusy}
+                        className="w-full"
+                      >
+                        {isBusy ? <Loader /> : <Shield />}
+                        {isBusy ? "Verifying..." : "Verify & Sign In"}
+                      </Button>
+
+                      <Button
+                        variant="secondary"
+                        type="button"
+                        disabled={isBusy}
+                        onClick={handleOtpBack}
+                        className="w-full"
+                      >
+                        <ChevronLeft />
+                        Back to Email
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              )}
+          </CardContent>
+        </Card>
+
+        {/* Footer */}
+        <div className="text-center text-sm text-muted-foreground">
+          {step === "email"
+            ? (
+              <p>
+                We'll send you a secure code to verify your identity.
+                <br />
+                No passwords required.
+              </p>
+            )
+            : (
+              <p>
+                Didn't receive the code? Check your spam folder or
+                <Button
+                  onClick={handleOtpBack}
+                  variant="link"
+                  size="sm"
+                >
+                  try again
+                </Button>
+              </p>
             )}
-        </CardContent>
-      </Card>
-    </LoggedOutLayout>
+        </div>
+      </div>
+    </div>
   );
 }

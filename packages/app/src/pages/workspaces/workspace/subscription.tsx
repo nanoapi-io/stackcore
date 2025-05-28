@@ -4,16 +4,13 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "../../../components/shadcn/Card.tsx";
 import { Button } from "../../../components/shadcn/Button.tsx";
-import {
-  BillingApiTypes,
-  MemberApiTypes,
-  WorkspaceApiTypes,
-} from "@stackcore/core/responses";
-import { CalendarCog, Check, CreditCard, Loader, Loader2 } from "lucide-react";
+import { BillingApiTypes, WorkspaceApiTypes } from "@stackcore/core/responses";
+import { Check, CreditCard, Loader, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogClose,
@@ -161,108 +158,96 @@ export default function WorkspaceSubscription() {
   if (!subscription) {
     return (
       <div className="space-y-4">
-        <Skeleton className="w-full h-10" />
-        <Skeleton className="w-full h-10" />
-        <Skeleton className="w-full h-10" />
-        <Skeleton className="w-full h-10" />
-        <Skeleton className="w-full h-10" />
+        <Skeleton className="w-full h-32" />
+        <Skeleton className="w-full h-20" />
+        <Skeleton className="w-full h-40" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-5">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Subscription status</TableHead>
-            <TableHead>Current Subscription</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          <TableRow>
-            {subscription
-              ? (
-                <>
-                  <TableCell>
-                    <div className="flex flex-col items-start space-y-2">
-                      {context.workspace.access_enabled
-                        ? (
-                          <Badge variant="outline">
-                            Up to date
-                          </Badge>
-                        )
-                        : (
-                          <Badge variant="destructive">
-                            Access disabled. Update your payment method
-                          </Badge>
-                        )}
-                      <Button
-                        onClick={goToStripePortal}
-                        disabled={stripePortalBusy}
-                      >
-                        {stripePortalBusy
-                          ? <Loader className="animate-spin" />
-                          : <CreditCard />}
-                        Invoices and payment method
-                      </Button>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col items-start space-y-2">
-                      <Badge variant="outline">
-                        {subscription.product}{" "}
-                        ({subscription.billingCycle || "unknown"})
-                      </Badge>
-                      {context.workspace.role ===
-                          MemberApiTypes.ADMIN_ROLE && (
-                        <Link
-                          to={`changeSubascription`}
-                        >
-                          <Button>
-                            <CalendarCog />
-                            Update current subscription
-                          </Button>
-                        </Link>
+    <>
+      {/* Current Subscription Status */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Current Subscription</CardTitle>
+          <CardDescription>
+            Manage your workspace subscription and billing
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Subscription status</TableHead>
+                <TableHead>Current Subscription</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    {context.workspace.access_enabled
+                      ? (
+                        <Badge variant="secondary">
+                          Up to date
+                        </Badge>
+                      )
+                      : (
+                        <Badge variant="destructive">
+                          Access disabled. Update your payment method
+                        </Badge>
                       )}
-                      {subscription.cancelAt && (
-                        <div className="text-muted-foreground text-sm">
-                          <p>
-                            Your subscription will be canceled on{" "}
-                            <span className="font-bold">
-                              {new Date(subscription.cancelAt)
-                                .toLocaleDateString()}
-                            </span>.
-                          </p>
-                          <p>
-                            Once cancelled, your subscription will be downgraded
-                            to{" "}
-                            <span className="font-bold">
-                              {subscription.newProductWhenCanceled ||
-                                "unknown"}
-                            </span>{" "}
-                            with{" "}
-                            <span className="font-bold">
-                              {subscription.newBillingCycleWhenCanceled ||
-                                "unknown"}
-                            </span>{" "}
-                            billing.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </TableCell>
-                </>
-              )
-              : (
-                <TableCell colSpan={2}>
-                  <Skeleton className="w-full h-12" />
+                    <Button
+                      onClick={goToStripePortal}
+                      disabled={stripePortalBusy}
+                      size="sm"
+                    >
+                      {stripePortalBusy ? <Loader /> : <CreditCard />}
+                      Invoices and payment method
+                    </Button>
+                  </div>
                 </TableCell>
-              )}
-          </TableRow>
-        </TableBody>
-      </Table>
+                <TableCell>
+                  <div className="flex flex-col items-start space-y-2">
+                    <Badge variant="secondary">
+                      {subscription.product}{" "}
+                      ({subscription.billingCycle || "unknown"})
+                    </Badge>
+                    {subscription.cancelAt && (
+                      <div className="text-muted-foreground text-sm">
+                        <p>
+                          Your subscription will be canceled on{" "}
+                          <span className="font-bold">
+                            {new Date(subscription.cancelAt)
+                              .toLocaleDateString()}
+                          </span>.
+                        </p>
+                        <p>
+                          Once cancelled, your subscription will be downgraded
+                          to{" "}
+                          <span className="font-bold">
+                            {subscription.newProductWhenCanceled ||
+                              "unknown"}
+                          </span>{" "}
+                          with{" "}
+                          <span className="font-bold">
+                            {subscription.newBillingCycleWhenCanceled ||
+                              "unknown"}
+                          </span>{" "}
+                          billing.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
+      {/* Subscription Plans */}
       {subscription.product ===
           WorkspaceApiTypes.CUSTOM_PRODUCT
         ? (
@@ -274,7 +259,6 @@ export default function WorkspaceSubscription() {
                 your subscription.
               </CardDescription>
             </CardHeader>
-
             <CardContent className="text-center">
               <Link
                 to="mailto:support@nanoapi.io"
@@ -286,177 +270,187 @@ export default function WorkspaceSubscription() {
           </Card>
         )
         : (
-          <div className="space-y-4">
-            <div className="flex justify-center">
-              <Tabs
-                value={billingCycle}
-                onValueChange={(value) =>
-                  setBillingCycle(
-                    value as WorkspaceApiTypes.StripeBillingCycle,
-                  )}
-              >
-                <TabsList>
-                  <TabsTrigger value={WorkspaceApiTypes.MONTHLY_BILLING_CYCLE}>
-                    Monthly
-                  </TabsTrigger>
-                  <TabsTrigger value={WorkspaceApiTypes.YEARLY_BILLING_CYCLE}>
-                    Yearly
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Available Plans</CardTitle>
+              <CardDescription>
+                Choose the plan that best fits your needs
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex justify-center">
+                <Tabs
+                  value={billingCycle}
+                  onValueChange={(value) =>
+                    setBillingCycle(
+                      value as WorkspaceApiTypes.StripeBillingCycle,
+                    )}
+                >
+                  <TabsList>
+                    <TabsTrigger
+                      value={WorkspaceApiTypes.MONTHLY_BILLING_CYCLE}
+                    >
+                      Monthly
+                    </TabsTrigger>
+                    <TabsTrigger value={WorkspaceApiTypes.YEARLY_BILLING_CYCLE}>
+                      Yearly
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
 
-            {billingCycle ===
-                WorkspaceApiTypes.MONTHLY_BILLING_CYCLE
-              ? (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <SubscriptionCard
-                    workspaceId={context.workspace.id}
-                    currentSubscription={subscription}
-                    product={WorkspaceApiTypes.BASIC_PRODUCT}
-                    title="Basic"
-                    description="Perfect for trying out the platform"
-                    features={[
-                      "50 credits included",
-                      "0.50 USD per additional credit",
-                    ]}
-                    subscriptionPrice="Free"
-                    billingCycle={WorkspaceApiTypes
-                      .MONTHLY_BILLING_CYCLE}
-                    changeType={getChangeType(
-                      subscription.product,
-                      subscription.billingCycle,
-                      WorkspaceApiTypes.BASIC_PRODUCT,
-                      WorkspaceApiTypes.MONTHLY_BILLING_CYCLE,
-                    )}
-                  />
-                  <SubscriptionCard
-                    workspaceId={context.workspace.id}
-                    currentSubscription={subscription}
-                    product={WorkspaceApiTypes.PRO_PRODUCT}
-                    title="Pro"
-                    description="Great for small teams and growing businesses"
-                    features={[
-                      "100 credits included",
-                      "0.25 USD per additional credit",
-                    ]}
-                    subscriptionPrice="20 USD/month"
-                    billingCycle={WorkspaceApiTypes
-                      .MONTHLY_BILLING_CYCLE}
-                    changeType={getChangeType(
-                      subscription.product,
-                      subscription.billingCycle,
-                      WorkspaceApiTypes.PRO_PRODUCT,
-                      WorkspaceApiTypes.MONTHLY_BILLING_CYCLE,
-                    )}
-                  />
-                  <SubscriptionCard
-                    workspaceId={context.workspace.id}
-                    currentSubscription={subscription}
-                    product={WorkspaceApiTypes.PREMIUM_PRODUCT}
-                    title="Premium"
-                    description="Perfect for medium teams with high volume needs"
-                    features={[
-                      "500 credits included",
-                      "0.10 USD per additional credit",
-                      "Support through discord and email (under 24h)",
-                    ]}
-                    subscriptionPrice="50 USD/month"
-                    billingCycle={WorkspaceApiTypes
-                      .MONTHLY_BILLING_CYCLE}
-                    changeType={getChangeType(
-                      subscription.product,
-                      subscription.billingCycle,
-                      WorkspaceApiTypes.PREMIUM_PRODUCT,
-                      WorkspaceApiTypes.MONTHLY_BILLING_CYCLE,
-                    )}
-                  />
-                  <SubscriptionCard
-                    workspaceId={context.workspace.id}
-                    currentSubscription={subscription}
-                    product={WorkspaceApiTypes.CUSTOM_PRODUCT}
-                    title="Custom pricing"
-                    description="Everything tailored to your needs"
-                    features={[]}
-                    subscriptionPrice="Custom"
-                    billingCycle={WorkspaceApiTypes
-                      .MONTHLY_BILLING_CYCLE}
-                    changeType={getChangeType(
-                      subscription.product,
-                      subscription.billingCycle,
-                      WorkspaceApiTypes.CUSTOM_PRODUCT,
-                      WorkspaceApiTypes.MONTHLY_BILLING_CYCLE,
-                    )}
-                  />
-                </div>
-              )
-              : (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <SubscriptionCard
-                    workspaceId={context.workspace.id}
-                    currentSubscription={subscription}
-                    product={WorkspaceApiTypes.PRO_PRODUCT}
-                    title="Pro"
-                    description="Great for small teams and growing businesses"
-                    features={[
-                      "100 credits included",
-                      "0.25 USD per additional credit",
-                      "Save 20% compared to monthly subscription",
-                    ]}
-                    subscriptionPrice="200 USD/year"
-                    billingCycle={WorkspaceApiTypes
-                      .YEARLY_BILLING_CYCLE}
-                    changeType={getChangeType(
-                      subscription.product,
-                      subscription.billingCycle,
-                      WorkspaceApiTypes.PRO_PRODUCT,
-                      WorkspaceApiTypes.YEARLY_BILLING_CYCLE,
-                    )}
-                  />
-                  <SubscriptionCard
-                    workspaceId={context.workspace.id}
-                    currentSubscription={subscription}
-                    product={WorkspaceApiTypes.PREMIUM_PRODUCT}
-                    title="Premium"
-                    description="Perfect for medium teams with high volume needs"
-                    features={[
-                      "500 credits included",
-                      "0.10 USD per additional credit",
-                      "Support through discord and email (under 24h)",
-                      "Save 20% compared to monthly subscription",
-                    ]}
-                    subscriptionPrice="500 USD/year"
-                    billingCycle={WorkspaceApiTypes
-                      .YEARLY_BILLING_CYCLE}
-                    changeType={getChangeType(
-                      subscription.product,
-                      subscription.billingCycle,
-                      WorkspaceApiTypes.PREMIUM_PRODUCT,
-                      WorkspaceApiTypes.YEARLY_BILLING_CYCLE,
-                    )}
-                  />
-                  <SubscriptionCard
-                    workspaceId={context.workspace.id}
-                    currentSubscription={subscription}
-                    product={WorkspaceApiTypes.CUSTOM_PRODUCT}
-                    title="Custom pricing"
-                    description="Everything tailored to your needs"
-                    features={[]}
-                    subscriptionPrice="Custom"
-                    billingCycle={WorkspaceApiTypes
-                      .YEARLY_BILLING_CYCLE}
-                    changeType={getChangeType(
-                      subscription.product,
-                      subscription.billingCycle,
-                      WorkspaceApiTypes.CUSTOM_PRODUCT,
-                      WorkspaceApiTypes.YEARLY_BILLING_CYCLE,
-                    )}
-                  />
-                </div>
-              )}
-          </div>
+              {billingCycle ===
+                  WorkspaceApiTypes.MONTHLY_BILLING_CYCLE
+                ? (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <SubscriptionCard
+                      workspaceId={context.workspace.id}
+                      currentSubscription={subscription}
+                      product={WorkspaceApiTypes.BASIC_PRODUCT}
+                      title="Basic"
+                      description="Perfect for trying out the platform"
+                      features={[
+                        "50 credits included",
+                        "0.50 USD per additional credit",
+                      ]}
+                      subscriptionPrice="Free"
+                      billingCycle={WorkspaceApiTypes
+                        .MONTHLY_BILLING_CYCLE}
+                      changeType={getChangeType(
+                        subscription.product,
+                        subscription.billingCycle,
+                        WorkspaceApiTypes.BASIC_PRODUCT,
+                        WorkspaceApiTypes.MONTHLY_BILLING_CYCLE,
+                      )}
+                    />
+                    <SubscriptionCard
+                      workspaceId={context.workspace.id}
+                      currentSubscription={subscription}
+                      product={WorkspaceApiTypes.PRO_PRODUCT}
+                      title="Pro"
+                      description="Great for small teams and growing businesses"
+                      features={[
+                        "100 credits included",
+                        "0.25 USD per additional credit",
+                      ]}
+                      subscriptionPrice="20 USD/month"
+                      billingCycle={WorkspaceApiTypes
+                        .MONTHLY_BILLING_CYCLE}
+                      changeType={getChangeType(
+                        subscription.product,
+                        subscription.billingCycle,
+                        WorkspaceApiTypes.PRO_PRODUCT,
+                        WorkspaceApiTypes.MONTHLY_BILLING_CYCLE,
+                      )}
+                    />
+                    <SubscriptionCard
+                      workspaceId={context.workspace.id}
+                      currentSubscription={subscription}
+                      product={WorkspaceApiTypes.PREMIUM_PRODUCT}
+                      title="Premium"
+                      description="Perfect for medium teams with high volume needs"
+                      features={[
+                        "500 credits included",
+                        "0.10 USD per additional credit",
+                        "Support through discord and email (under 24h)",
+                      ]}
+                      subscriptionPrice="50 USD/month"
+                      billingCycle={WorkspaceApiTypes
+                        .MONTHLY_BILLING_CYCLE}
+                      changeType={getChangeType(
+                        subscription.product,
+                        subscription.billingCycle,
+                        WorkspaceApiTypes.PREMIUM_PRODUCT,
+                        WorkspaceApiTypes.MONTHLY_BILLING_CYCLE,
+                      )}
+                    />
+                    <SubscriptionCard
+                      workspaceId={context.workspace.id}
+                      currentSubscription={subscription}
+                      product={WorkspaceApiTypes.CUSTOM_PRODUCT}
+                      title="Custom pricing"
+                      description="Everything tailored to your needs"
+                      features={[]}
+                      subscriptionPrice="Custom"
+                      billingCycle={WorkspaceApiTypes
+                        .MONTHLY_BILLING_CYCLE}
+                      changeType={getChangeType(
+                        subscription.product,
+                        subscription.billingCycle,
+                        WorkspaceApiTypes.CUSTOM_PRODUCT,
+                        WorkspaceApiTypes.MONTHLY_BILLING_CYCLE,
+                      )}
+                    />
+                  </div>
+                )
+                : (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <SubscriptionCard
+                      workspaceId={context.workspace.id}
+                      currentSubscription={subscription}
+                      product={WorkspaceApiTypes.PRO_PRODUCT}
+                      title="Pro"
+                      description="Great for small teams and growing businesses"
+                      features={[
+                        "100 credits included",
+                        "0.25 USD per additional credit",
+                        "Save 20% compared to monthly subscription",
+                      ]}
+                      subscriptionPrice="200 USD/year"
+                      billingCycle={WorkspaceApiTypes
+                        .YEARLY_BILLING_CYCLE}
+                      changeType={getChangeType(
+                        subscription.product,
+                        subscription.billingCycle,
+                        WorkspaceApiTypes.PRO_PRODUCT,
+                        WorkspaceApiTypes.YEARLY_BILLING_CYCLE,
+                      )}
+                    />
+                    <SubscriptionCard
+                      workspaceId={context.workspace.id}
+                      currentSubscription={subscription}
+                      product={WorkspaceApiTypes.PREMIUM_PRODUCT}
+                      title="Premium"
+                      description="Perfect for medium teams with high volume needs"
+                      features={[
+                        "500 credits included",
+                        "0.10 USD per additional credit",
+                        "Support through discord and email (under 24h)",
+                        "Save 20% compared to monthly subscription",
+                      ]}
+                      subscriptionPrice="500 USD/year"
+                      billingCycle={WorkspaceApiTypes
+                        .YEARLY_BILLING_CYCLE}
+                      changeType={getChangeType(
+                        subscription.product,
+                        subscription.billingCycle,
+                        WorkspaceApiTypes.PREMIUM_PRODUCT,
+                        WorkspaceApiTypes.YEARLY_BILLING_CYCLE,
+                      )}
+                    />
+                    <SubscriptionCard
+                      workspaceId={context.workspace.id}
+                      currentSubscription={subscription}
+                      product={WorkspaceApiTypes.CUSTOM_PRODUCT}
+                      title="Custom pricing"
+                      description="Everything tailored to your needs"
+                      features={[]}
+                      subscriptionPrice="Custom"
+                      billingCycle={WorkspaceApiTypes
+                        .YEARLY_BILLING_CYCLE}
+                      changeType={getChangeType(
+                        subscription.product,
+                        subscription.billingCycle,
+                        WorkspaceApiTypes.CUSTOM_PRODUCT,
+                        WorkspaceApiTypes.YEARLY_BILLING_CYCLE,
+                      )}
+                    />
+                  </div>
+                )}
+            </CardContent>
+          </Card>
         )}
-    </div>
+    </>
   );
 }
 
@@ -480,20 +474,22 @@ function SubscriptionCard(props: {
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="grow flex flex-col justify-between space-y-4">
+      <CardContent className="grow flex flex-col justify-between gap-4">
         <div className="text-center text-3xl font-bold">
           {props.subscriptionPrice}
         </div>
 
         <ul className="space-y-3">
           {props.features.map((feature) => (
-            <li key={feature} className="flex items-center space-x-2">
-              <Check className="text-green-500 w-5 h-5" />
-              <span className="text-sm">{feature}</span>
+            <li key={feature} className="flex items-center gap-2 text-sm">
+              <Check />
+              <span>{feature}</span>
             </li>
           ))}
         </ul>
+      </CardContent>
 
+      <CardFooter>
         {props.changeType === "same"
           ? <Button className="w-full" disabled>Current Subscription</Button>
           : props.changeType === "custom"
@@ -501,6 +497,7 @@ function SubscriptionCard(props: {
             <Link
               to="mailto:support@nanoapi.io"
               target="_blank"
+              className="w-full"
             >
               <Button className="w-full">
                 Contact us support@nanoapi.io
@@ -515,7 +512,7 @@ function SubscriptionCard(props: {
               newBillingCycle={props.billingCycle}
             />
           )}
-      </CardContent>
+      </CardFooter>
     </Card>
   );
 }

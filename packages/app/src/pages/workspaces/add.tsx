@@ -2,12 +2,13 @@ import { useState } from "react";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from "../../components/shadcn/Card.tsx";
 import { Input } from "../../components/shadcn/Input.tsx";
 import { Button } from "../../components/shadcn/Button.tsx";
-import { Loader } from "lucide-react";
+import { Briefcase, Loader, Users } from "lucide-react";
 import { useNavigate } from "react-router";
 import { toast } from "../../components/shadcn/hooks/use-toast.tsx";
 import { useCoreApi } from "../../contexts/CoreApi.tsx";
@@ -29,7 +30,7 @@ export default function AddWorkspacePage() {
   const navigate = useNavigate();
 
   const coreApi = useCoreApi();
-  const { refreshWorkspaces } = useWorkspace();
+  const { refreshWorkspaces, setSelectedWorkspaceId } = useWorkspace();
   const [isBusy, setIsBusy] = useState(false);
 
   const formSchema = z.object({
@@ -75,6 +76,8 @@ export default function AddWorkspacePage() {
 
       await refreshWorkspaces();
 
+      setSelectedWorkspaceId(workspace.id);
+
       navigate(`/workspaces/${workspace.id}`);
     } catch (error) {
       console.error(error);
@@ -89,42 +92,77 @@ export default function AddWorkspacePage() {
   }
 
   return (
-    <Card className="mt-20 w-md mx-auto">
-      <CardHeader>
-        <CardTitle>Create new workspace</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="flex flex-col space-y-4"
-          >
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button
-              type="submit"
-              disabled={isBusy}
-              className="flex items-center space-x-2"
-            >
-              {isBusy && <Loader className="animate-spin" />}
-              <div>
-                Create
+    <div className="grow flex items-center justify-center">
+      <div className="w-full max-w-md space-y-6">
+        {/* Welcome Card */}
+        <Card>
+          <CardHeader className="flex flex-col items-center gap-2">
+            <CardTitle className="flex flex-col items-center gap-2">
+              <Briefcase />
+              <div className="text-2xl">
+                Create New Workspace
               </div>
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+            </CardTitle>
+            <CardDescription>
+              Workspaces help you organize your projects and collaborate with
+              your team
+            </CardDescription>
+          </CardHeader>
+        </Card>
+
+        {/* Form Card */}
+        <Card>
+          <CardHeader className="flex flex-col items-center gap-2">
+            <CardTitle className="flex items-center gap-2">
+              <Users />
+              Workspace Details
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-5"
+              >
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Workspace Name
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="My Awesome Workspace"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="submit"
+                  disabled={isBusy}
+                  className="w-full"
+                >
+                  {isBusy && <Loader />}
+                  {isBusy ? "Creating..." : "Create Workspace"}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+
+        {/* Footer */}
+        <div className="text-center text-sm text-muted-foreground">
+          <p>
+            Once created, you can invite team members and start organizing your
+            projects.
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }

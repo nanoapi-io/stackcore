@@ -5,6 +5,7 @@ type CoreApiContextType = {
   token: string | null;
   login: (token: string) => void;
   logout: () => void;
+  getUserFromToken: () => { userId: string; email: string } | null;
   handleRequest: (
     url: string,
     method: string,
@@ -18,6 +19,7 @@ const initialState: CoreApiContextType = {
   token: null,
   login: () => {},
   logout: () => {},
+  getUserFromToken: () => null,
   handleRequest: () => Promise.resolve({} as Response),
 };
 
@@ -42,6 +44,25 @@ export function CoreApiProvider(
   function login(token: string) {
     localStorage.setItem("token", token);
     setToken(token);
+  }
+
+  function getUserFromToken() {
+    if (!token) return null;
+
+    try {
+      // JWT tokens are base64 encoded with 3 parts separated by dots
+      const [, payloadBase64] = token.split(".");
+      // Decode the base64 payload
+      const payload = JSON.parse(atob(payloadBase64));
+
+      return {
+        userId: payload.userId, // subject claim contains user ID
+        email: payload.email,
+      };
+    } catch (error) {
+      console.error("Error decoding JWT token:", error);
+      return null;
+    }
   }
 
   async function handleRequest<T>(
@@ -80,7 +101,14 @@ export function CoreApiProvider(
   return (
     <CoreApiContext.Provider
       {...props}
-      value={{ isAuthenticated: !!token, token, login, logout, handleRequest }}
+      value={{
+        isAuthenticated: !!token,
+        token,
+        login,
+        logout,
+        getUserFromToken,
+        handleRequest,
+      }}
     >
       {children}
     </CoreApiContext.Provider>

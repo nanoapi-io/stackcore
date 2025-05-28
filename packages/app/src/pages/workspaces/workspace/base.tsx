@@ -9,7 +9,6 @@ import { useEffect, useState } from "react";
 import { useWorkspace, type Workspace } from "../../../contexts/Workspace.tsx";
 import {
   Card,
-  CardContent,
   CardHeader,
   CardTitle,
 } from "../../../components/shadcn/Card.tsx";
@@ -103,58 +102,63 @@ export default function WorkspacePage() {
   }, [location.pathname]);
 
   return (
-    <Card className="w-full max-w-7xl mx-auto my-5">
+    <div className="w-full max-w-7xl mx-auto mt-5 space-y-4">
       {workspace
         ? (
           <>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center space-x-1">
-                  <span>Workspace: {workspace.name}</span>
-                  {workspace.isTeam && (
-                    <Badge variant="outline" className="ml-2">Team</Badge>
+            {/* Workspace Header */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center space-x-1">
+                    <span>Workspace: {workspace.name}</span>
+                    {workspace.isTeam && (
+                      <Badge variant="outline" className="ml-2">Team</Badge>
+                    )}
+                  </CardTitle>
+                  {(workspace &&
+                    workspace.role === MemberApiTypes.ADMIN_ROLE &&
+                    workspace.isTeam) && (
+                    <DeactivateWorkspaceDialog
+                      workspace={workspace}
+                    />
                   )}
-                </CardTitle>
-                {(workspace &&
-                  workspace.role === MemberApiTypes.ADMIN_ROLE &&
-                  workspace.isTeam) && (
-                  <DeactivateWorkspaceDialog
-                    workspace={workspace}
-                  />
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Tabs
-                value={tab}
-              >
-                <TabsList>
-                  <TabsTrigger value="members">
-                    <Link to={`/workspaces/${workspaceId}/members`}>
-                      Members
-                    </Link>
-                  </TabsTrigger>
-                  <TabsTrigger value="subscription">
-                    <Link to={`/workspaces/${workspaceId}/subscription`}>
-                      Subscription
-                    </Link>
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-              <Outlet context={{ workspace }} />
-            </CardContent>
+                </div>
+              </CardHeader>
+            </Card>
+
+            {/* Navigation Tabs */}
+            <Card>
+              <CardHeader>
+                <Tabs value={tab}>
+                  <TabsList>
+                    <TabsTrigger value="members">
+                      <Link to={`/workspaces/${workspaceId}/members`}>
+                        Members
+                      </Link>
+                    </TabsTrigger>
+                    <TabsTrigger value="subscription">
+                      <Link to={`/workspaces/${workspaceId}/subscription`}>
+                        Subscription
+                      </Link>
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </CardHeader>
+            </Card>
+
+            {/* Outlet Content */}
+            <Outlet context={{ workspace }} />
           </>
         )
         : (
           <div className="space-y-4">
-            <Skeleton className="w-full h-10" />
-            <Skeleton className="w-full h-10" />
-            <Skeleton className="w-full h-10" />
-            <Skeleton className="w-full h-10" />
-            <Skeleton className="w-full h-10" />
+            <Skeleton className="w-full h-32" />
+            <Skeleton className="w-full h-20" />
+            <Skeleton className="w-full h-40" />
           </div>
         )}
-    </Card>
+    </div>
   );
 }
 

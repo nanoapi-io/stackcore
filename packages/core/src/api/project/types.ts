@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Project } from "../../db/models/project.ts";
 
 export const createProjectPayloadSchema = z.object({
   name: z.string(),
@@ -70,3 +71,8 @@ export function prepareDeleteProject(projectId: number) {
     body: undefined,
   };
 }
+
+export type GetProjectsResponse = {
+  results: Project[];
+  total: number;
+};

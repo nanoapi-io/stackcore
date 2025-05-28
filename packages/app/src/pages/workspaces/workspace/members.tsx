@@ -52,6 +52,13 @@ import { MemberApiTypes } from "@stackcore/core/responses";
 import { useOutletContext } from "react-router";
 import type { WorkspacePageContext } from "./base.tsx";
 import { Separator } from "../../../components/shadcn/Separator.tsx";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../../components/shadcn/Card.tsx";
 
 type Member = {
   id: number;
@@ -133,18 +140,16 @@ export default function WorkspaceMembers() {
       accessorKey: "role",
       header: "Role",
       cell: ({ row }) => {
-        const badgeVariant = row.original.role === MemberApiTypes.ADMIN_ROLE
-          ? "default"
-          : "outline";
-
-        if (context.workspace.role === MemberApiTypes.ADMIN_ROLE) {
-          return (
-            <div className="flex items-center space-x-2">
-              <Badge
-                variant={badgeVariant}
-              >
-                {row.original.role}
-              </Badge>
+        return (
+          <div className="flex items-center space-x-2">
+            <Badge
+              variant={row.original.role === MemberApiTypes.ADMIN_ROLE
+                ? "default"
+                : "secondary"}
+            >
+              {row.original.role}
+            </Badge>
+            {context.workspace.role === MemberApiTypes.ADMIN_ROLE && (
               <EditMemberDialog
                 workspace={context.workspace}
                 member={row.original}
@@ -153,17 +158,9 @@ export default function WorkspaceMembers() {
                 }}
                 disable={isBusy}
               />
-            </div>
-          );
-        } else {
-          return (
-            <Badge
-              variant={badgeVariant}
-            >
-              {row.original.role}
-            </Badge>
-          );
-        }
+            )}
+          </div>
+        );
       },
     },
   ];
@@ -190,71 +187,80 @@ export default function WorkspaceMembers() {
   });
 
   return (
-    <div>
-      <div className="border rounded-md">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder ? null : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext(),
-                      )}
-                    </TableHead>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {isBusy
-              ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={table.getAllColumns().length}
-                    className="space-y-2"
-                  >
-                    <Separator className="w-full h-4" />
-                    <Separator className="w-full h-4" />
-                    <Separator className="w-full h-4" />
-                  </TableCell>
-                </TableRow>
-              )
-              : table.getRowModel().rows?.length
-              ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
+    <Card>
+      <CardHeader>
+        <CardTitle>Workspace Members</CardTitle>
+        <CardDescription>
+          Manage members and their roles in this workspace
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="border rounded-md">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => {
+                    return (
+                      <TableHead key={header.id}>
+                        {header.isPlaceholder ? null : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
                         )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              )
-              : (
-                <TableRow>
-                  <TableCell colSpan={3} className="h-24 text-center">
-                    No results.
-                  </TableCell>
+                      </TableHead>
+                    );
+                  })}
                 </TableRow>
-              )}
-          </TableBody>
-        </Table>
-      </div>
-      <div className="mt-4">
+              ))}
+            </TableHeader>
+            <TableBody>
+              {isBusy
+                ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={table.getAllColumns().length}
+                      className="space-y-2"
+                    >
+                      <Separator className="w-full h-4" />
+                      <Separator className="w-full h-4" />
+                      <Separator className="w-full h-4" />
+                    </TableCell>
+                  </TableRow>
+                )
+                : table.getRowModel().rows?.length
+                ? (
+                  table.getRowModel().rows.map((row) => (
+                    <TableRow
+                      key={row.id}
+                      data-state={row.getIsSelected() && "selected"}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id}>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                )
+                : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={table.getAllColumns().length}
+                      className="h-24 text-center"
+                    >
+                      No results.
+                    </TableCell>
+                  </TableRow>
+                )}
+            </TableBody>
+          </Table>
+        </div>
         <DataTablePagination table={table} />
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 
