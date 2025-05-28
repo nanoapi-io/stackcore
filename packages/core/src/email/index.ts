@@ -2,7 +2,6 @@ import type {
   StripeBillingCycle,
   StripeProduct,
 } from "../db/models/workspace.ts";
-import settings from "../settings.ts";
 import { ConsoleEmailService } from "./console/index.ts";
 
 export function getEmailService() {

@@ -77,9 +77,6 @@ export default {
       },
     },
   },
-  FRONTEND: {
-    URL: getEnv("FRONTEND_URL", "http://localhost:3000"),
-  },
   DATABASE: {
     HOST: getEnv("DATABASE_HOST", "localhost"),
     PORT: parseInt(getEnv("DATABASE_PORT", "5432")),
