@@ -8,7 +8,7 @@ import {
   Plus,
   Settings,
   Sun,
-  User,
+  UserCog,
 } from "lucide-react";
 import { Button } from "../components/shadcn/Button.tsx";
 import { useTheme } from "../contexts/ThemeProvider.tsx";
@@ -17,7 +17,6 @@ import { useCoreApi } from "../contexts/CoreApi.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -175,14 +174,12 @@ export default function LoggedInLayout() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56">
-                  <DropdownMenuGroup>
-                    <DropdownMenuItem>
-                      <Link to="/user" className="flex items-center gap-2">
-                        <User size={16} />
-                        Profile
-                      </Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile" className="flex items-center gap-2">
+                      <UserCog size={16} />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={logout}>
                     <LogOut size={16} />

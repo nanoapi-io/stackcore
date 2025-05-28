@@ -19,6 +19,7 @@ import LoggedOutLayout from "./layout/loggedOut.tsx";
 import InvitationClaimPage from "./pages/invitations/claim.tsx";
 import ProjectsPage from "./pages/projects/index.tsx";
 import AddProjectPage from "./pages/projects/add.tsx";
+import ProfilePage from "./pages/profile.tsx";
 
 const router = createBrowserRouter([
   {
@@ -38,6 +39,7 @@ const router = createBrowserRouter([
     ),
     children: [
       { index: true, Component: IndexPage },
+      { path: "profile", Component: ProfilePage },
       { path: "invitations/claim", Component: InvitationClaimPage },
       { path: "workspaces/add", element: <AddWorkspacePage /> },
       {
