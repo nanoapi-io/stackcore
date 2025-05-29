@@ -41,6 +41,14 @@ export function prepareGetProjects(payload: {
   };
 }
 
+export function prepareGetProjectDetails(projectId: number) {
+  return {
+    url: `/projects/${projectId}`,
+    method: "GET",
+    body: undefined,
+  };
+}
+
 export const updateProjectSchema = z.object({
   name: z.string(),
 });
@@ -72,3 +80,5 @@ export type GetProjectsResponse = {
   results: Project[];
   total: number;
 };
+
+export type GetProjectDetailsResponse = Project;

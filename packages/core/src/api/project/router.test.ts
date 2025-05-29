@@ -215,6 +215,226 @@ Deno.test("create project - invalid input validation", async () => {
   }
 });
 
+// --- GET PROJECT DETAILS TESTS ---
+Deno.test("get project details", async () => {
+  initKyselyDb();
+  await resetTables();
+
+  try {
+    const { userId, token } = await createTestUserAndToken();
+
+    // Create workspace and project
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace("Test Workspace", userId);
+
+    const workspace = await db
+      .selectFrom("workspace")
+      .selectAll()
+      .where("name", "=", "Test Workspace")
+      .executeTakeFirstOrThrow();
+
+    const projectService = new ProjectService();
+    await projectService.createProject(userId, "Test Project", workspace.id);
+
+    const project = await db
+      .selectFrom("project")
+      .selectAll()
+      .where("name", "=", "Test Project")
+      .where("workspace_id", "=", workspace.id)
+      .executeTakeFirstOrThrow();
+
+    // Get project details via API
+    const { url, method } = ProjectApiTypes.prepareGetProjectDetails(
+      project.id,
+    );
+
+    const response = await api.handle(
+      new Request(`http://localhost:3000${url}`, {
+        method,
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      }),
+    );
+
+    assertEquals(response?.status, 200);
+    const responseBody = await response?.json();
+    console.log(1111111, responseBody);
+    assertEquals(responseBody.id, project.id);
+    assertEquals(responseBody.name, "Test Project");
+    assertEquals(responseBody.workspace_id, workspace.id);
+    assertEquals(
+      new Date(responseBody.created_at).getTime(),
+      project.created_at.getTime(),
+    );
+  } finally {
+    await resetTables();
+    await destroyKyselyDb();
+  }
+});
+
+Deno.test("get project details - non-member of workspace", async () => {
+  initKyselyDb();
+  await resetTables();
+
+  try {
+    // Create first user with workspace and project
+    const { userId } = await createTestUserAndToken();
+
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace("Test Workspace", userId);
+
+    const workspace = await db
+      .selectFrom("workspace")
+      .selectAll()
+      .where("name", "=", "Test Workspace")
+      .executeTakeFirstOrThrow();
+
+    const projectService = new ProjectService();
+    await projectService.createProject(userId, "Test Project", workspace.id);
+
+    const project = await db
+      .selectFrom("project")
+      .selectAll()
+      .where("name", "=", "Test Project")
+      .where("workspace_id", "=", workspace.id)
+      .executeTakeFirstOrThrow();
+
+    // Create second user (not a member of the workspace)
+    const { token: nonMemberToken } = await createTestUserAndToken();
+
+    // Try to get project details as non-member
+    const { url, method } = ProjectApiTypes.prepareGetProjectDetails(
+      project.id,
+    );
+
+    const response = await api.handle(
+      new Request(`http://localhost:3000${url}`, {
+        method,
+        headers: {
+          "Authorization": `Bearer ${nonMemberToken}`,
+        },
+      }),
+    );
+
+    assertEquals(response?.status, 400);
+    const responseBody = await response?.json();
+    assertEquals(responseBody.error, "project_not_found");
+  } finally {
+    await resetTables();
+    await destroyKyselyDb();
+  }
+});
+
+Deno.test("get project details - project not found", async () => {
+  initKyselyDb();
+  await resetTables();
+
+  try {
+    const { token } = await createTestUserAndToken();
+
+    // Try to get details for non-existent project
+    const { url, method } = ProjectApiTypes.prepareGetProjectDetails(999);
+
+    const response = await api.handle(
+      new Request(`http://localhost:3000${url}`, {
+        method,
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      }),
+    );
+
+    assertEquals(response?.status, 400);
+    const responseBody = await response?.json();
+    assertEquals(responseBody.error, "project_not_found");
+  } finally {
+    await resetTables();
+    await destroyKyselyDb();
+  }
+});
+
+Deno.test("get project details - invalid project ID", async () => {
+  initKyselyDb();
+  await resetTables();
+
+  try {
+    const { token } = await createTestUserAndToken();
+
+    // Try to get details with invalid project ID
+    const response = await api.handle(
+      new Request(`http://localhost:3000/projects/invalid`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      }),
+    );
+
+    assertEquals(response?.status, 400);
+  } finally {
+    await resetTables();
+    await destroyKyselyDb();
+  }
+});
+
+Deno.test("get project details - deactivated workspace", async () => {
+  initKyselyDb();
+  await resetTables();
+
+  try {
+    const { userId, token } = await createTestUserAndToken();
+
+    // Create workspace and project
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace("Test Workspace", userId);
+
+    const workspace = await db
+      .selectFrom("workspace")
+      .selectAll()
+      .where("name", "=", "Test Workspace")
+      .executeTakeFirstOrThrow();
+
+    const projectService = new ProjectService();
+    await projectService.createProject(userId, "Test Project", workspace.id);
+
+    const project = await db
+      .selectFrom("project")
+      .selectAll()
+      .where("name", "=", "Test Project")
+      .where("workspace_id", "=", workspace.id)
+      .executeTakeFirstOrThrow();
+
+    // Deactivate the workspace
+    await db
+      .updateTable("workspace")
+      .set({ deactivated: true })
+      .where("id", "=", workspace.id)
+      .execute();
+
+    // Try to get project details from deactivated workspace
+    const { url, method } = ProjectApiTypes.prepareGetProjectDetails(
+      project.id,
+    );
+
+    const response = await api.handle(
+      new Request(`http://localhost:3000${url}`, {
+        method,
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      }),
+    );
+
+    assertEquals(response?.status, 400);
+    const responseBody = await response?.json();
+    assertEquals(responseBody.error, "project_not_found");
+  } finally {
+    await resetTables();
+    await destroyKyselyDb();
+  }
+});
+
 // --- GET PROJECTS TESTS ---
 Deno.test("get user projects", async () => {
   initKyselyDb();

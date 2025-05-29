@@ -51,7 +51,7 @@ import {
 } from "../../../components/shadcn/Select.tsx";
 import { InvitationApiTypes, MemberApiTypes } from "@stackcore/core/responses";
 import { useOutletContext } from "react-router";
-import type { WorkspacePageContext } from "./base.tsx";
+import type { WorkspacePageContext } from "./index.tsx";
 import { Separator } from "../../../components/shadcn/Separator.tsx";
 import {
   Card,

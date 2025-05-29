@@ -26,7 +26,7 @@ import {
 } from "../../../components/shadcn/Dialog.tsx";
 import { toast } from "../../../components/shadcn/hooks/use-toast.tsx";
 import { useCoreApi } from "../../../contexts/CoreApi.tsx";
-import type { WorkspacePageContext } from "./base.tsx";
+import type { WorkspacePageContext } from "./index.tsx";
 import {
   Table,
   TableBody,

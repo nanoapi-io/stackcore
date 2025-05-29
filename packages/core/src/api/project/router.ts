@@ -3,6 +3,7 @@ import { ProjectService } from "./service.ts";
 import { authMiddleware, getSession } from "../auth/middleware.ts";
 import {
   createProjectPayloadSchema,
+  type GetProjectDetailsResponse,
   type GetProjectsResponse,
   updateProjectSchema,
 } from "./types.ts";
@@ -86,6 +87,39 @@ router.get("/", authMiddleware, async (ctx) => {
 
   ctx.response.status = Status.OK;
   ctx.response.body = response as GetProjectsResponse;
+});
+
+// Get project details
+router.get("/:projectId", authMiddleware, async (ctx) => {
+  const session = getSession(ctx);
+
+  const paramSchema = z.object({
+    projectId: z.number().int().min(1),
+  });
+
+  const parsedParams = paramSchema.safeParse({
+    projectId: Number(ctx.params.projectId),
+  });
+
+  if (!parsedParams.success) {
+    ctx.response.status = Status.BadRequest;
+    ctx.response.body = { error: parsedParams.error };
+    return;
+  }
+
+  const response = await projectService.getProjectDetails(
+    session.userId,
+    parsedParams.data.projectId,
+  );
+
+  if ("error" in response) {
+    ctx.response.status = Status.BadRequest;
+    ctx.response.body = { error: response.error };
+    return;
+  }
+
+  ctx.response.status = Status.OK;
+  ctx.response.body = response as GetProjectDetailsResponse;
 });
 
 // Update a project

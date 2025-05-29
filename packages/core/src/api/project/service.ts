@@ -1,5 +1,8 @@
 import { db } from "../../db/database.ts";
-import type { GetProjectsResponse } from "./types.ts";
+import type {
+  GetProjectDetailsResponse,
+  GetProjectsResponse,
+} from "./types.ts";
 
 export const projectAlreadyExistsErrorCode = "project_already_exists";
 export const projectNotFoundError = "project_not_found";
@@ -57,6 +60,39 @@ export class ProjectService {
       .execute();
 
     return {};
+  }
+
+  /**
+   * Get project details by ID
+   */
+  public async getProjectDetails(
+    userId: number,
+    projectId: number,
+  ): Promise<{ error?: string } | GetProjectDetailsResponse> {
+    // Get project with access check via workspace membership
+    const project = await db
+      .selectFrom("project")
+      .innerJoin(
+        "workspace",
+        "workspace.id",
+        "project.workspace_id",
+      )
+      .innerJoin(
+        "member",
+        "member.workspace_id",
+        "project.workspace_id",
+      )
+      .where("project.id", "=", projectId)
+      .where("member.user_id", "=", userId)
+      .where("workspace.deactivated", "=", false)
+      .selectAll("project")
+      .executeTakeFirst();
+
+    if (!project) {
+      return { error: projectNotFoundError };
+    }
+
+    return project as GetProjectDetailsResponse;
   }
 
   /**
@@ -121,7 +157,7 @@ export class ProjectService {
     // Get paginated projects
     const projects = await db
       .selectFrom("project")
-      .selectAll()
+      .selectAll("project")
       .innerJoin(
         "member",
         "member.workspace_id",

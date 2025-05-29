@@ -10,7 +10,7 @@ import LoginPage from "./pages/login.tsx";
 import { CoreApiProvider } from "./contexts/CoreApi.tsx";
 import { WorkspaceProvider } from "./contexts/Workspace.tsx";
 import AddWorkspacePage from "./pages/workspaces/add.tsx";
-import WorkspaceBase from "./pages/workspaces/workspace/base.tsx";
+import WorkspaceBase from "./pages/workspaces/workspace/index.tsx";
 import WorkspaceMembers from "./pages/workspaces/workspace/members.tsx";
 import LoggedInLayout from "./layout/loggedIn.tsx";
 import { RequireAuth } from "./guards/RequireAuth.tsx";
@@ -20,6 +20,12 @@ import InvitationClaimPage from "./pages/invitations/claim.tsx";
 import ProjectsPage from "./pages/projects/index.tsx";
 import AddProjectPage from "./pages/projects/add.tsx";
 import ProfilePage from "./pages/profile.tsx";
+import ProjectBase from "./pages/projects/project/base.tsx";
+import ProjectIndex from "./pages/projects/project/index.tsx";
+import ProjectManifests from "./pages/projects/project/manifests.tsx";
+import ProjectManifestsAdd from "./pages/projects/project/manifests/add/index.tsx";
+import ProjectManifest from "./pages/projects/project/manifests/manifest.tsx";
+import ProjectManifestsAddCli from "./pages/projects/project/manifests/add/cli.tsx";
 
 const router = createBrowserRouter([
   {
@@ -41,7 +47,7 @@ const router = createBrowserRouter([
       { index: true, Component: IndexPage },
       { path: "profile", Component: ProfilePage },
       { path: "invitations/claim", Component: InvitationClaimPage },
-      { path: "workspaces/add", element: <AddWorkspacePage /> },
+      { path: "workspaces/add", Component: AddWorkspacePage },
       {
         path: "workspaces/:workspaceId",
         Component: WorkspaceBase,
@@ -56,6 +62,26 @@ const router = createBrowserRouter([
       },
       { path: "projects", Component: ProjectsPage },
       { path: "projects/add", Component: AddProjectPage },
+      {
+        path: "projects/:projectId",
+        Component: ProjectBase,
+        children: [
+          {
+            path: "",
+            Component: ProjectIndex,
+            children: [
+              { index: true, element: <Navigate to="manifests" replace /> },
+              { path: "manifests", Component: ProjectManifests },
+            ],
+          },
+          { path: "manifests/add", Component: ProjectManifestsAdd },
+          {
+            path: "manifests/add/cli",
+            Component: ProjectManifestsAddCli,
+          },
+          { path: "manifests/:manifestId", Component: ProjectManifest },
+        ],
+      },
     ],
   },
 ]);
