@@ -1,2 +1,23 @@
-export type { DependencyManifest } from "./dependencyManifest/types.ts";
+export {
+  type DependencyManifest,
+  type Metric,
+  metricCharacterCount,
+  metricCodeCharacterCount,
+  metricCodeLineCount,
+  metricCyclomaticComplexity,
+  metricDependencyCount,
+  metricDependentCount,
+  metricLinesCount,
+  type SymbolType,
+  symbolTypeClass,
+  symbolTypeDelegate,
+  symbolTypeEnum,
+  symbolTypeFunction,
+  symbolTypeInterface,
+  symbolTypeRecord,
+  symbolTypeStruct,
+  symbolTypeTypedef,
+  symbolTypeUnion,
+  symbolTypeVariable,
+} from "./dependencyManifest/types.ts";
 export type { AuditManifest } from "./auditManifest/types.ts";

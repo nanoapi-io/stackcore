@@ -10,7 +10,7 @@ import {
 import { Input } from "../../../../../components/shadcn/Input.tsx";
 import { Button } from "../../../../../components/shadcn/Button.tsx";
 import { ExternalLink, Loader, Terminal, Upload } from "lucide-react";
-import { toast } from "../../../../../components/shadcn/hooks/use-toast.tsx";
+import { toast } from "sonner";
 import { useCoreApi } from "../../../../../contexts/CoreApi.tsx";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -90,23 +90,14 @@ export default function ProjectManifestsAdd() {
       const createResponseBody = await response
         .json() as ManifestApiTypes.CreateManifestResponse;
 
-      toast({
-        title: "Success",
-        description: "Manifest created successfully.",
-      });
+      toast.success("Manifest created successfully.");
 
       navigate(
         `/projects/${context.project.id}/manifests/${createResponseBody.id}`,
       );
     } catch (error) {
       console.error(error);
-      toast({
-        title: "Error",
-        description: error instanceof Error
-          ? error.message
-          : "Failed to create manifest",
-        variant: "destructive",
-      });
+      toast.error("Failed to create manifest");
     } finally {
       setIsBusy(false);
     }

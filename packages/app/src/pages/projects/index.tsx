@@ -27,7 +27,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { DataTablePagination } from "../../components/shadcn/Datatablepagination.tsx";
-import { toast } from "../../components/shadcn/hooks/use-toast.tsx";
+import { toast } from "sonner";
 import { PencilRuler, Plus } from "lucide-react";
 import { ProjectApiTypes } from "@stackcore/core/responses";
 import { Separator } from "../../components/shadcn/Separator.tsx";
@@ -97,11 +97,7 @@ export default function WorkspaceProjectsPage() {
       setTotal(data.total);
     } catch (error) {
       console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to get projects",
-        variant: "destructive",
-      });
+      toast.error("Failed to get projects");
     } finally {
       setIsBusy(false);
     }

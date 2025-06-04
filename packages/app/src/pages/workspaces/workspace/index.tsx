@@ -34,7 +34,7 @@ import {
   FormLabel,
   FormMessage,
 } from "../../../components/shadcn/Form.tsx";
-import { toast } from "../../../components/shadcn/hooks/use-toast.tsx";
+import { toast } from "sonner";
 import { Input } from "../../../components/shadcn/Input.tsx";
 import { Separator } from "../../../components/shadcn/Separator.tsx";
 import { useCoreApi } from "../../../contexts/CoreApi.tsx";
@@ -202,11 +202,7 @@ function DeactivateWorkspaceDialog(
       );
 
       if (!response.ok || response.status !== 204) {
-        toast({
-          title: "Error",
-          description: "Failed to deactivate workspace",
-          variant: "destructive",
-        });
+        toast.error("Failed to deactivate workspace");
         setIsBusy(false);
         throw new Error("Failed to deactivate workspace");
       }

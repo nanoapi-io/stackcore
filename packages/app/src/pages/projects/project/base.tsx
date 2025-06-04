@@ -2,7 +2,7 @@ import { Outlet, useNavigate, useParams } from "react-router";
 import { useEffect, useState } from "react";
 import { Skeleton } from "../../../components/shadcn/Skeleton.tsx";
 import { ProjectApiTypes } from "@stackcore/core/responses";
-import { toast } from "../../../components/shadcn/hooks/use-toast.tsx";
+import { toast } from "sonner";
 import { useCoreApi } from "../../../contexts/CoreApi.tsx";
 
 export type ProjectPageContext = {
@@ -45,11 +45,7 @@ export default function ProjectBase() {
       setProject(projectData);
     } catch (error) {
       console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to get project",
-        variant: "destructive",
-      });
+      toast.error("Failed to get project");
       navigate("/");
     }
   }

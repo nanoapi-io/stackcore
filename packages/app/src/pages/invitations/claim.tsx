@@ -1,7 +1,7 @@
 import { Link, useSearchParams } from "react-router";
 import { InvitationApiTypes } from "@stackcore/core/responses";
 import { useCoreApi } from "../../contexts/CoreApi.tsx";
-import { toast } from "../../components/shadcn/hooks/use-toast.tsx";
+import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import {
   Card,
@@ -51,10 +51,7 @@ export default function InvitationClaimPage() {
 
       if (response.ok && response.status === 200) {
         setClaimState("success");
-        toast({
-          title: "Invitation claimed",
-          description: "Invitation claimed successfully",
-        });
+        toast.success("Invitation claimed");
       } else {
         // Handle different error cases
         const errorData = await response.json().catch(() => ({}));
@@ -76,11 +73,7 @@ export default function InvitationClaimPage() {
     } catch (error) {
       console.error(error);
       setClaimState("error");
-      toast({
-        title: "Error",
-        description: "Network error occurred",
-        variant: "destructive",
-      });
+      toast.error("Unknown error occurred");
     }
   }
 

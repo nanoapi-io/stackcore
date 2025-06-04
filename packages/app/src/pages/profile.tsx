@@ -44,7 +44,7 @@ import { DataTablePagination } from "../components/shadcn/Datatablepagination.ts
 import { Input } from "../components/shadcn/Input.tsx";
 import { Badge } from "../components/shadcn/Badge.tsx";
 import { Separator } from "../components/shadcn/Separator.tsx";
-import { toast } from "../components/shadcn/hooks/use-toast.tsx";
+import { toast } from "sonner";
 import { useCoreApi } from "../contexts/CoreApi.tsx";
 import { Copy, Key, Loader, Plus, Trash, User } from "lucide-react";
 import { z } from "zod";
@@ -97,11 +97,7 @@ export default function ProfilePage() {
       setTotal(data.total);
     } catch (error) {
       console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to get tokens",
-        variant: "destructive",
-      });
+      toast.error("Failed to get tokens");
     } finally {
       setIsBusy(false);
     }
@@ -373,19 +369,12 @@ function CreateTokenDialog(
       const data = await response.json() as TokenApiTypes.CreateTokenResponse;
 
       setCreatedToken(data.uuid);
-      toast({
-        title: "Token created",
-        description: "Your API token has been created successfully",
-      });
+      toast.success("Token created");
       props.onCreated();
       form.reset();
     } catch (error) {
       console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to create token",
-        variant: "destructive",
-      });
+      toast.error("Failed to create token");
     } finally {
       setIsBusy(false);
     }
@@ -428,11 +417,7 @@ function CreateTokenDialog(
                     variant="outline"
                     onClick={() => {
                       navigator.clipboard.writeText(createdToken);
-                      toast({
-                        title: "Copied to clipboard",
-                        description:
-                          "The API token has been copied to your clipboard",
-                      });
+                      toast.info("Copied to clipboard");
                     }}
                   >
                     <Copy />
@@ -516,19 +501,12 @@ function DeleteTokenDialog(
         throw new Error("Failed to delete token");
       }
 
-      toast({
-        title: "Token deleted",
-        description: "The API token has been deleted successfully",
-      });
+      toast.success("Token deleted");
       props.onDeleted();
       setOpen(false);
     } catch (error) {
       console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to delete token",
-        variant: "destructive",
-      });
+      toast.error("Failed to delete token");
     } finally {
       setIsBusy(false);
     }

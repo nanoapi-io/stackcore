@@ -10,7 +10,7 @@ import { Input } from "../../components/shadcn/Input.tsx";
 import { Button } from "../../components/shadcn/Button.tsx";
 import { Briefcase, Loader, Users } from "lucide-react";
 import { useNavigate } from "react-router";
-import { toast } from "../../components/shadcn/hooks/use-toast.tsx";
+import { toast } from "sonner";
 import { useCoreApi } from "../../contexts/CoreApi.tsx";
 import { useWorkspace } from "../../contexts/Workspace.tsx";
 import { z } from "zod";
@@ -66,10 +66,7 @@ export default function AddWorkspacePage() {
         throw new Error("Failed to create workspace");
       }
 
-      toast({
-        title: "Workspace created",
-        description: "You can now manage your workspace",
-      });
+      toast.success("Workspace created");
 
       const workspace = await response
         .json() as WorkspaceApiTypes.CreateWorkspaceResponse;
@@ -81,11 +78,7 @@ export default function AddWorkspacePage() {
       navigate(`/workspaces/${workspace.id}`);
     } catch (error) {
       console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to create workspace",
-        variant: "destructive",
-      });
+      toast.error("Failed to create workspace");
     } finally {
       setIsBusy(false);
     }

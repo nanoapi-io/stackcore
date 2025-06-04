@@ -10,7 +10,7 @@ import { Input } from "../../components/shadcn/Input.tsx";
 import { Button } from "../../components/shadcn/Button.tsx";
 import { Loader, PencilRuler, Settings } from "lucide-react";
 import { useNavigate } from "react-router";
-import { toast } from "../../components/shadcn/hooks/use-toast.tsx";
+import { toast } from "sonner";
 import { useCoreApi } from "../../contexts/CoreApi.tsx";
 import { useWorkspace } from "../../contexts/Workspace.tsx";
 import { z } from "zod";
@@ -93,11 +93,7 @@ export default function AddProjectPage() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!selectedWorkspaceId) {
-      toast({
-        title: "Error",
-        description: "No workspace selected",
-        variant: "destructive",
-      });
+      toast.error("No workspace selected");
       return;
     }
 
@@ -142,19 +138,12 @@ export default function AddProjectPage() {
       const createResponseBody = await response
         .json() as ProjectApiTypes.CreateProjectResponse;
 
-      toast({
-        title: "Project created",
-        description: "You can now start working on your project",
-      });
+      toast.success("Project created");
 
       navigate(`/projects/${createResponseBody.id}`);
     } catch (error) {
       console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to create project",
-        variant: "destructive",
-      });
+      toast.error("Failed to create project");
     } finally {
       setIsBusy(false);
     }

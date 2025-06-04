@@ -9,7 +9,7 @@ import {
 } from "../../../../../components/shadcn/Card.tsx";
 import { Button } from "../../../../../components/shadcn/Button.tsx";
 import { CheckCircle, Copy, FileText, Terminal } from "lucide-react";
-import { toast } from "../../../../../components/shadcn/hooks/use-toast.tsx";
+import { toast } from "sonner";
 import type { ProjectPageContext } from "../../base.tsx";
 import {
   Alert,
@@ -29,11 +29,7 @@ export default function ProjectManifestsAddCli() {
         setCopied(false);
       }, 2000);
     } catch (_error) {
-      toast({
-        title: "Error",
-        description: "Failed to copy to clipboard",
-        variant: "destructive",
-      });
+      toast.error("Failed to copy to clipboard");
     }
   };
 

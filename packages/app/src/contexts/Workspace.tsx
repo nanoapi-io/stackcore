@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { toast } from "../components/shadcn/hooks/use-toast.tsx";
+import { toast } from "sonner";
 import { useCoreApi } from "./CoreApi.tsx";
 import { WorkspaceApiTypes } from "@stackcore/core/responses";
 
@@ -102,11 +102,7 @@ export function WorkspaceProvider(
       setIsInitialized(true);
     } catch (error) {
       console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to refresh workspaces",
-        variant: "destructive",
-      });
+      toast.error("Failed to refresh workspaces");
     } finally {
       setIsBusy(false);
     }

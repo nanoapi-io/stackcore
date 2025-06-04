@@ -10,7 +10,7 @@ import {
 import { Input } from "../../../components/shadcn/Input.tsx";
 import { Button } from "../../../components/shadcn/Button.tsx";
 import { Loader, Settings } from "lucide-react";
-import { toast } from "../../../components/shadcn/hooks/use-toast.tsx";
+import { toast } from "sonner";
 import { useCoreApi } from "../../../contexts/CoreApi.tsx";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -133,17 +133,10 @@ export default function ProjectSettings() {
         throw new Error("Failed to update project");
       }
 
-      toast({
-        title: "Project updated",
-        description: "Project settings have been saved successfully",
-      });
+      toast.success("Project updated");
     } catch (error) {
       console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to update project",
-        variant: "destructive",
-      });
+      toast.error("Failed to update project");
     } finally {
       setIsBusy(false);
     }

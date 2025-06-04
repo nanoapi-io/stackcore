@@ -13,7 +13,7 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "../components/shadcn/InputOTP.tsx";
-import { toast } from "../components/shadcn/hooks/use-toast.tsx";
+import { toast } from "sonner";
 import { ArrowRight, ChevronLeft, Loader, Mail, Shield } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router";
 import { useCoreApi } from "../contexts/CoreApi.tsx";
@@ -87,11 +87,7 @@ export default function LoginPage() {
       setStep("otp");
     } catch (error) {
       console.error(error);
-      toast({
-        title: "Unexpected error",
-        description: "Failed to send one time password",
-        variant: "destructive",
-      });
+      toast.error("Failed to send one time password");
     } finally {
       setIsBusy(false);
     }
@@ -122,21 +118,12 @@ export default function LoginPage() {
       if (!response.ok && response.status === 400) {
         const { error } = await response.json() as { error: string };
         if (error === "invalid_otp") {
-          toast({
-            title: "Invalid one time password",
-            description:
-              "Please check your email for the correct one time password",
-            variant: "destructive",
-          });
+          toast.error("Invalid one time password");
           setIsBusy(false);
           return;
         }
         if (error === "otp_max_attempts") {
-          toast({
-            title: "Too many attempts",
-            description: "Please request a new one time password",
-            variant: "destructive",
-          });
+          toast.error("Too many attempts");
           setStep("email");
           setIsBusy(false);
           return;
@@ -161,11 +148,7 @@ export default function LoginPage() {
         navigate(redirectLocation);
       }, 500);
     } catch (error) {
-      toast({
-        title: "Unexpected error",
-        description: "Failed to verify one time password",
-        variant: "destructive",
-      });
+      toast.error("Failed to verify one time password");
       console.error(error);
     } finally {
       setIsBusy(false);

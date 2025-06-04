@@ -1,7 +1,14 @@
 import type { AuditManifest } from "./auditManifest/types.ts";
-import type {
-  DependencyManifest,
-  DependencyManifestV1,
+import {
+  type DependencyManifest,
+  type DependencyManifestV1,
+  metricCharacterCount,
+  metricCodeCharacterCount,
+  metricCodeLineCount,
+  metricCyclomaticComplexity,
+  metricDependencyCount,
+  metricDependentCount,
+  metricLinesCount,
 } from "./dependencyManifest/types.ts";
 
 function getNumberSeverityLevel(
@@ -93,8 +100,8 @@ function generateAuditManifestV1(
       fileDependencyManifest.metrics.codeCharacterCount;
     const codeCharacterCountTarget = config.file.maxCodeChar;
     if (codeCharacterCountValue > codeCharacterCountTarget) {
-      fileAuditManifest.alerts["codeCharacterCount"] = {
-        metric: "codeCharacterCount",
+      fileAuditManifest.alerts[metricCodeCharacterCount] = {
+        metric: metricCodeCharacterCount,
         severity: getNumberSeverityLevel(
           codeCharacterCountValue,
           codeCharacterCountTarget,
@@ -110,8 +117,8 @@ function generateAuditManifestV1(
     const characterCountValue = fileDependencyManifest.metrics.characterCount;
     const characterCountTarget = config.file.maxChar;
     if (characterCountValue > characterCountTarget) {
-      fileAuditManifest.alerts["characterCount"] = {
-        metric: "characterCount",
+      fileAuditManifest.alerts[metricCharacterCount] = {
+        metric: metricCharacterCount,
         severity: getNumberSeverityLevel(
           characterCountValue,
           characterCountTarget,
@@ -127,8 +134,8 @@ function generateAuditManifestV1(
     const codeLineCountValue = fileDependencyManifest.metrics.codeLineCount;
     const codeLineCountTarget = config.file.maxCodeLine;
     if (codeLineCountValue > codeLineCountTarget) {
-      fileAuditManifest.alerts["codeLineCount"] = {
-        metric: "codeLineCount",
+      fileAuditManifest.alerts[metricCodeLineCount] = {
+        metric: metricCodeLineCount,
         severity: getNumberSeverityLevel(
           codeLineCountValue,
           codeLineCountTarget,
@@ -144,8 +151,8 @@ function generateAuditManifestV1(
     const linesCountValue = fileDependencyManifest.metrics.linesCount;
     const linesCountTarget = config.file.maxLine;
     if (linesCountValue > linesCountTarget) {
-      fileAuditManifest.alerts["linesCount"] = {
-        metric: "linesCount",
+      fileAuditManifest.alerts[metricLinesCount] = {
+        metric: metricLinesCount,
         severity: getNumberSeverityLevel(linesCountValue, linesCountTarget),
         message: {
           short: "Too many lines",
@@ -158,8 +165,8 @@ function generateAuditManifestV1(
     const dependencyCountValue = fileDependencyManifest.metrics.dependencyCount;
     const dependencyCountTarget = config.file.maxDependency;
     if (dependencyCountValue > dependencyCountTarget) {
-      fileAuditManifest.alerts["dependencyCount"] = {
-        metric: "dependencyCount",
+      fileAuditManifest.alerts[metricDependencyCount] = {
+        metric: metricDependencyCount,
         severity: getNumberSeverityLevel(
           dependencyCountValue,
           dependencyCountTarget,
@@ -175,8 +182,8 @@ function generateAuditManifestV1(
     const dependentCountValue = fileDependencyManifest.metrics.dependentCount;
     const dependentCountTarget = config.file.maxDependent;
     if (dependentCountValue > dependentCountTarget) {
-      fileAuditManifest.alerts["dependentCount"] = {
-        metric: "dependentCount",
+      fileAuditManifest.alerts[metricDependentCount] = {
+        metric: metricDependentCount,
         severity: getNumberSeverityLevel(
           dependentCountValue,
           dependentCountTarget,
@@ -193,8 +200,8 @@ function generateAuditManifestV1(
       fileDependencyManifest.metrics.cyclomaticComplexity;
     const cyclomaticComplexityTarget = config.file.maxCyclomaticComplexity;
     if (cyclomaticComplexityValue > cyclomaticComplexityTarget) {
-      fileAuditManifest.alerts["cyclomaticComplexity"] = {
-        metric: "cyclomaticComplexity",
+      fileAuditManifest.alerts[metricCyclomaticComplexity] = {
+        metric: metricCyclomaticComplexity,
         severity: getNumberSeverityLevel(
           cyclomaticComplexityValue,
           cyclomaticComplexityTarget,
@@ -216,8 +223,8 @@ function generateAuditManifestV1(
       const codeCharacterCountValue = symbol.metrics.codeCharacterCount;
       const codeCharacterCountTarget = config.symbol.maxCodeChar;
       if (codeCharacterCountValue > codeCharacterCountTarget) {
-        symbolAuditManifest.alerts["codeCharacterCount"] = {
-          metric: "codeCharacterCount",
+        symbolAuditManifest.alerts[metricCodeCharacterCount] = {
+          metric: metricCodeCharacterCount,
           severity: getNumberSeverityLevel(
             codeCharacterCountValue,
             codeCharacterCountTarget,
@@ -233,8 +240,8 @@ function generateAuditManifestV1(
       const characterCountValue = symbol.metrics.characterCount;
       const characterCountTarget = config.symbol.maxChar;
       if (characterCountValue > characterCountTarget) {
-        symbolAuditManifest.alerts["characterCount"] = {
-          metric: "characterCount",
+        symbolAuditManifest.alerts[metricCharacterCount] = {
+          metric: metricCharacterCount,
           severity: getNumberSeverityLevel(
             characterCountValue,
             characterCountTarget,
@@ -250,8 +257,8 @@ function generateAuditManifestV1(
       const codeLineCountValue = symbol.metrics.codeLineCount;
       const codeLineCountTarget = config.symbol.maxCodeLine;
       if (codeLineCountValue > codeLineCountTarget) {
-        symbolAuditManifest.alerts["codeLineCount"] = {
-          metric: "codeLineCount",
+        symbolAuditManifest.alerts[metricCodeLineCount] = {
+          metric: metricCodeLineCount,
           severity: getNumberSeverityLevel(
             codeLineCountValue,
             codeLineCountTarget,
@@ -267,8 +274,8 @@ function generateAuditManifestV1(
       const linesCountValue = symbol.metrics.linesCount;
       const linesCountTarget = config.symbol.maxLine;
       if (linesCountValue > linesCountTarget) {
-        symbolAuditManifest.alerts["linesCount"] = {
-          metric: "linesCount",
+        symbolAuditManifest.alerts[metricLinesCount] = {
+          metric: metricLinesCount,
           severity: getNumberSeverityLevel(linesCountValue, linesCountTarget),
           message: {
             short: "Symbol too long",
@@ -281,8 +288,8 @@ function generateAuditManifestV1(
       const dependencyCountValue = symbol.metrics.dependencyCount;
       const dependencyCountTarget = config.symbol.maxDependency;
       if (dependencyCountValue > dependencyCountTarget) {
-        symbolAuditManifest.alerts["dependencyCount"] = {
-          metric: "dependencyCount",
+        symbolAuditManifest.alerts[metricDependencyCount] = {
+          metric: metricDependencyCount,
           severity: getNumberSeverityLevel(
             dependencyCountValue,
             dependencyCountTarget,
@@ -298,8 +305,8 @@ function generateAuditManifestV1(
       const dependentCountValue = symbol.metrics.dependentCount;
       const dependentCountTarget = config.symbol.maxDependent;
       if (dependentCountValue > dependentCountTarget) {
-        symbolAuditManifest.alerts["dependentCount"] = {
-          metric: "dependentCount",
+        symbolAuditManifest.alerts[metricDependentCount] = {
+          metric: metricDependentCount,
           severity: getNumberSeverityLevel(
             dependentCountValue,
             dependentCountTarget,
@@ -315,8 +322,8 @@ function generateAuditManifestV1(
       const cyclomaticComplexityValue = symbol.metrics.cyclomaticComplexity;
       const cyclomaticComplexityTarget = config.symbol.maxCyclomaticComplexity;
       if (cyclomaticComplexityValue > cyclomaticComplexityTarget) {
-        symbolAuditManifest.alerts["cyclomaticComplexity"] = {
-          metric: "cyclomaticComplexity",
+        symbolAuditManifest.alerts[metricCyclomaticComplexity] = {
+          metric: metricCyclomaticComplexity,
           severity: getNumberSeverityLevel(
             cyclomaticComplexityValue,
             cyclomaticComplexityTarget,

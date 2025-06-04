@@ -1,14 +1,23 @@
 import z from "zod";
+import {
+  metricCharacterCount,
+  metricCodeCharacterCount,
+  metricCodeLineCount,
+  metricCyclomaticComplexity,
+  metricDependencyCount,
+  metricDependentCount,
+  metricLinesCount,
+} from "../dependencyManifest/types.ts";
 
 const auditAlertSchema = z.object({
   metric: z.enum([
-    "linesCount",
-    "codeLineCount",
-    "characterCount",
-    "codeCharacterCount",
-    "dependencyCount",
-    "dependentCount",
-    "cyclomaticComplexity",
+    metricLinesCount,
+    metricCodeLineCount,
+    metricCharacterCount,
+    metricCodeCharacterCount,
+    metricDependencyCount,
+    metricDependentCount,
+    metricCyclomaticComplexity,
   ]),
   severity: z.number().min(1).max(5),
   message: z.object({

@@ -24,7 +24,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../../../components/shadcn/Dialog.tsx";
-import { toast } from "../../../components/shadcn/hooks/use-toast.tsx";
+import { toast } from "sonner";
 import { useCoreApi } from "../../../contexts/CoreApi.tsx";
 import type { WorkspacePageContext } from "./index.tsx";
 import {
@@ -78,11 +78,7 @@ export default function WorkspaceSubscription() {
       setSubscription(data);
     } catch (error) {
       console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to get subscription",
-        variant: "destructive",
-      });
+      toast.error("Failed to get subscription");
     }
   }
 
@@ -107,11 +103,7 @@ export default function WorkspaceSubscription() {
       globalThis.location.href = data.url;
     } catch (error) {
       console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to go to billing portal",
-        variant: "destructive",
-      });
+      toast.error("Failed to go to billing portal");
       setStripePortalBusy(false);
     }
     // We do not set stripePortalBusy to false here because
@@ -143,11 +135,7 @@ export default function WorkspaceSubscription() {
       globalThis.location.href = data.url;
     } catch (error) {
       console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to go to billing portal",
-        variant: "destructive",
-      });
+      toast.error("Failed to go to billing portal");
       setStripePortalPaymentMethodBusy(false);
     }
     // We do not set stripePortalBusy to false here because
@@ -634,10 +622,7 @@ function ChangeSubscriptionDialog(props: {
       globalThis.location.href = data.url;
     } catch (error) {
       console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to create portal session",
-      });
+      toast.error("Failed to create portal session");
     } finally {
       setBusy(false);
     }
@@ -665,10 +650,7 @@ function ChangeSubscriptionDialog(props: {
           throw new Error("Failed to upgrade subscription");
         }
 
-        toast({
-          title: "Success",
-          description: "Subscription upgraded successfully",
-        });
+        toast.success("Subscription upgraded successfully");
       } else {
         const { url, method, body } = BillingApiTypes
           .prepareDowngradeSubscription({
@@ -683,33 +665,26 @@ function ChangeSubscriptionDialog(props: {
           throw new Error("Failed to downgrade subscription");
         }
 
-        toast({
-          title: "Success",
-          description: "Subscription downgraded successfully",
-        });
+        toast.success("Subscription downgraded successfully");
       }
       navigate(`/workspaces/${props.workspaceId}`);
     } catch (error) {
       console.error(error);
-      toast({
-        title: "Error",
-        description: (
-          <div className="space-y-2">
-            <div>
-              Failed to update subscription. Make sure you have a payment method
-              added to your account and try again.
-            </div>
-            <Button
-              onClick={handleManagePaymentMethodClick}
-              disabled={busy}
-            >
-              <CreditCard />
-              Manage payment method
-            </Button>
+      toast.error(
+        <div className="space-y-2">
+          <div>
+            Failed to update subscription. Make sure you have a payment method
+            added to your account and try again.
           </div>
-        ),
-        variant: "destructive",
-      });
+          <Button
+            onClick={handleManagePaymentMethodClick}
+            disabled={busy}
+          >
+            <CreditCard />
+            Manage payment method
+          </Button>
+        </div>,
+      );
     } finally {
       setBusy(false);
     }

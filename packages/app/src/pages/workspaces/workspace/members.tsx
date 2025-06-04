@@ -22,7 +22,7 @@ import {
   FormMessage,
 } from "../../../components/shadcn/Form.tsx";
 import { useCoreApi } from "../../../contexts/CoreApi.tsx";
-import { toast } from "../../../components/shadcn/hooks/use-toast.tsx";
+import { toast } from "sonner";
 import { Edit, Loader, Plus } from "lucide-react";
 import { Badge } from "../../../components/shadcn/Badge.tsx";
 import {
@@ -119,11 +119,7 @@ export default function WorkspaceMembers() {
       setTotal(data.total);
     } catch (error) {
       console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to get members",
-        variant: "destructive",
-      });
+      toast.error("Failed to get members");
     } finally {
       setIsBusy(false);
     }
@@ -317,18 +313,11 @@ function InviteMemberDialog(
         throw new Error("Failed to edit member");
       }
 
-      toast({
-        title: "Invitation sent",
-        description: "Invitation sent successfully",
-      });
+      toast.success("Invitation sent");
       setOpen(false);
     } catch (error) {
       console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to send invitation",
-        variant: "destructive",
-      });
+      toast.error("Failed to send invitation");
     } finally {
       setIsBusy(false);
     }
@@ -430,18 +419,11 @@ function EditMemberDialog(
         throw new Error("Failed to edit member");
       }
 
-      toast({
-        title: "Member updated",
-        description: "Member role updated successfully",
-      });
+      toast.success("Member updated");
       props.onEdited();
     } catch (error) {
       console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to edit member",
-        variant: "destructive",
-      });
+      toast.error("Failed to edit member");
     } finally {
       setIsBusy(false);
     }

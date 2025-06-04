@@ -4,7 +4,7 @@ import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router";
 import IndexPage from "./pages/index.tsx";
-import { Toaster } from "./components/shadcn/Toaster.tsx";
+import { Toaster } from "sonner";
 import { ThemeProvider } from "./contexts/ThemeProvider.tsx";
 import LoginPage from "./pages/login.tsx";
 import { CoreApiProvider } from "./contexts/CoreApi.tsx";
@@ -99,7 +99,7 @@ ReactDOM.createRoot(rootElement).render(
     <ThemeProvider>
       <CoreApiProvider>
         <RouterProvider router={router} />
-        <Toaster />
+        <Toaster position="top-right" closeButton richColors />
       </CoreApiProvider>
     </ThemeProvider>
   </StrictMode>,

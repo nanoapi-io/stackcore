@@ -2,8 +2,12 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { useCoreApi } from "../../../../contexts/CoreApi.tsx";
 import { ManifestApiTypes } from "@stackcore/core/responses";
-import type { DependencyManifest } from "@stackcore/core/manifest";
+import type {
+  AuditManifest,
+  DependencyManifest,
+} from "@stackcore/core/manifest";
 import { Loader } from "lucide-react";
+import DependencyVisualizer from "../../../../components/DependencyVisualizer/DependencyVisualizer.tsx";
 
 export default function ProjectManifest() {
   const { manifestId } = useParams<{ manifestId: string }>();
@@ -78,31 +82,16 @@ export default function ProjectManifest() {
   if (isBusy) {
     return (
       <div className="flex items-center justify-center p-8">
-        <Loader className="animate-spin mr-2" />
+        <Loader className="animate-spin" />
         <span>Loading manifest data...</span>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto mt-5 space-y-4">
-      <h1 className="text-2xl font-bold">Manifest #{manifestId}</h1>
-
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-lg font-semibold mb-2">Manifest Data</h2>
-          <pre className="bg-gray-100 p-4 rounded-lg overflow-auto text-sm">
-            {JSON.stringify(manifestData, null, 2)}
-          </pre>
-        </div>
-
-        <div>
-          <h2 className="text-lg font-semibold mb-2">Audit Manifest</h2>
-          <pre className="bg-gray-100 p-4 rounded-lg overflow-auto text-sm">
-            {JSON.stringify(auditManifest, null, 2)}
-          </pre>
-        </div>
-      </div>
-    </div>
+    <DependencyVisualizer
+      dependencyManifest={manifestData?.manifest as DependencyManifest}
+      auditManifest={auditManifest as AuditManifest}
+    />
   );
 }

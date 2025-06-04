@@ -25,7 +25,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { DataTablePagination } from "../../../../components/shadcn/Datatablepagination.tsx";
-import { toast } from "../../../../components/shadcn/hooks/use-toast.tsx";
+import { toast } from "sonner";
 import { Eye, Plus, ScrollText } from "lucide-react";
 import { ManifestApiTypes } from "@stackcore/core/responses";
 import { Separator } from "../../../../components/shadcn/Separator.tsx";
@@ -79,11 +79,7 @@ export default function ProjectManifests() {
       setTotal(data.total);
     } catch (error) {
       console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to get manifests",
-        variant: "destructive",
-      });
+      toast.error("Failed to get manifests");
     } finally {
       setIsBusy(false);
     }
