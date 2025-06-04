@@ -35,9 +35,12 @@ export default function DependencyVisualizer(props: {
 
   return (
     <SidebarProvider
-      defaultOpen
-      className="h-screen w-full"
+      defaultOpen={false}
       style={{ "--sidebar-width": "30rem" } as React.CSSProperties}
+      // min-h-0 needed to prevent the sidebar
+      // from growing to the height of the screen
+      // within the parent container
+      className="grow flex min-h-0"
     >
       <FileExplorerSidebar
         dependencyManifest={props.dependencyManifest}
@@ -77,7 +80,7 @@ export default function DependencyVisualizer(props: {
           }
         }}
       />
-      <div className="h-full w-full flex flex-col overflow-hidden">
+      <div className="w-full flex flex-col overflow-hidden">
         <div className="flex items-center py-2 justify-between">
           <div className="flex items-center gap-2 ml-2">
             <SidebarTrigger />
