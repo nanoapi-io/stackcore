@@ -1,6 +1,9 @@
 import { db } from "../../db/database.ts";
+import type { DependencyManifest } from "../../manifest/dependencyManifest/types.ts";
+import { generateAuditManifest } from "../../manifest/service.ts";
 import settings from "../../settings.ts";
 import type {
+  GetManifestAuditResponse,
   GetManifestDetailsResponse,
   GetManifestsResponse,
 } from "./types.ts";
@@ -8,6 +11,8 @@ import type {
 export const manifestNotFoundError = "manifest_not_found";
 export const projectNotFoundError = "project_not_found";
 export const notAMemberOfWorkspaceError = "not_a_member_of_workspace";
+export const failedToGenerateAuditManifestError =
+  "failed_to_generate_audit_manifest";
 
 export class ManifestService {
   /**
@@ -20,10 +25,13 @@ export class ManifestService {
     commitSha: string | null,
     commitShaDate: Date | null,
     manifest: object,
-  ): Promise<{
-    manifestId?: number;
-    error?: string;
-  }> {
+  ): Promise<
+    {
+      id: number;
+    } | {
+      error: string;
+    }
+  > {
     // Check if user has access to the project via workspace membership
     const hasAccess = await db
       .selectFrom("project")
@@ -39,7 +47,7 @@ export class ManifestService {
     }
 
     // Create the manifest
-    const result = await db
+    const newManifest = await db
       .insertInto("manifest")
       .values({
         project_id: projectId,
@@ -51,9 +59,9 @@ export class ManifestService {
         created_at: new Date(),
       })
       .returningAll()
-      .executeTakeFirst();
+      .executeTakeFirstOrThrow();
 
-    return { manifestId: result?.id };
+    return { id: newManifest.id };
   }
 
   /**
@@ -213,5 +221,73 @@ export class ManifestService {
       .execute();
 
     return {};
+  }
+
+  /**
+   * Get manifest audit for a manifest
+   */
+  public async getManifestAudit(
+    userId: number,
+    manifestId: number,
+  ): Promise<GetManifestAuditResponse | { error?: string }> {
+    // Get manifest with access check
+    const manifest = await db
+      .selectFrom("manifest")
+      .selectAll("manifest")
+      .innerJoin("project", "project.id", "manifest.project_id")
+      .innerJoin("workspace", "workspace.id", "project.workspace_id")
+      .innerJoin("member", "member.workspace_id", "project.workspace_id")
+      .where("manifest.id", "=", manifestId)
+      .where("member.user_id", "=", userId)
+      .where("workspace.deactivated", "=", false)
+      .executeTakeFirst();
+
+    if (!manifest) {
+      return { error: manifestNotFoundError };
+    }
+
+    // Get project
+    const project = await db
+      .selectFrom("project")
+      .selectAll("project")
+      .where("id", "=", manifest.project_id)
+      .executeTakeFirst();
+
+    if (!project) {
+      return { error: projectNotFoundError };
+    }
+
+    try {
+      const auditManifest = generateAuditManifest(
+        manifest.version,
+        manifest.manifest as DependencyManifest,
+        {
+          file: {
+            maxCodeChar: project.max_char_per_file,
+            maxChar: project.max_char_per_file,
+            maxCodeLine: project.max_line_per_file,
+            maxLine: project.max_line_per_file,
+            maxDependency: project.max_dependency_per_file,
+            maxDependent: project.max_dependent_per_file,
+            maxCyclomaticComplexity: project.max_cyclomatic_complexity_per_file,
+          },
+          symbol: {
+            maxCodeChar: project.max_char_per_symbol,
+            maxChar: project.max_char_per_symbol,
+            maxCodeLine: project.max_line_per_symbol,
+            maxLine: project.max_line_per_symbol,
+            maxDependency: project.max_dependency_per_symbol,
+            maxDependent: project.max_dependent_per_symbol,
+            maxCyclomaticComplexity:
+              project.max_cyclomatic_complexity_per_symbol,
+          },
+        },
+      );
+
+      return auditManifest;
+    } catch (error) {
+      console.error(error);
+      return { error: failedToGenerateAuditManifestError };
+    }
   }
 }

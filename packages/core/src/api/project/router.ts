@@ -3,6 +3,7 @@ import { ProjectService } from "./service.ts";
 import { authMiddleware, getSession } from "../auth/middleware.ts";
 import {
   createProjectPayloadSchema,
+  type CreateProjectResponse,
   type GetProjectDetailsResponse,
   type GetProjectsResponse,
   updateProjectSchema,
@@ -27,7 +28,7 @@ router.post("/", authMiddleware, async (ctx) => {
     return;
   }
 
-  const { error } = await projectService.createProject(
+  const response = await projectService.createProject(
     session.userId,
     {
       name: parsedBody.data.name,
@@ -51,14 +52,14 @@ router.post("/", authMiddleware, async (ctx) => {
     },
   );
 
-  if (error) {
+  if ("error" in response) {
     ctx.response.status = Status.BadRequest;
-    ctx.response.body = { error };
+    ctx.response.body = { error: response.error };
     return;
   }
 
   ctx.response.status = Status.Created;
-  ctx.response.body = { message: "Project created successfully" };
+  ctx.response.body = response as CreateProjectResponse;
 });
 
 // Get all projects for an workspace

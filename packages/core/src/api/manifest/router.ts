@@ -3,6 +3,8 @@ import { ManifestService } from "./service.ts";
 import { authMiddleware, getSession } from "../auth/middleware.ts";
 import {
   createManifestPayloadSchema,
+  type CreateManifestResponse,
+  type GetManifestAuditResponse,
   type GetManifestDetailsResponse,
   type GetManifestsResponse,
 } from "./types.ts";
@@ -26,7 +28,7 @@ router.post("/", authMiddleware, async (ctx) => {
     return;
   }
 
-  const { manifestId, error } = await manifestService.createManifest(
+  const response = await manifestService.createManifest(
     session.userId,
     parsedBody.data.projectId,
     parsedBody.data.branch,
@@ -35,17 +37,14 @@ router.post("/", authMiddleware, async (ctx) => {
     parsedBody.data.manifest,
   );
 
-  if (error) {
+  if ("error" in response) {
     ctx.response.status = Status.BadRequest;
-    ctx.response.body = { error };
+    ctx.response.body = { error: response.error };
     return;
   }
 
   ctx.response.status = Status.Created;
-  ctx.response.body = {
-    message: "Manifest created successfully",
-    manifestId,
-  };
+  ctx.response.body = response as CreateManifestResponse;
 });
 
 // Get manifests with pagination and filtering
@@ -162,6 +161,39 @@ router.delete("/:manifestId", authMiddleware, async (ctx) => {
   }
 
   ctx.response.status = Status.NoContent;
+});
+
+// Get manifest audit for a manifest
+router.get("/:manifestId/audit", authMiddleware, async (ctx) => {
+  const session = getSession(ctx);
+
+  const paramSchema = z.object({
+    manifestId: z.number().int().min(1),
+  });
+
+  const parsedParams = paramSchema.safeParse({
+    manifestId: Number(ctx.params.manifestId),
+  });
+
+  if (!parsedParams.success) {
+    ctx.response.status = Status.BadRequest;
+    ctx.response.body = { error: parsedParams.error };
+    return;
+  }
+
+  const response = await manifestService.getManifestAudit(
+    session.userId,
+    parsedParams.data.manifestId,
+  );
+
+  if ("error" in response) {
+    ctx.response.status = Status.BadRequest;
+    ctx.response.body = { error: response.error };
+    return;
+  }
+
+  ctx.response.status = Status.OK;
+  ctx.response.body = response as GetManifestAuditResponse;
 });
 
 export default router;

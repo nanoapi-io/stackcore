@@ -24,6 +24,10 @@ export type CreateProjectPayload = z.infer<
   typeof createProjectPayloadSchema
 >;
 
+export type CreateProjectResponse = {
+  id: number;
+};
+
 export function prepareCreateProject(payload: CreateProjectPayload) {
   return {
     url: "/projects",

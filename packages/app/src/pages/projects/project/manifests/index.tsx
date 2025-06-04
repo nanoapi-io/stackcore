@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, useOutletContext } from "react-router";
-import { Button } from "../../../components/shadcn/Button.tsx";
+import { Button } from "../../../../components/shadcn/Button.tsx";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "../../../components/shadcn/Card.tsx";
+} from "../../../../components/shadcn/Card.tsx";
 import {
   Table,
   TableBody,
@@ -15,7 +15,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../../../components/shadcn/Table.tsx";
+} from "../../../../components/shadcn/Table.tsx";
 import {
   type ColumnDef,
   flexRender,
@@ -24,14 +24,14 @@ import {
   type PaginationState,
   useReactTable,
 } from "@tanstack/react-table";
-import { DataTablePagination } from "../../../components/shadcn/Datatablepagination.tsx";
-import { toast } from "../../../components/shadcn/hooks/use-toast.tsx";
+import { DataTablePagination } from "../../../../components/shadcn/Datatablepagination.tsx";
+import { toast } from "../../../../components/shadcn/hooks/use-toast.tsx";
 import { Eye, Plus, ScrollText } from "lucide-react";
 import { ManifestApiTypes } from "@stackcore/core/responses";
-import { Separator } from "../../../components/shadcn/Separator.tsx";
-import { useCoreApi } from "../../../contexts/CoreApi.tsx";
-import type { ProjectPageContext } from "./base.tsx";
-import { Input } from "../../../components/shadcn/Input.tsx";
+import { Separator } from "../../../../components/shadcn/Separator.tsx";
+import { useCoreApi } from "../../../../contexts/CoreApi.tsx";
+import type { ProjectPageContext } from "../base.tsx";
+import { Input } from "../../../../components/shadcn/Input.tsx";
 
 export default function ProjectManifests() {
   const context = useOutletContext<ProjectPageContext>();
@@ -165,7 +165,9 @@ export default function ProjectManifests() {
       header: "Actions",
       cell: ({ row }) => {
         return (
-          <Link to={`/manifests/${row.original.id}`}>
+          <Link
+            to={`/projects/${context.project.id}/manifests/${row.original.id}`}
+          >
             <Button variant="secondary" size="icon">
               <Eye />
             </Button>

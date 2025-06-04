@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { Manifest } from "../../db/models/manifest.ts";
+import type { AuditManifest } from "../../manifest/auditManifest/types.ts";
 
 export const createManifestPayloadSchema = z.object({
   projectId: z.number(),
@@ -14,6 +15,10 @@ export const createManifestPayloadSchema = z.object({
 export type CreateManifestPayload = z.infer<
   typeof createManifestPayloadSchema
 >;
+
+export type CreateManifestResponse = {
+  id: number;
+};
 
 export function prepareCreateManifest(payload: CreateManifestPayload) {
   return {
@@ -72,3 +77,13 @@ export type GetManifestsResponse = {
 };
 
 export type GetManifestDetailsResponse = Manifest; // Return full manifest details
+
+export function prepareGetManifestAudit(manifestId: number) {
+  return {
+    url: `/manifests/${manifestId}/audit`,
+    method: "GET",
+    body: undefined,
+  };
+}
+
+export type GetManifestAuditResponse = AuditManifest;

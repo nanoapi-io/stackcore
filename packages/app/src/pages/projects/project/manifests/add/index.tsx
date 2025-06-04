@@ -87,12 +87,17 @@ export default function ProjectManifestsAdd() {
         throw new Error(errorData.error || "Failed to create manifest");
       }
 
+      const createResponseBody = await response
+        .json() as ManifestApiTypes.CreateManifestResponse;
+
       toast({
         title: "Success",
         description: "Manifest created successfully.",
       });
 
-      navigate(`/projects/${context.project.id}/manifests`);
+      navigate(
+        `/projects/${context.project.id}/manifests/${createResponseBody.id}`,
+      );
     } catch (error) {
       console.error(error);
       toast({

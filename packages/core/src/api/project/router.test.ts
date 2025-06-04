@@ -68,6 +68,9 @@ Deno.test("create a project", async () => {
       .where("workspace_id", "=", workspace.id)
       .executeTakeFirstOrThrow();
 
+    const createResponseBody = await createResponse?.json();
+    assertEquals(createResponseBody.id, project.id);
+
     assertEquals(project.name, "Test Project");
     assertEquals(project.workspace_id, workspace.id);
   } finally {

@@ -99,14 +99,13 @@ Deno.test("create a manifest", async () => {
     assertEquals(createResponse?.status, 201);
 
     const responseBody = await createResponse?.json();
-    assertEquals(responseBody.message, "Manifest created successfully");
-    assertEquals(typeof responseBody.manifestId, "number");
+    assertEquals(typeof responseBody.id, "number");
 
     // Verify manifest was created in database
     const manifest = await db
       .selectFrom("manifest")
       .selectAll()
-      .where("id", "=", responseBody.manifestId)
+      .where("id", "=", responseBody.id)
       .executeTakeFirstOrThrow();
 
     assertEquals(manifest.project_id, project.id);
@@ -502,354 +501,6 @@ Deno.test("get manifests with search", async () => {
   }
 });
 
-// --- GET MANIFEST DETAILS TESTS ---
-Deno.test("get manifest details", async () => {
-  initKyselyDb();
-  await resetTables();
-
-  try {
-    const { userId, token } = await createTestUserAndToken();
-
-    // Create workspace and project
-    const workspaceService = new WorkspaceService();
-    await workspaceService.createTeamWorkspace("Test Workspace", userId);
-
-    const workspace = await db
-      .selectFrom("workspace")
-      .selectAll()
-      .where("name", "=", "Test Workspace")
-      .executeTakeFirstOrThrow();
-
-    const projectService = new ProjectService();
-    const config = getDefaultProjectConfig();
-    await projectService.createProject(
-      userId,
-      {
-        name: "Test Project",
-        workspaceId: workspace.id,
-        maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
-        maxCodeCharPerFile: config.maxCodeCharPerFile,
-        maxCharPerSymbol: config.maxCharPerSymbol,
-        maxCharPerFile: config.maxCharPerFile,
-        maxCodeLinePerSymbol: config.maxCodeLinePerSymbol,
-        maxCodeLinePerFile: config.maxCodeLinePerFile,
-        maxLinePerSymbol: config.maxLinePerSymbol,
-        maxLinePerFile: config.maxLinePerFile,
-        maxDependencyPerSymbol: config.maxDependencyPerSymbol,
-        maxDependencyPerFile: config.maxDependencyPerFile,
-        maxDependentPerSymbol: config.maxDependentPerSymbol,
-        maxDependentPerFile: config.maxDependentPerFile,
-        maxCyclomaticComplexityPerSymbol:
-          config.maxCyclomaticComplexityPerSymbol,
-        maxCyclomaticComplexityPerFile: config.maxCyclomaticComplexityPerFile,
-      },
-    );
-
-    const project = await db
-      .selectFrom("project")
-      .selectAll()
-      .where("name", "=", "Test Project")
-      .executeTakeFirstOrThrow();
-
-    // Create manifest
-    const manifestService = new ManifestService();
-    const { manifestId } = await manifestService.createManifest(
-      userId,
-      project.id,
-      "main",
-      "abc123",
-      new Date(),
-      { test: "data", complex: { nested: "value" } },
-    );
-
-    const { url, method } = ManifestApiTypes.prepareGetManifestDetails(
-      manifestId!,
-    );
-
-    const response = await api.handle(
-      new Request(`http://localhost:3000${url}`, {
-        method,
-        headers: {
-          "Authorization": `Bearer ${token}`,
-        },
-      }),
-    );
-
-    assertEquals(response?.status, 200);
-    const manifest = await response?.json();
-    assertEquals(manifest.id, manifestId);
-    assertEquals(manifest.project_id, project.id);
-    assertEquals(manifest.branch, "main");
-    assertEquals(manifest.commitSha, "abc123");
-    assertEquals(manifest.version, 1);
-    assertEquals(manifest.manifest.test, "data");
-    assertEquals(manifest.manifest.complex.nested, "value");
-  } finally {
-    await resetTables();
-    await destroyKyselyDb();
-  }
-});
-
-Deno.test("get manifest details - non-member", async () => {
-  initKyselyDb();
-  await resetTables();
-
-  try {
-    // Create first user with workspace, project, and manifest
-    const { userId } = await createTestUserAndToken();
-
-    const workspaceService = new WorkspaceService();
-    await workspaceService.createTeamWorkspace("Test Workspace", userId);
-
-    const workspace = await db
-      .selectFrom("workspace")
-      .selectAll()
-      .where("name", "=", "Test Workspace")
-      .executeTakeFirstOrThrow();
-
-    const projectService = new ProjectService();
-    const config = getDefaultProjectConfig();
-    await projectService.createProject(
-      userId,
-      {
-        name: "Test Project",
-        workspaceId: workspace.id,
-        maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
-        maxCodeCharPerFile: config.maxCodeCharPerFile,
-        maxCharPerSymbol: config.maxCharPerSymbol,
-        maxCharPerFile: config.maxCharPerFile,
-        maxCodeLinePerSymbol: config.maxCodeLinePerSymbol,
-        maxCodeLinePerFile: config.maxCodeLinePerFile,
-        maxLinePerSymbol: config.maxLinePerSymbol,
-        maxLinePerFile: config.maxLinePerFile,
-        maxDependencyPerSymbol: config.maxDependencyPerSymbol,
-        maxDependencyPerFile: config.maxDependencyPerFile,
-        maxDependentPerSymbol: config.maxDependentPerSymbol,
-        maxDependentPerFile: config.maxDependentPerFile,
-        maxCyclomaticComplexityPerSymbol:
-          config.maxCyclomaticComplexityPerSymbol,
-        maxCyclomaticComplexityPerFile: config.maxCyclomaticComplexityPerFile,
-      },
-    );
-
-    const project = await db
-      .selectFrom("project")
-      .selectAll()
-      .where("name", "=", "Test Project")
-      .executeTakeFirstOrThrow();
-
-    const manifestService = new ManifestService();
-    const { manifestId } = await manifestService.createManifest(
-      userId,
-      project.id,
-      "main",
-      "abc123",
-      new Date(),
-      { test: "data" },
-    );
-
-    // Create second user (not a member of the workspace)
-    const { token: nonMemberToken } = await createTestUserAndToken();
-
-    const { url, method } = ManifestApiTypes.prepareGetManifestDetails(
-      manifestId!,
-    );
-
-    const response = await api.handle(
-      new Request(`http://localhost:3000${url}`, {
-        method,
-        headers: {
-          "Authorization": `Bearer ${nonMemberToken}`,
-        },
-      }),
-    );
-
-    assertEquals(response?.status, 400);
-    const responseBody = await response?.json();
-    assertEquals(responseBody.error, "manifest_not_found");
-  } finally {
-    await resetTables();
-    await destroyKyselyDb();
-  }
-});
-
-// --- DELETE MANIFEST TESTS ---
-Deno.test("delete a manifest", async () => {
-  initKyselyDb();
-  await resetTables();
-
-  try {
-    const { userId, token } = await createTestUserAndToken();
-
-    // Create workspace and project
-    const workspaceService = new WorkspaceService();
-    await workspaceService.createTeamWorkspace("Test Workspace", userId);
-
-    const workspace = await db
-      .selectFrom("workspace")
-      .selectAll()
-      .where("name", "=", "Test Workspace")
-      .executeTakeFirstOrThrow();
-
-    const projectService = new ProjectService();
-    const config = getDefaultProjectConfig();
-    await projectService.createProject(
-      userId,
-      {
-        name: "Test Project",
-        workspaceId: workspace.id,
-        maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
-        maxCodeCharPerFile: config.maxCodeCharPerFile,
-        maxCharPerSymbol: config.maxCharPerSymbol,
-        maxCharPerFile: config.maxCharPerFile,
-        maxCodeLinePerSymbol: config.maxCodeLinePerSymbol,
-        maxCodeLinePerFile: config.maxCodeLinePerFile,
-        maxLinePerSymbol: config.maxLinePerSymbol,
-        maxLinePerFile: config.maxLinePerFile,
-        maxDependencyPerSymbol: config.maxDependencyPerSymbol,
-        maxDependencyPerFile: config.maxDependencyPerFile,
-        maxDependentPerSymbol: config.maxDependentPerSymbol,
-        maxDependentPerFile: config.maxDependentPerFile,
-        maxCyclomaticComplexityPerSymbol:
-          config.maxCyclomaticComplexityPerSymbol,
-        maxCyclomaticComplexityPerFile: config.maxCyclomaticComplexityPerFile,
-      },
-    );
-
-    const project = await db
-      .selectFrom("project")
-      .selectAll()
-      .where("name", "=", "Test Project")
-      .executeTakeFirstOrThrow();
-
-    // Create manifest
-    const manifestService = new ManifestService();
-    const { manifestId } = await manifestService.createManifest(
-      userId,
-      project.id,
-      "main",
-      "abc123",
-      new Date(),
-      { test: "data" },
-    );
-
-    const { url, method } = ManifestApiTypes.prepareDeleteManifest(manifestId!);
-
-    const response = await api.handle(
-      new Request(`http://localhost:3000${url}`, {
-        method,
-        headers: {
-          "Authorization": `Bearer ${token}`,
-        },
-      }),
-    );
-
-    assertEquals(response?.status, 204);
-
-    // Verify manifest was deleted
-    const deletedManifest = await db
-      .selectFrom("manifest")
-      .selectAll()
-      .where("id", "=", manifestId!)
-      .executeTakeFirst();
-
-    assertEquals(deletedManifest, undefined);
-  } finally {
-    await resetTables();
-    await destroyKyselyDb();
-  }
-});
-
-Deno.test("delete a manifest - non-member", async () => {
-  initKyselyDb();
-  await resetTables();
-
-  try {
-    // Create first user with workspace, project, and manifest
-    const { userId } = await createTestUserAndToken();
-
-    const workspaceService = new WorkspaceService();
-    await workspaceService.createTeamWorkspace("Test Workspace", userId);
-
-    const workspace = await db
-      .selectFrom("workspace")
-      .selectAll()
-      .where("name", "=", "Test Workspace")
-      .executeTakeFirstOrThrow();
-
-    const projectService = new ProjectService();
-    const config = getDefaultProjectConfig();
-    await projectService.createProject(
-      userId,
-      {
-        name: "Test Project",
-        workspaceId: workspace.id,
-        maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
-        maxCodeCharPerFile: config.maxCodeCharPerFile,
-        maxCharPerSymbol: config.maxCharPerSymbol,
-        maxCharPerFile: config.maxCharPerFile,
-        maxCodeLinePerSymbol: config.maxCodeLinePerSymbol,
-        maxCodeLinePerFile: config.maxCodeLinePerFile,
-        maxLinePerSymbol: config.maxLinePerSymbol,
-        maxLinePerFile: config.maxLinePerFile,
-        maxDependencyPerSymbol: config.maxDependencyPerSymbol,
-        maxDependencyPerFile: config.maxDependencyPerFile,
-        maxDependentPerSymbol: config.maxDependentPerSymbol,
-        maxDependentPerFile: config.maxDependentPerFile,
-        maxCyclomaticComplexityPerSymbol:
-          config.maxCyclomaticComplexityPerSymbol,
-        maxCyclomaticComplexityPerFile: config.maxCyclomaticComplexityPerFile,
-      },
-    );
-
-    const project = await db
-      .selectFrom("project")
-      .selectAll()
-      .where("name", "=", "Test Project")
-      .executeTakeFirstOrThrow();
-
-    const manifestService = new ManifestService();
-    const { manifestId } = await manifestService.createManifest(
-      userId,
-      project.id,
-      "main",
-      "abc123",
-      new Date(),
-      { test: "data" },
-    );
-
-    // Create second user (not a member of the workspace)
-    const { token: nonMemberToken } = await createTestUserAndToken();
-
-    const { url, method } = ManifestApiTypes.prepareDeleteManifest(manifestId!);
-
-    const response = await api.handle(
-      new Request(`http://localhost:3000${url}`, {
-        method,
-        headers: {
-          "Authorization": `Bearer ${nonMemberToken}`,
-        },
-      }),
-    );
-
-    assertEquals(response?.status, 400);
-    const responseBody = await response?.json();
-    assertEquals(responseBody.error, "manifest_not_found");
-
-    // Verify manifest still exists
-    const existingManifest = await db
-      .selectFrom("manifest")
-      .selectAll()
-      .where("id", "=", manifestId!)
-      .executeTakeFirst();
-
-    assertNotEquals(existingManifest, undefined);
-  } finally {
-    await resetTables();
-    await destroyKyselyDb();
-  }
-});
-
 // --- PAGINATION TESTS ---
 Deno.test("get manifests - pagination", async () => {
   initKyselyDb();
@@ -972,6 +623,640 @@ Deno.test("get manifests - invalid pagination parameters", async () => {
       ),
     );
     assertEquals(response2?.status, 400);
+  } finally {
+    await resetTables();
+    await destroyKyselyDb();
+  }
+});
+
+// --- GET MANIFEST DETAILS TESTS ---
+Deno.test("get manifest details", async () => {
+  initKyselyDb();
+  await resetTables();
+
+  try {
+    const { userId, token } = await createTestUserAndToken();
+
+    // Create workspace and project
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace("Test Workspace", userId);
+
+    const workspace = await db
+      .selectFrom("workspace")
+      .selectAll()
+      .where("name", "=", "Test Workspace")
+      .executeTakeFirstOrThrow();
+
+    const projectService = new ProjectService();
+    const config = getDefaultProjectConfig();
+    await projectService.createProject(
+      userId,
+      {
+        name: "Test Project",
+        workspaceId: workspace.id,
+        maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
+        maxCodeCharPerFile: config.maxCodeCharPerFile,
+        maxCharPerSymbol: config.maxCharPerSymbol,
+        maxCharPerFile: config.maxCharPerFile,
+        maxCodeLinePerSymbol: config.maxCodeLinePerSymbol,
+        maxCodeLinePerFile: config.maxCodeLinePerFile,
+        maxLinePerSymbol: config.maxLinePerSymbol,
+        maxLinePerFile: config.maxLinePerFile,
+        maxDependencyPerSymbol: config.maxDependencyPerSymbol,
+        maxDependencyPerFile: config.maxDependencyPerFile,
+        maxDependentPerSymbol: config.maxDependentPerSymbol,
+        maxDependentPerFile: config.maxDependentPerFile,
+        maxCyclomaticComplexityPerSymbol:
+          config.maxCyclomaticComplexityPerSymbol,
+        maxCyclomaticComplexityPerFile: config.maxCyclomaticComplexityPerFile,
+      },
+    );
+
+    const project = await db
+      .selectFrom("project")
+      .selectAll()
+      .where("name", "=", "Test Project")
+      .executeTakeFirstOrThrow();
+
+    // Create manifest
+    const manifestService = new ManifestService();
+    const createResponse = await manifestService.createManifest(
+      userId,
+      project.id,
+      "main",
+      "abc123",
+      new Date(),
+      { test: "data", complex: { nested: "value" } },
+    );
+
+    if ("error" in createResponse) {
+      throw new Error(createResponse.error);
+    }
+
+    const { url, method } = ManifestApiTypes.prepareGetManifestDetails(
+      createResponse.id,
+    );
+
+    const response = await api.handle(
+      new Request(`http://localhost:3000${url}`, {
+        method,
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      }),
+    );
+
+    assertEquals(response?.status, 200);
+    const manifest = await response?.json();
+    assertEquals(manifest.id, createResponse.id);
+    assertEquals(manifest.project_id, project.id);
+    assertEquals(manifest.branch, "main");
+    assertEquals(manifest.commitSha, "abc123");
+    assertEquals(manifest.version, 1);
+    assertEquals(manifest.manifest.test, "data");
+    assertEquals(manifest.manifest.complex.nested, "value");
+  } finally {
+    await resetTables();
+    await destroyKyselyDb();
+  }
+});
+
+Deno.test("get manifest details - non-member", async () => {
+  initKyselyDb();
+  await resetTables();
+
+  try {
+    // Create first user with workspace, project, and manifest
+    const { userId } = await createTestUserAndToken();
+
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace("Test Workspace", userId);
+
+    const workspace = await db
+      .selectFrom("workspace")
+      .selectAll()
+      .where("name", "=", "Test Workspace")
+      .executeTakeFirstOrThrow();
+
+    const projectService = new ProjectService();
+    const config = getDefaultProjectConfig();
+    await projectService.createProject(
+      userId,
+      {
+        name: "Test Project",
+        workspaceId: workspace.id,
+        maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
+        maxCodeCharPerFile: config.maxCodeCharPerFile,
+        maxCharPerSymbol: config.maxCharPerSymbol,
+        maxCharPerFile: config.maxCharPerFile,
+        maxCodeLinePerSymbol: config.maxCodeLinePerSymbol,
+        maxCodeLinePerFile: config.maxCodeLinePerFile,
+        maxLinePerSymbol: config.maxLinePerSymbol,
+        maxLinePerFile: config.maxLinePerFile,
+        maxDependencyPerSymbol: config.maxDependencyPerSymbol,
+        maxDependencyPerFile: config.maxDependencyPerFile,
+        maxDependentPerSymbol: config.maxDependentPerSymbol,
+        maxDependentPerFile: config.maxDependentPerFile,
+        maxCyclomaticComplexityPerSymbol:
+          config.maxCyclomaticComplexityPerSymbol,
+        maxCyclomaticComplexityPerFile: config.maxCyclomaticComplexityPerFile,
+      },
+    );
+
+    const project = await db
+      .selectFrom("project")
+      .selectAll()
+      .where("name", "=", "Test Project")
+      .executeTakeFirstOrThrow();
+
+    const manifestService = new ManifestService();
+    const createResponse = await manifestService.createManifest(
+      userId,
+      project.id,
+      "main",
+      "abc123",
+      new Date(),
+      { test: "data" },
+    );
+
+    if ("error" in createResponse) {
+      throw new Error(createResponse.error);
+    }
+
+    // Create second user (not a member of the workspace)
+    const { token: nonMemberToken } = await createTestUserAndToken();
+
+    const { url, method } = ManifestApiTypes.prepareGetManifestDetails(
+      createResponse.id,
+    );
+
+    const response = await api.handle(
+      new Request(`http://localhost:3000${url}`, {
+        method,
+        headers: {
+          "Authorization": `Bearer ${nonMemberToken}`,
+        },
+      }),
+    );
+
+    assertEquals(response?.status, 400);
+    const responseBody = await response?.json();
+    assertEquals(responseBody.error, "manifest_not_found");
+  } finally {
+    await resetTables();
+    await destroyKyselyDb();
+  }
+});
+
+// --- DELETE MANIFEST TESTS ---
+Deno.test("delete a manifest", async () => {
+  initKyselyDb();
+  await resetTables();
+
+  try {
+    const { userId, token } = await createTestUserAndToken();
+
+    // Create workspace and project
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace("Test Workspace", userId);
+
+    const workspace = await db
+      .selectFrom("workspace")
+      .selectAll()
+      .where("name", "=", "Test Workspace")
+      .executeTakeFirstOrThrow();
+
+    const projectService = new ProjectService();
+    const config = getDefaultProjectConfig();
+    await projectService.createProject(
+      userId,
+      {
+        name: "Test Project",
+        workspaceId: workspace.id,
+        maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
+        maxCodeCharPerFile: config.maxCodeCharPerFile,
+        maxCharPerSymbol: config.maxCharPerSymbol,
+        maxCharPerFile: config.maxCharPerFile,
+        maxCodeLinePerSymbol: config.maxCodeLinePerSymbol,
+        maxCodeLinePerFile: config.maxCodeLinePerFile,
+        maxLinePerSymbol: config.maxLinePerSymbol,
+        maxLinePerFile: config.maxLinePerFile,
+        maxDependencyPerSymbol: config.maxDependencyPerSymbol,
+        maxDependencyPerFile: config.maxDependencyPerFile,
+        maxDependentPerSymbol: config.maxDependentPerSymbol,
+        maxDependentPerFile: config.maxDependentPerFile,
+        maxCyclomaticComplexityPerSymbol:
+          config.maxCyclomaticComplexityPerSymbol,
+        maxCyclomaticComplexityPerFile: config.maxCyclomaticComplexityPerFile,
+      },
+    );
+
+    const project = await db
+      .selectFrom("project")
+      .selectAll()
+      .where("name", "=", "Test Project")
+      .executeTakeFirstOrThrow();
+
+    // Create manifest
+    const manifestService = new ManifestService();
+    const createResponse = await manifestService.createManifest(
+      userId,
+      project.id,
+      "main",
+      "abc123",
+      new Date(),
+      { test: "data" },
+    );
+
+    if ("error" in createResponse) {
+      throw new Error(createResponse.error);
+    }
+
+    const { url, method } = ManifestApiTypes.prepareDeleteManifest(
+      createResponse.id,
+    );
+
+    const response = await api.handle(
+      new Request(`http://localhost:3000${url}`, {
+        method,
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      }),
+    );
+
+    assertEquals(response?.status, 204);
+
+    // Verify manifest was deleted
+    const deletedManifest = await db
+      .selectFrom("manifest")
+      .selectAll()
+      .where("id", "=", createResponse.id)
+      .executeTakeFirst();
+
+    assertEquals(deletedManifest, undefined);
+  } finally {
+    await resetTables();
+    await destroyKyselyDb();
+  }
+});
+
+Deno.test("delete a manifest - non-member", async () => {
+  initKyselyDb();
+  await resetTables();
+
+  try {
+    // Create first user with workspace, project, and manifest
+    const { userId } = await createTestUserAndToken();
+
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace("Test Workspace", userId);
+
+    const workspace = await db
+      .selectFrom("workspace")
+      .selectAll()
+      .where("name", "=", "Test Workspace")
+      .executeTakeFirstOrThrow();
+
+    const projectService = new ProjectService();
+    const config = getDefaultProjectConfig();
+    await projectService.createProject(
+      userId,
+      {
+        name: "Test Project",
+        workspaceId: workspace.id,
+        maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
+        maxCodeCharPerFile: config.maxCodeCharPerFile,
+        maxCharPerSymbol: config.maxCharPerSymbol,
+        maxCharPerFile: config.maxCharPerFile,
+        maxCodeLinePerSymbol: config.maxCodeLinePerSymbol,
+        maxCodeLinePerFile: config.maxCodeLinePerFile,
+        maxLinePerSymbol: config.maxLinePerSymbol,
+        maxLinePerFile: config.maxLinePerFile,
+        maxDependencyPerSymbol: config.maxDependencyPerSymbol,
+        maxDependencyPerFile: config.maxDependencyPerFile,
+        maxDependentPerSymbol: config.maxDependentPerSymbol,
+        maxDependentPerFile: config.maxDependentPerFile,
+        maxCyclomaticComplexityPerSymbol:
+          config.maxCyclomaticComplexityPerSymbol,
+        maxCyclomaticComplexityPerFile: config.maxCyclomaticComplexityPerFile,
+      },
+    );
+
+    const project = await db
+      .selectFrom("project")
+      .selectAll()
+      .where("name", "=", "Test Project")
+      .executeTakeFirstOrThrow();
+
+    const manifestService = new ManifestService();
+    const createResponse = await manifestService.createManifest(
+      userId,
+      project.id,
+      "main",
+      "abc123",
+      new Date(),
+      { test: "data" },
+    );
+
+    // Create second user (not a member of the workspace)
+    const { token: nonMemberToken } = await createTestUserAndToken();
+
+    if ("error" in createResponse) {
+      throw new Error(createResponse.error);
+    }
+
+    const { url, method } = ManifestApiTypes.prepareDeleteManifest(
+      createResponse.id,
+    );
+
+    const response = await api.handle(
+      new Request(`http://localhost:3000${url}`, {
+        method,
+        headers: {
+          "Authorization": `Bearer ${nonMemberToken}`,
+        },
+      }),
+    );
+
+    assertEquals(response?.status, 400);
+    const responseBody = await response?.json();
+    assertEquals(responseBody.error, "manifest_not_found");
+
+    // Verify manifest still exists
+    const existingManifest = await db
+      .selectFrom("manifest")
+      .selectAll()
+      .where("id", "=", createResponse.id)
+      .executeTakeFirst();
+
+    assertNotEquals(existingManifest, undefined);
+  } finally {
+    await resetTables();
+    await destroyKyselyDb();
+  }
+});
+
+// --- GET MANIFEST AUDIT TESTS ---
+Deno.test("get manifest audit", async () => {
+  initKyselyDb();
+  await resetTables();
+
+  try {
+    const { userId, token } = await createTestUserAndToken();
+
+    // Create workspace and project
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace("Test Workspace", userId);
+
+    const workspace = await db
+      .selectFrom("workspace")
+      .selectAll()
+      .where("name", "=", "Test Workspace")
+      .executeTakeFirstOrThrow();
+
+    const projectService = new ProjectService();
+    const config = getDefaultProjectConfig();
+    await projectService.createProject(
+      userId,
+      {
+        name: "Test Project",
+        workspaceId: workspace.id,
+        maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
+        maxCodeCharPerFile: config.maxCodeCharPerFile,
+        maxCharPerSymbol: config.maxCharPerSymbol,
+        maxCharPerFile: config.maxCharPerFile,
+        maxCodeLinePerSymbol: config.maxCodeLinePerSymbol,
+        maxCodeLinePerFile: config.maxCodeLinePerFile,
+        maxLinePerSymbol: config.maxLinePerSymbol,
+        maxLinePerFile: config.maxLinePerFile,
+        maxDependencyPerSymbol: config.maxDependencyPerSymbol,
+        maxDependencyPerFile: config.maxDependencyPerFile,
+        maxDependentPerSymbol: config.maxDependentPerSymbol,
+        maxDependentPerFile: config.maxDependentPerFile,
+        maxCyclomaticComplexityPerSymbol:
+          config.maxCyclomaticComplexityPerSymbol,
+        maxCyclomaticComplexityPerFile: config.maxCyclomaticComplexityPerFile,
+      },
+    );
+
+    const project = await db
+      .selectFrom("project")
+      .selectAll()
+      .where("name", "=", "Test Project")
+      .executeTakeFirstOrThrow();
+
+    // Create manifest with sample dependency manifest structure
+    const manifestService = new ManifestService();
+    const sampleManifest = {
+      "src/index.ts": {
+        id: "src/index.ts",
+        filePath: "src/index.ts",
+        language: "typescript",
+        metrics: {
+          linesCount: 12,
+          codeLineCount: 8,
+          characterCount: 200,
+          codeCharacterCount: 150,
+          dependencyCount: 1,
+          dependentCount: 0,
+          cyclomaticComplexity: 3,
+        },
+        dependencies: {
+          "./utils": {
+            id: "./utils",
+            isExternal: false,
+            symbols: {},
+          },
+        },
+        dependents: {},
+        symbols: {
+          "MyClass": {
+            id: "MyClass",
+            type: "class",
+            metrics: {
+              linesCount: 12,
+              codeLineCount: 8,
+              characterCount: 200,
+              codeCharacterCount: 150,
+              dependencyCount: 1,
+              dependentCount: 0,
+              cyclomaticComplexity: 3,
+            },
+            dependencies: {
+              "./utils": {
+                id: "./utils",
+                isExternal: false,
+                symbols: {},
+              },
+            },
+            dependents: {},
+          },
+        },
+      },
+    };
+
+    const createResponse = await manifestService.createManifest(
+      userId,
+      project.id,
+      "main",
+      "abc123",
+      new Date(),
+      sampleManifest,
+    );
+
+    if ("error" in createResponse) {
+      throw new Error(createResponse.error);
+    }
+
+    const { url, method } = ManifestApiTypes.prepareGetManifestAudit(
+      createResponse.id,
+    );
+
+    const response = await api.handle(
+      new Request(`http://localhost:3000${url}`, {
+        method,
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      }),
+    );
+
+    assertEquals(response?.status, 200);
+    const auditManifest = await response?.json();
+
+    // Verify audit manifest structure
+    assertEquals(typeof auditManifest, "object");
+
+    // Check that it has the expected file entry
+    assertEquals(typeof auditManifest["src/index.ts"], "object");
+    assertEquals(auditManifest["src/index.ts"].id, "src/index.ts");
+    assertEquals(typeof auditManifest["src/index.ts"].alerts, "object");
+    assertEquals(typeof auditManifest["src/index.ts"].symbols, "object");
+
+    // Check that the symbol is present
+    assertEquals(
+      typeof auditManifest["src/index.ts"].symbols["MyClass"],
+      "object",
+    );
+    assertEquals(
+      auditManifest["src/index.ts"].symbols["MyClass"].id,
+      "MyClass",
+    );
+  } finally {
+    await resetTables();
+    await destroyKyselyDb();
+  }
+});
+
+Deno.test("get manifest audit - non-member", async () => {
+  initKyselyDb();
+  await resetTables();
+
+  try {
+    // Create first user with workspace, project, and manifest
+    const { userId } = await createTestUserAndToken();
+
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace("Test Workspace", userId);
+
+    const workspace = await db
+      .selectFrom("workspace")
+      .selectAll()
+      .where("name", "=", "Test Workspace")
+      .executeTakeFirstOrThrow();
+
+    const projectService = new ProjectService();
+    const config = getDefaultProjectConfig();
+    await projectService.createProject(
+      userId,
+      {
+        name: "Test Project",
+        workspaceId: workspace.id,
+        maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
+        maxCodeCharPerFile: config.maxCodeCharPerFile,
+        maxCharPerSymbol: config.maxCharPerSymbol,
+        maxCharPerFile: config.maxCharPerFile,
+        maxCodeLinePerSymbol: config.maxCodeLinePerSymbol,
+        maxCodeLinePerFile: config.maxCodeLinePerFile,
+        maxLinePerSymbol: config.maxLinePerSymbol,
+        maxLinePerFile: config.maxLinePerFile,
+        maxDependencyPerSymbol: config.maxDependencyPerSymbol,
+        maxDependencyPerFile: config.maxDependencyPerFile,
+        maxDependentPerSymbol: config.maxDependentPerSymbol,
+        maxDependentPerFile: config.maxDependentPerFile,
+        maxCyclomaticComplexityPerSymbol:
+          config.maxCyclomaticComplexityPerSymbol,
+        maxCyclomaticComplexityPerFile: config.maxCyclomaticComplexityPerFile,
+      },
+    );
+
+    const project = await db
+      .selectFrom("project")
+      .selectAll()
+      .where("name", "=", "Test Project")
+      .executeTakeFirstOrThrow();
+
+    const manifestService = new ManifestService();
+    const createResponse = await manifestService.createManifest(
+      userId,
+      project.id,
+      "main",
+      "abc123",
+      new Date(),
+      { test: "data" },
+    );
+
+    if ("error" in createResponse) {
+      throw new Error(createResponse.error);
+    }
+
+    // Create second user (not a member of the workspace)
+    const { token: nonMemberToken } = await createTestUserAndToken();
+
+    const { url, method } = ManifestApiTypes.prepareGetManifestAudit(
+      createResponse.id,
+    );
+
+    const response = await api.handle(
+      new Request(`http://localhost:3000${url}`, {
+        method,
+        headers: {
+          "Authorization": `Bearer ${nonMemberToken}`,
+        },
+      }),
+    );
+
+    assertEquals(response?.status, 400);
+    const responseBody = await response?.json();
+    assertEquals(responseBody.error, "manifest_not_found");
+  } finally {
+    await resetTables();
+    await destroyKyselyDb();
+  }
+});
+
+Deno.test("get manifest audit - invalid manifest id", async () => {
+  initKyselyDb();
+  await resetTables();
+
+  try {
+    const { token } = await createTestUserAndToken();
+
+    const { url, method } = ManifestApiTypes.prepareGetManifestAudit(999999);
+
+    const response = await api.handle(
+      new Request(`http://localhost:3000${url}`, {
+        method,
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      }),
+    );
+
+    assertEquals(response?.status, 400);
+    const responseBody = await response?.json();
+    assertEquals(responseBody.error, "manifest_not_found");
   } finally {
     await resetTables();
     await destroyKyselyDb();

@@ -139,12 +139,15 @@ export default function AddProjectPage() {
         throw new Error("Failed to create project");
       }
 
+      const createResponseBody = await response
+        .json() as ProjectApiTypes.CreateProjectResponse;
+
       toast({
         title: "Project created",
         description: "You can now start working on your project",
       });
 
-      navigate(`/projects`);
+      navigate(`/projects/${createResponseBody.id}`);
     } catch (error) {
       console.error(error);
       toast({

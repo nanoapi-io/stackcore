@@ -32,9 +32,13 @@ export class ProjectService {
       maxCyclomaticComplexityPerSymbol: number;
       maxCyclomaticComplexityPerFile: number;
     },
-  ): Promise<{
-    error?: string;
-  }> {
+  ): Promise<
+    {
+      id: number;
+    } | {
+      error: string;
+    }
+  > {
     // Check if user is a member of the workspace
     const isMember = await db
       .selectFrom("member")
@@ -66,7 +70,7 @@ export class ProjectService {
     }
 
     // Create the project
-    await db
+    const newProject = await db
       .insertInto("project")
       .values({
         name: project.name,
@@ -89,9 +93,10 @@ export class ProjectService {
           project.maxCyclomaticComplexityPerFile,
         created_at: new Date(),
       })
-      .execute();
+      .returning("id")
+      .executeTakeFirstOrThrow();
 
-    return {};
+    return { id: newProject.id };
   }
 
   /**

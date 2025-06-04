@@ -22,7 +22,7 @@ import AddProjectPage from "./pages/projects/add.tsx";
 import ProfilePage from "./pages/profile.tsx";
 import ProjectBase from "./pages/projects/project/base.tsx";
 import ProjectIndex from "./pages/projects/project/index.tsx";
-import ProjectManifests from "./pages/projects/project/manifests.tsx";
+import ProjectManifests from "./pages/projects/project/manifests/index.tsx";
 import ProjectManifestsAdd from "./pages/projects/project/manifests/add/index.tsx";
 import ProjectManifest from "./pages/projects/project/manifests/manifest.tsx";
 import ProjectManifestsAddCli from "./pages/projects/project/manifests/add/cli.tsx";
