@@ -14,7 +14,7 @@ import {
   MemberApiTypes,
   WorkspaceApiTypes,
 } from "@stackcore/core/responses";
-import { Check, CreditCard, Loader, Loader2 } from "lucide-react";
+import { Check, CreditCard, Loader } from "lucide-react";
 import {
   Dialog,
   DialogClose,
@@ -120,6 +120,42 @@ export default function WorkspaceSubscription() {
     // show a loading state false to the user in the meantime
   }
 
+  const [stripePortalPaymentMethodBusy, setStripePortalPaymentMethodBusy] =
+    useState(false);
+
+  async function goToStripePortalPaymentMethod() {
+    setStripePortalPaymentMethodBusy(true);
+
+    try {
+      const { url, method, body } = BillingApiTypes
+        .prepareCreatePortalSessionPaymentMethod({
+          workspaceId: context.workspace.id,
+          returnUrl: globalThis.location.href,
+        });
+
+      const response = await coreApi.handleRequest(url, method, body);
+
+      if (!response.ok || response.status !== 200) {
+        throw new Error("Failed to go to billing portal");
+      }
+
+      const data = await response.json();
+      globalThis.location.href = data.url;
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "Failed to go to billing portal",
+        variant: "destructive",
+      });
+      setStripePortalPaymentMethodBusy(false);
+    }
+    // We do not set stripePortalBusy to false here because
+    // the user will be redirected to the billing portal anyway
+    // however this sometimes takes a while to load, so we don't want to
+    // show a loading state false to the user in the meantime
+  }
+
   function getChangeType(
     currentProduct: WorkspaceApiTypes.StripeProduct,
     currentBillingCycle: WorkspaceApiTypes.StripeBillingCycle | null,
@@ -184,13 +220,14 @@ export default function WorkspaceSubscription() {
             <TableHeader>
               <TableRow>
                 <TableHead>Subscription status</TableHead>
+                <TableHead>Payment method</TableHead>
                 <TableHead>Current Subscription</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               <TableRow>
                 <TableCell>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col items-start gap-2">
                     {context.workspace.access_enabled
                       ? (
                         <Badge variant="secondary">
@@ -208,10 +245,37 @@ export default function WorkspaceSubscription() {
                         disabled={stripePortalBusy}
                         size="sm"
                       >
-                        {stripePortalBusy ? <Loader /> : <CreditCard />}
+                        {stripePortalBusy
+                          ? <Loader className="animate-spin" />
+                          : <CreditCard />}
                         Invoices and payment method
                       </Button>
                     )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-col items-start gap-2">
+                    {subscription.hasDefaultPaymentMethod
+                      ? (
+                        <Badge variant="secondary">
+                          Default payment method
+                        </Badge>
+                      )
+                      : (
+                        <Badge variant="destructive">
+                          No payment method set
+                        </Badge>
+                      )}
+                    <Button
+                      size="sm"
+                      onClick={goToStripePortalPaymentMethod}
+                      disabled={stripePortalPaymentMethodBusy}
+                    >
+                      {stripePortalPaymentMethodBusy
+                        ? <Loader className="animate-spin" />
+                        : <CreditCard />}
+                      Manage payment method
+                    </Button>
                   </div>
                 </TableCell>
                 <TableCell>
@@ -552,10 +616,11 @@ function ChangeSubscriptionDialog(props: {
     setBusy(true);
 
     try {
-      const { url, method, body } = BillingApiTypes.prepareCreatePortalSession({
-        workspaceId: props.workspaceId,
-        returnUrl: globalThis.location.href,
-      });
+      const { url, method, body } = BillingApiTypes
+        .prepareCreatePortalSessionPaymentMethod({
+          workspaceId: props.workspaceId,
+          returnUrl: globalThis.location.href,
+        });
 
       const response = await coreApi.handleRequest(url, method, body);
 
@@ -711,7 +776,7 @@ function ChangeSubscriptionDialog(props: {
             </Button>
           </DialogClose>
           <Button onClick={handleSubmit} disabled={busy}>
-            {busy && <Loader2 className="w-4 h-4 animate-spin" />}
+            {busy && <Loader className="animate-spin" />}
             Confirm {props.changeType === "upgrade" ? "Upgrade" : "Downgrade"}
           </Button>
         </DialogFooter>

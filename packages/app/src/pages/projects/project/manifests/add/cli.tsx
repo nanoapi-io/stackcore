@@ -19,14 +19,14 @@ import {
 
 export default function ProjectManifestsAddCli() {
   const context = useOutletContext<ProjectPageContext>();
-  const [copiedStates, setCopiedStates] = useState<Record<string, boolean>>({});
+  const [copied, setCopied] = useState(false);
 
-  const copyToClipboard = async (text: string, key: string) => {
+  const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      setCopiedStates({ ...copiedStates, [key]: true });
+      setCopied(true);
       setTimeout(() => {
-        setCopiedStates({ ...copiedStates, [key]: false });
+        setCopied(false);
       }, 2000);
     } catch (_error) {
       toast({
@@ -86,8 +86,8 @@ export default function ProjectManifestsAddCli() {
           </Alert>
 
           <div className="space-y-4">
-            {cliCommands.map((cmd, index) => (
-              <div key={index} className="space-y-2">
+            {cliCommands.map((cmd) => (
+              <div key={cmd.title} className="space-y-2">
                 <div className="flex items-center justify-between">
                   <h4 className="font-medium text-sm">{cmd.title}</h4>
                 </div>
@@ -99,9 +99,9 @@ export default function ProjectManifestsAddCli() {
                     variant="outline"
                     size="icon"
                     onClick={() =>
-                      copyToClipboard(cmd.command, `cmd-${index}`)}
+                      copyToClipboard(cmd.command)}
                   >
-                    {copiedStates[`cmd-${index}`]
+                    {copied
                       ? <CheckCircle className="h-4 w-4 text-green-600" />
                       : <Copy className="h-4 w-4" />}
                   </Button>

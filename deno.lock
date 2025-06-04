@@ -3347,11 +3347,6 @@
           "npm:stripe@^18.1.0",
           "npm:zod@^3.24.4"
         ]
-      },
-      "packages/runner": {
-        "dependencies": [
-          "jsr:@std/assert@1"
-        ]
       }
     }
   }

@@ -4,6 +4,20 @@ import type { Project } from "../../db/models/project.ts";
 export const createProjectPayloadSchema = z.object({
   name: z.string(),
   workspaceId: z.number(),
+  maxCodeCharPerSymbol: z.number().int().min(1),
+  maxCodeCharPerFile: z.number().int().min(1),
+  maxCharPerSymbol: z.number().int().min(1),
+  maxCharPerFile: z.number().int().min(1),
+  maxCodeLinePerSymbol: z.number().int().min(1),
+  maxCodeLinePerFile: z.number().int().min(1),
+  maxLinePerSymbol: z.number().int().min(1),
+  maxLinePerFile: z.number().int().min(1),
+  maxDependencyPerSymbol: z.number().int().min(1),
+  maxDependencyPerFile: z.number().int().min(1),
+  maxDependentPerSymbol: z.number().int().min(1),
+  maxDependentPerFile: z.number().int().min(1),
+  maxCyclomaticComplexityPerSymbol: z.number().int().min(1),
+  maxCyclomaticComplexityPerFile: z.number().int().min(1),
 });
 
 export type CreateProjectPayload = z.infer<
@@ -51,6 +65,20 @@ export function prepareGetProjectDetails(projectId: number) {
 
 export const updateProjectSchema = z.object({
   name: z.string(),
+  maxCodeCharPerSymbol: z.number().int().min(1),
+  maxCodeCharPerFile: z.number().int().min(1),
+  maxCharPerSymbol: z.number().int().min(1),
+  maxCharPerFile: z.number().int().min(1),
+  maxCodeLinePerSymbol: z.number().int().min(1),
+  maxCodeLinePerFile: z.number().int().min(1),
+  maxLinePerSymbol: z.number().int().min(1),
+  maxLinePerFile: z.number().int().min(1),
+  maxDependencyPerSymbol: z.number().int().min(1),
+  maxDependencyPerFile: z.number().int().min(1),
+  maxDependentPerSymbol: z.number().int().min(1),
+  maxDependentPerFile: z.number().int().min(1),
+  maxCyclomaticComplexityPerSymbol: z.number().int().min(1),
+  maxCyclomaticComplexityPerFile: z.number().int().min(1),
 });
 
 export type UpdateProjectPayload = z.infer<

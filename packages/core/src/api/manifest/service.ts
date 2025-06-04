@@ -1,4 +1,5 @@
 import { db } from "../../db/database.ts";
+import settings from "../../settings.ts";
 import type {
   GetManifestDetailsResponse,
   GetManifestsResponse,
@@ -18,7 +19,6 @@ export class ManifestService {
     branch: string | null,
     commitSha: string | null,
     commitShaDate: Date | null,
-    version: number,
     manifest: object,
   ): Promise<{
     manifestId?: number;
@@ -46,7 +46,7 @@ export class ManifestService {
         branch,
         commitSha,
         commitShaDate,
-        version,
+        version: settings.MANIFEST.DEFAULT_VERSION,
         manifest,
         created_at: new Date(),
       })

@@ -31,6 +31,8 @@ const cannotDowngradeToSuperiorProductError =
 const cannotChangeToSameProductAndBillingCycleError =
   "cannot_change_to_same_product_and_billing_cycle";
 const couldNotChangeSubscriptionError = "could_not_change_subscription";
+const cannotUpgradeWithoutDefaultPaymentMethodError =
+  "cannot_upgrade_without_default_payment_method";
 
 export class BillingService {
   public async getSubscription(
@@ -104,6 +106,7 @@ export class BillingService {
       const subscriptionDetails: SubscriptionDetails = {
         product: CUSTOM_PRODUCT,
         billingCycle: null,
+        hasDefaultPaymentMethod: subscription.default_payment_method !== null,
         cancelAt: null,
         newProductWhenCanceled: null,
         newBillingCycleWhenCanceled: null,
@@ -125,6 +128,7 @@ export class BillingService {
     const subscriptionDetails: SubscriptionDetails = {
       product: productInfo.product,
       billingCycle: productInfo.billingCycle,
+      hasDefaultPaymentMethod: subscription.default_payment_method !== null,
       cancelAt: cancelAt ? new Date(cancelAt * 1000) : null,
       newProductWhenCanceled,
       newBillingCycleWhenCanceled,
@@ -246,6 +250,10 @@ export class BillingService {
       .getSubscription(userId, workspaceId);
     if (error || !currentSubscription) {
       return { error };
+    }
+
+    if (!currentSubscription.hasDefaultPaymentMethod) {
+      return { error: cannotUpgradeWithoutDefaultPaymentMethodError };
     }
 
     // Check if user is upgrading to a superior product

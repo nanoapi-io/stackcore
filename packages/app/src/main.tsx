@@ -26,6 +26,7 @@ import ProjectManifests from "./pages/projects/project/manifests.tsx";
 import ProjectManifestsAdd from "./pages/projects/project/manifests/add/index.tsx";
 import ProjectManifest from "./pages/projects/project/manifests/manifest.tsx";
 import ProjectManifestsAddCli from "./pages/projects/project/manifests/add/cli.tsx";
+import ProjectSettings from "./pages/projects/project/settings.tsx";
 
 const router = createBrowserRouter([
   {
@@ -72,6 +73,7 @@ const router = createBrowserRouter([
             children: [
               { index: true, element: <Navigate to="manifests" replace /> },
               { path: "manifests", Component: ProjectManifests },
+              { path: "settings", Component: ProjectSettings },
             ],
           },
           { path: "manifests/add", Component: ProjectManifestsAdd },

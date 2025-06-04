@@ -26,30 +26,21 @@ import {
 } from "@tanstack/react-table";
 import { DataTablePagination } from "../../../components/shadcn/Datatablepagination.tsx";
 import { toast } from "../../../components/shadcn/hooks/use-toast.tsx";
-import { Eye, Plus } from "lucide-react";
+import { Eye, Plus, ScrollText } from "lucide-react";
 import { ManifestApiTypes } from "@stackcore/core/responses";
 import { Separator } from "../../../components/shadcn/Separator.tsx";
-import { Badge } from "../../../components/shadcn/Badge.tsx";
 import { useCoreApi } from "../../../contexts/CoreApi.tsx";
 import type { ProjectPageContext } from "./base.tsx";
 import { Input } from "../../../components/shadcn/Input.tsx";
-
-type Manifest = {
-  id: number;
-  project_id: number;
-  created_at: Date;
-  branch: string | null;
-  commitSha: string | null;
-  commitShaDate: Date | null;
-  version: number;
-};
 
 export default function ProjectManifests() {
   const context = useOutletContext<ProjectPageContext>();
   const coreApi = useCoreApi();
 
   const [isBusy, setIsBusy] = useState(false);
-  const [manifests, setManifests] = useState<Manifest[]>([]);
+  const [manifests, setManifests] = useState<
+    ManifestApiTypes.GetManifestsResponse["results"]
+  >([]);
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState("");
 
@@ -104,52 +95,69 @@ export default function ProjectManifests() {
 
   // Handle search with debounce effect
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      // Reset to first page when searching
-      const newPagination = { ...pagination, pageIndex: 0 };
-      setPagination(newPagination);
-      getManifests(newPagination, search);
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
+    // Reset to first page when searching
+    const newPagination = { ...pagination, pageIndex: 0 };
+    setPagination(newPagination);
+    getManifests(newPagination, search);
   }, [search]);
 
-  const columns: ColumnDef<Manifest>[] = [
-    {
-      accessorKey: "version",
-      header: "Version",
-      cell: ({ row }) => {
-        return (
-          <Badge variant="outline">
-            v{row.original.version}
-          </Badge>
-        );
-      },
-    },
+  const columns: ColumnDef<
+    ManifestApiTypes.GetManifestsResponse["results"][number]
+  >[] = [
     {
       accessorKey: "branch",
       header: "Branch",
       cell: ({ row }) => {
-        return row.original.branch || (
-          <span className="text-muted-foreground">-</span>
-        );
+        return row.original.branch
+          ? (
+            <div className="text-muted-foreground">
+              {row.original.branch}
+            </div>
+          )
+          : (
+            <div className="text-muted-foreground">
+              No branch
+            </div>
+          );
       },
     },
     {
       accessorKey: "commitSha",
       header: "Commit SHA",
       cell: ({ row }) => {
-        const sha = row.original.commitSha;
-        return sha
-          ? <code className="text-sm">{sha.substring(0, 8)}</code>
-          : <span className="text-muted-foreground">-</span>;
+        if (row.original.commitSha) {
+          return (
+            <div className="text-sm">
+              {row.original.commitSha}
+            </div>
+          );
+        }
+        return (
+          <div className="text-muted-foreground">
+            No commit SHA
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "commitShaDate",
+      header: "Commit SHA Date",
+      cell: ({ row }) => {
+        if (row.original.commitShaDate) {
+          return new Date(row.original.commitShaDate).toLocaleString();
+        }
+        return (
+          <div className="text-muted-foreground">
+            No commit SHA date
+          </div>
+        );
       },
     },
     {
       accessorKey: "created_at",
       header: "Created",
       cell: ({ row }) => {
-        return new Date(row.original.created_at).toLocaleDateString();
+        return new Date(row.original.created_at).toLocaleString();
       },
     },
     {
@@ -157,13 +165,11 @@ export default function ProjectManifests() {
       header: "Actions",
       cell: ({ row }) => {
         return (
-          <div className="flex items-center space-x-2">
-            <Link to={`/manifests/${row.original.id}`}>
-              <Button variant="outline" size="icon">
-                <Eye className="h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
+          <Link to={`/manifests/${row.original.id}`}>
+            <Button variant="secondary" size="icon">
+              <Eye />
+            </Button>
+          </Link>
         );
       },
     },
@@ -193,13 +199,16 @@ export default function ProjectManifests() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Project Manifests</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <ScrollText />
+          Project Manifests
+        </CardTitle>
         <CardDescription>
           View and manage manifests for this project
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex items-center justify-between space-x-4">
+        <div className="flex items-center justify-between gap-4">
           <Input
             placeholder="Search manifests..."
             value={search}
@@ -208,7 +217,7 @@ export default function ProjectManifests() {
           />
           <Link to={`/projects/${context.project.id}/manifests/add`}>
             <Button>
-              <Plus className="h-4 w-4" />
+              <Plus />
               Add Manifest
             </Button>
           </Link>
@@ -246,7 +255,7 @@ export default function ProjectManifests() {
                     </TableCell>
                   </TableRow>
                 )
-                : table.getRowModel().rows?.length
+                : table.getRowModel().rows.length
                 ? (
                   table.getRowModel().rows.map((row) => (
                     <TableRow
@@ -268,7 +277,7 @@ export default function ProjectManifests() {
                   <TableRow>
                     <TableCell
                       colSpan={table.getAllColumns().length}
-                      className="h-24 text-center"
+                      className="h-24 text-center text-muted-foreground"
                     >
                       No manifests found.
                     </TableCell>

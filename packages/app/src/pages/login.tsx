@@ -159,7 +159,7 @@ export default function LoginPage() {
       // Should be small enough to not be noticeable to the user
       setTimeout(() => {
         navigate(redirectLocation);
-      }, 100);
+      }, 500);
     } catch (error) {
       toast({
         title: "Unexpected error",
@@ -242,7 +242,9 @@ export default function LoginPage() {
                       disabled={isBusy}
                       className="w-full"
                     >
-                      {isBusy ? <Loader /> : <ArrowRight />}
+                      {isBusy
+                        ? <Loader className="animate-spin" />
+                        : <ArrowRight />}
                       {isBusy ? "Sending..." : "Send Verification Code"}
                     </Button>
                   </form>
@@ -293,7 +295,9 @@ export default function LoginPage() {
                         disabled={isBusy}
                         className="w-full"
                       >
-                        {isBusy ? <Loader /> : <Shield />}
+                        {isBusy
+                          ? <Loader className="animate-spin" />
+                          : <Shield />}
                         {isBusy ? "Verifying..." : "Verify & Sign In"}
                       </Button>
 

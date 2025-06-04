@@ -125,6 +125,28 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn("id", "serial", (col) => col.primaryKey())
     .addColumn("name", "varchar(255)", (col) => col.notNull())
     .addColumn("workspace_id", "integer", (col) => col.notNull())
+    .addColumn("max_code_char_per_symbol", "integer", (col) => col.notNull())
+    .addColumn("max_code_char_per_file", "integer", (col) => col.notNull())
+    .addColumn("max_char_per_symbol", "integer", (col) => col.notNull())
+    .addColumn("max_char_per_file", "integer", (col) => col.notNull())
+    .addColumn("max_code_line_per_symbol", "integer", (col) => col.notNull())
+    .addColumn("max_code_line_per_file", "integer", (col) => col.notNull())
+    .addColumn("max_line_per_symbol", "integer", (col) => col.notNull())
+    .addColumn("max_line_per_file", "integer", (col) => col.notNull())
+    .addColumn("max_dependency_per_symbol", "integer", (col) => col.notNull())
+    .addColumn("max_dependency_per_file", "integer", (col) => col.notNull())
+    .addColumn("max_dependent_per_symbol", "integer", (col) => col.notNull())
+    .addColumn("max_dependent_per_file", "integer", (col) => col.notNull())
+    .addColumn(
+      "max_cyclomatic_complexity_per_symbol",
+      "integer",
+      (col) => col.notNull(),
+    )
+    .addColumn(
+      "max_cyclomatic_complexity_per_file",
+      "integer",
+      (col) => col.notNull(),
+    )
     .addColumn(
       "created_at",
       "timestamp",

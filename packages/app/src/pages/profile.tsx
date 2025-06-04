@@ -481,7 +481,7 @@ function CreateTokenDialog(
                     </Button>
                   </DialogClose>
                   <Button type="submit" disabled={isBusy}>
-                    {isBusy && <Loader />}
+                    {isBusy && <Loader className="animate-spin" />}
                     Create Token
                   </Button>
                 </div>

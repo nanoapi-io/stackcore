@@ -100,7 +100,7 @@ export default function InvitationClaimPage() {
           <Card>
             <CardHeader className="flex flex-col items-center gap-2">
               <CardTitle className="flex flex-col items-center gap-2 text-2xl">
-                <Loader />
+                <Loader className="animate-spin" />
                 Processing Invitation
               </CardTitle>
               <CardDescription>

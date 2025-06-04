@@ -8,6 +8,26 @@ import { ProjectService } from "../project/service.ts";
 import { ManifestService } from "./service.ts";
 import { ManifestApiTypes } from "../responseType.ts";
 
+// Helper function to provide default project configuration values
+function getDefaultProjectConfig() {
+  return {
+    maxCodeCharPerSymbol: 1000,
+    maxCodeCharPerFile: 50000,
+    maxCharPerSymbol: 2000,
+    maxCharPerFile: 100000,
+    maxCodeLinePerSymbol: 50,
+    maxCodeLinePerFile: 2000,
+    maxLinePerSymbol: 100,
+    maxLinePerFile: 4000,
+    maxDependencyPerSymbol: 10,
+    maxDependencyPerFile: 100,
+    maxDependentPerSymbol: 20,
+    maxDependentPerFile: 200,
+    maxCyclomaticComplexityPerSymbol: 10,
+    maxCyclomaticComplexityPerFile: 100,
+  };
+}
+
 // --- CREATE MANIFEST TESTS ---
 Deno.test("create a manifest", async () => {
   initKyselyDb();
@@ -16,7 +36,6 @@ Deno.test("create a manifest", async () => {
   try {
     const { userId, token } = await createTestUserAndToken();
 
-    // Create workspace and project first
     const workspaceService = new WorkspaceService();
     await workspaceService.createTeamWorkspace("Test Workspace", userId);
 
@@ -27,7 +46,29 @@ Deno.test("create a manifest", async () => {
       .executeTakeFirstOrThrow();
 
     const projectService = new ProjectService();
-    await projectService.createProject(userId, "Test Project", workspace.id);
+    const config = getDefaultProjectConfig();
+    await projectService.createProject(
+      userId,
+      {
+        name: "Test Project",
+        workspaceId: workspace.id,
+        maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
+        maxCodeCharPerFile: config.maxCodeCharPerFile,
+        maxCharPerSymbol: config.maxCharPerSymbol,
+        maxCharPerFile: config.maxCharPerFile,
+        maxCodeLinePerSymbol: config.maxCodeLinePerSymbol,
+        maxCodeLinePerFile: config.maxCodeLinePerFile,
+        maxLinePerSymbol: config.maxLinePerSymbol,
+        maxLinePerFile: config.maxLinePerFile,
+        maxDependencyPerSymbol: config.maxDependencyPerSymbol,
+        maxDependencyPerFile: config.maxDependencyPerFile,
+        maxDependentPerSymbol: config.maxDependentPerSymbol,
+        maxDependentPerFile: config.maxDependentPerFile,
+        maxCyclomaticComplexityPerSymbol:
+          config.maxCyclomaticComplexityPerSymbol,
+        maxCyclomaticComplexityPerFile: config.maxCyclomaticComplexityPerFile,
+      },
+    );
 
     const project = await db
       .selectFrom("project")
@@ -41,7 +82,6 @@ Deno.test("create a manifest", async () => {
       branch: "main",
       commitSha: "abc123",
       commitShaDate: new Date(),
-      version: 1,
       manifest: { test: "data" },
     });
 
@@ -97,7 +137,29 @@ Deno.test("create a manifest - non-member of workspace", async () => {
       .executeTakeFirstOrThrow();
 
     const projectService = new ProjectService();
-    await projectService.createProject(userId, "Test Project", workspace.id);
+    const config = getDefaultProjectConfig();
+    await projectService.createProject(
+      userId,
+      {
+        name: "Test Project",
+        workspaceId: workspace.id,
+        maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
+        maxCodeCharPerFile: config.maxCodeCharPerFile,
+        maxCharPerSymbol: config.maxCharPerSymbol,
+        maxCharPerFile: config.maxCharPerFile,
+        maxCodeLinePerSymbol: config.maxCodeLinePerSymbol,
+        maxCodeLinePerFile: config.maxCodeLinePerFile,
+        maxLinePerSymbol: config.maxLinePerSymbol,
+        maxLinePerFile: config.maxLinePerFile,
+        maxDependencyPerSymbol: config.maxDependencyPerSymbol,
+        maxDependencyPerFile: config.maxDependencyPerFile,
+        maxDependentPerSymbol: config.maxDependentPerSymbol,
+        maxDependentPerFile: config.maxDependentPerFile,
+        maxCyclomaticComplexityPerSymbol:
+          config.maxCyclomaticComplexityPerSymbol,
+        maxCyclomaticComplexityPerFile: config.maxCyclomaticComplexityPerFile,
+      },
+    );
 
     const project = await db
       .selectFrom("project")
@@ -114,7 +176,6 @@ Deno.test("create a manifest - non-member of workspace", async () => {
       branch: "main",
       commitSha: "abc123",
       commitShaDate: null,
-      version: 1,
       manifest: { test: "data" },
     });
 
@@ -148,7 +209,6 @@ Deno.test("create manifest - invalid input validation", async () => {
     // Test with invalid JSON
     const { url, method } = ManifestApiTypes.prepareCreateManifest({
       projectId: 999,
-      version: 1,
       branch: "main",
       commitSha: "abc123",
       commitShaDate: new Date(),
@@ -191,7 +251,29 @@ Deno.test("get manifests", async () => {
       .executeTakeFirstOrThrow();
 
     const projectService = new ProjectService();
-    await projectService.createProject(userId, "Test Project", workspace.id);
+    const config = getDefaultProjectConfig();
+    await projectService.createProject(
+      userId,
+      {
+        name: "Test Project",
+        workspaceId: workspace.id,
+        maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
+        maxCodeCharPerFile: config.maxCodeCharPerFile,
+        maxCharPerSymbol: config.maxCharPerSymbol,
+        maxCharPerFile: config.maxCharPerFile,
+        maxCodeLinePerSymbol: config.maxCodeLinePerSymbol,
+        maxCodeLinePerFile: config.maxCodeLinePerFile,
+        maxLinePerSymbol: config.maxLinePerSymbol,
+        maxLinePerFile: config.maxLinePerFile,
+        maxDependencyPerSymbol: config.maxDependencyPerSymbol,
+        maxDependencyPerFile: config.maxDependencyPerFile,
+        maxDependentPerSymbol: config.maxDependentPerSymbol,
+        maxDependentPerFile: config.maxDependentPerFile,
+        maxCyclomaticComplexityPerSymbol:
+          config.maxCyclomaticComplexityPerSymbol,
+        maxCyclomaticComplexityPerFile: config.maxCyclomaticComplexityPerFile,
+      },
+    );
 
     const project = await db
       .selectFrom("project")
@@ -208,7 +290,6 @@ Deno.test("get manifests", async () => {
         `branch-${i}`,
         `commit-${i}`,
         new Date(),
-        i + 1,
         { version: i + 1 },
       );
     }
@@ -261,7 +342,29 @@ Deno.test("get manifests with workspace filter", async () => {
       .executeTakeFirstOrThrow();
 
     const projectService = new ProjectService();
-    await projectService.createProject(userId, "Test Project", workspace.id);
+    const config = getDefaultProjectConfig();
+    await projectService.createProject(
+      userId,
+      {
+        name: "Test Project",
+        workspaceId: workspace.id,
+        maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
+        maxCodeCharPerFile: config.maxCodeCharPerFile,
+        maxCharPerSymbol: config.maxCharPerSymbol,
+        maxCharPerFile: config.maxCharPerFile,
+        maxCodeLinePerSymbol: config.maxCodeLinePerSymbol,
+        maxCodeLinePerFile: config.maxCodeLinePerFile,
+        maxLinePerSymbol: config.maxLinePerSymbol,
+        maxLinePerFile: config.maxLinePerFile,
+        maxDependencyPerSymbol: config.maxDependencyPerSymbol,
+        maxDependencyPerFile: config.maxDependencyPerFile,
+        maxDependentPerSymbol: config.maxDependentPerSymbol,
+        maxDependentPerFile: config.maxDependentPerFile,
+        maxCyclomaticComplexityPerSymbol:
+          config.maxCyclomaticComplexityPerSymbol,
+        maxCyclomaticComplexityPerFile: config.maxCyclomaticComplexityPerFile,
+      },
+    );
 
     const project = await db
       .selectFrom("project")
@@ -277,7 +380,6 @@ Deno.test("get manifests with workspace filter", async () => {
       "main",
       "abc123",
       new Date(),
-      1,
       { test: "data" },
     );
 
@@ -324,7 +426,29 @@ Deno.test("get manifests with search", async () => {
       .executeTakeFirstOrThrow();
 
     const projectService = new ProjectService();
-    await projectService.createProject(userId, "Test Project", workspace.id);
+    const config = getDefaultProjectConfig();
+    await projectService.createProject(
+      userId,
+      {
+        name: "Test Project",
+        workspaceId: workspace.id,
+        maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
+        maxCodeCharPerFile: config.maxCodeCharPerFile,
+        maxCharPerSymbol: config.maxCharPerSymbol,
+        maxCharPerFile: config.maxCharPerFile,
+        maxCodeLinePerSymbol: config.maxCodeLinePerSymbol,
+        maxCodeLinePerFile: config.maxCodeLinePerFile,
+        maxLinePerSymbol: config.maxLinePerSymbol,
+        maxLinePerFile: config.maxLinePerFile,
+        maxDependencyPerSymbol: config.maxDependencyPerSymbol,
+        maxDependencyPerFile: config.maxDependencyPerFile,
+        maxDependentPerSymbol: config.maxDependentPerSymbol,
+        maxDependentPerFile: config.maxDependentPerFile,
+        maxCyclomaticComplexityPerSymbol:
+          config.maxCyclomaticComplexityPerSymbol,
+        maxCyclomaticComplexityPerFile: config.maxCyclomaticComplexityPerFile,
+      },
+    );
 
     const project = await db
       .selectFrom("project")
@@ -340,7 +464,6 @@ Deno.test("get manifests with search", async () => {
       "main",
       "abc123",
       new Date(),
-      1,
       { test: "data" },
     );
     await manifestService.createManifest(
@@ -349,7 +472,6 @@ Deno.test("get manifests with search", async () => {
       "feature-xyz",
       "def456",
       new Date(),
-      2,
       { test: "data2" },
     );
 
@@ -399,7 +521,29 @@ Deno.test("get manifest details", async () => {
       .executeTakeFirstOrThrow();
 
     const projectService = new ProjectService();
-    await projectService.createProject(userId, "Test Project", workspace.id);
+    const config = getDefaultProjectConfig();
+    await projectService.createProject(
+      userId,
+      {
+        name: "Test Project",
+        workspaceId: workspace.id,
+        maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
+        maxCodeCharPerFile: config.maxCodeCharPerFile,
+        maxCharPerSymbol: config.maxCharPerSymbol,
+        maxCharPerFile: config.maxCharPerFile,
+        maxCodeLinePerSymbol: config.maxCodeLinePerSymbol,
+        maxCodeLinePerFile: config.maxCodeLinePerFile,
+        maxLinePerSymbol: config.maxLinePerSymbol,
+        maxLinePerFile: config.maxLinePerFile,
+        maxDependencyPerSymbol: config.maxDependencyPerSymbol,
+        maxDependencyPerFile: config.maxDependencyPerFile,
+        maxDependentPerSymbol: config.maxDependentPerSymbol,
+        maxDependentPerFile: config.maxDependentPerFile,
+        maxCyclomaticComplexityPerSymbol:
+          config.maxCyclomaticComplexityPerSymbol,
+        maxCyclomaticComplexityPerFile: config.maxCyclomaticComplexityPerFile,
+      },
+    );
 
     const project = await db
       .selectFrom("project")
@@ -415,7 +559,6 @@ Deno.test("get manifest details", async () => {
       "main",
       "abc123",
       new Date(),
-      1,
       { test: "data", complex: { nested: "value" } },
     );
 
@@ -465,7 +608,29 @@ Deno.test("get manifest details - non-member", async () => {
       .executeTakeFirstOrThrow();
 
     const projectService = new ProjectService();
-    await projectService.createProject(userId, "Test Project", workspace.id);
+    const config = getDefaultProjectConfig();
+    await projectService.createProject(
+      userId,
+      {
+        name: "Test Project",
+        workspaceId: workspace.id,
+        maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
+        maxCodeCharPerFile: config.maxCodeCharPerFile,
+        maxCharPerSymbol: config.maxCharPerSymbol,
+        maxCharPerFile: config.maxCharPerFile,
+        maxCodeLinePerSymbol: config.maxCodeLinePerSymbol,
+        maxCodeLinePerFile: config.maxCodeLinePerFile,
+        maxLinePerSymbol: config.maxLinePerSymbol,
+        maxLinePerFile: config.maxLinePerFile,
+        maxDependencyPerSymbol: config.maxDependencyPerSymbol,
+        maxDependencyPerFile: config.maxDependencyPerFile,
+        maxDependentPerSymbol: config.maxDependentPerSymbol,
+        maxDependentPerFile: config.maxDependentPerFile,
+        maxCyclomaticComplexityPerSymbol:
+          config.maxCyclomaticComplexityPerSymbol,
+        maxCyclomaticComplexityPerFile: config.maxCyclomaticComplexityPerFile,
+      },
+    );
 
     const project = await db
       .selectFrom("project")
@@ -480,7 +645,6 @@ Deno.test("get manifest details - non-member", async () => {
       "main",
       "abc123",
       new Date(),
-      1,
       { test: "data" },
     );
 
@@ -528,7 +692,29 @@ Deno.test("delete a manifest", async () => {
       .executeTakeFirstOrThrow();
 
     const projectService = new ProjectService();
-    await projectService.createProject(userId, "Test Project", workspace.id);
+    const config = getDefaultProjectConfig();
+    await projectService.createProject(
+      userId,
+      {
+        name: "Test Project",
+        workspaceId: workspace.id,
+        maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
+        maxCodeCharPerFile: config.maxCodeCharPerFile,
+        maxCharPerSymbol: config.maxCharPerSymbol,
+        maxCharPerFile: config.maxCharPerFile,
+        maxCodeLinePerSymbol: config.maxCodeLinePerSymbol,
+        maxCodeLinePerFile: config.maxCodeLinePerFile,
+        maxLinePerSymbol: config.maxLinePerSymbol,
+        maxLinePerFile: config.maxLinePerFile,
+        maxDependencyPerSymbol: config.maxDependencyPerSymbol,
+        maxDependencyPerFile: config.maxDependencyPerFile,
+        maxDependentPerSymbol: config.maxDependentPerSymbol,
+        maxDependentPerFile: config.maxDependentPerFile,
+        maxCyclomaticComplexityPerSymbol:
+          config.maxCyclomaticComplexityPerSymbol,
+        maxCyclomaticComplexityPerFile: config.maxCyclomaticComplexityPerFile,
+      },
+    );
 
     const project = await db
       .selectFrom("project")
@@ -544,7 +730,6 @@ Deno.test("delete a manifest", async () => {
       "main",
       "abc123",
       new Date(),
-      1,
       { test: "data" },
     );
 
@@ -593,7 +778,29 @@ Deno.test("delete a manifest - non-member", async () => {
       .executeTakeFirstOrThrow();
 
     const projectService = new ProjectService();
-    await projectService.createProject(userId, "Test Project", workspace.id);
+    const config = getDefaultProjectConfig();
+    await projectService.createProject(
+      userId,
+      {
+        name: "Test Project",
+        workspaceId: workspace.id,
+        maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
+        maxCodeCharPerFile: config.maxCodeCharPerFile,
+        maxCharPerSymbol: config.maxCharPerSymbol,
+        maxCharPerFile: config.maxCharPerFile,
+        maxCodeLinePerSymbol: config.maxCodeLinePerSymbol,
+        maxCodeLinePerFile: config.maxCodeLinePerFile,
+        maxLinePerSymbol: config.maxLinePerSymbol,
+        maxLinePerFile: config.maxLinePerFile,
+        maxDependencyPerSymbol: config.maxDependencyPerSymbol,
+        maxDependencyPerFile: config.maxDependencyPerFile,
+        maxDependentPerSymbol: config.maxDependentPerSymbol,
+        maxDependentPerFile: config.maxDependentPerFile,
+        maxCyclomaticComplexityPerSymbol:
+          config.maxCyclomaticComplexityPerSymbol,
+        maxCyclomaticComplexityPerFile: config.maxCyclomaticComplexityPerFile,
+      },
+    );
 
     const project = await db
       .selectFrom("project")
@@ -608,7 +815,6 @@ Deno.test("delete a manifest - non-member", async () => {
       "main",
       "abc123",
       new Date(),
-      1,
       { test: "data" },
     );
 
@@ -663,7 +869,29 @@ Deno.test("get manifests - pagination", async () => {
       .executeTakeFirstOrThrow();
 
     const projectService = new ProjectService();
-    await projectService.createProject(userId, "Test Project", workspace.id);
+    const config = getDefaultProjectConfig();
+    await projectService.createProject(
+      userId,
+      {
+        name: "Test Project",
+        workspaceId: workspace.id,
+        maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
+        maxCodeCharPerFile: config.maxCodeCharPerFile,
+        maxCharPerSymbol: config.maxCharPerSymbol,
+        maxCharPerFile: config.maxCharPerFile,
+        maxCodeLinePerSymbol: config.maxCodeLinePerSymbol,
+        maxCodeLinePerFile: config.maxCodeLinePerFile,
+        maxLinePerSymbol: config.maxLinePerSymbol,
+        maxLinePerFile: config.maxLinePerFile,
+        maxDependencyPerSymbol: config.maxDependencyPerSymbol,
+        maxDependencyPerFile: config.maxDependencyPerFile,
+        maxDependentPerSymbol: config.maxDependentPerSymbol,
+        maxDependentPerFile: config.maxDependentPerFile,
+        maxCyclomaticComplexityPerSymbol:
+          config.maxCyclomaticComplexityPerSymbol,
+        maxCyclomaticComplexityPerFile: config.maxCyclomaticComplexityPerFile,
+      },
+    );
 
     const project = await db
       .selectFrom("project")
@@ -680,7 +908,6 @@ Deno.test("get manifests - pagination", async () => {
         `branch-${i}`,
         `commit-${i}`,
         new Date(),
-        i + 1,
         { version: i + 1 },
       );
     }

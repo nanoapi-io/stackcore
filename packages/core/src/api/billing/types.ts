@@ -12,6 +12,7 @@ import {
 export type SubscriptionDetails = {
   product: StripeProduct;
   billingCycle: StripeBillingCycle | null;
+  hasDefaultPaymentMethod: boolean;
   cancelAt: Date | null;
   newProductWhenCanceled: StripeProduct | null;
   newBillingCycleWhenCanceled: StripeBillingCycle | null;

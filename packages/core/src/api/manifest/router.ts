@@ -32,7 +32,6 @@ router.post("/", authMiddleware, async (ctx) => {
     parsedBody.data.branch,
     parsedBody.data.commitSha,
     parsedBody.data.commitShaDate,
-    parsedBody.data.version,
     parsedBody.data.manifest,
   );
 

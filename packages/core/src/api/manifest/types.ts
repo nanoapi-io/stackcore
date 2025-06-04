@@ -8,7 +8,6 @@ export const createManifestPayloadSchema = z.object({
   commitShaDate: z.string().nullable().transform((val) =>
     val ? new Date(val) : null
   ),
-  version: z.number(),
   manifest: z.object({}).passthrough(), // Allow any object structure
 });
 

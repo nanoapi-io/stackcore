@@ -29,8 +29,26 @@ router.post("/", authMiddleware, async (ctx) => {
 
   const { error } = await projectService.createProject(
     session.userId,
-    parsedBody.data.name,
-    parsedBody.data.workspaceId,
+    {
+      name: parsedBody.data.name,
+      workspaceId: parsedBody.data.workspaceId,
+      maxCodeCharPerSymbol: parsedBody.data.maxCodeCharPerSymbol,
+      maxCodeCharPerFile: parsedBody.data.maxCodeCharPerFile,
+      maxCharPerSymbol: parsedBody.data.maxCharPerSymbol,
+      maxCharPerFile: parsedBody.data.maxCharPerFile,
+      maxCodeLinePerSymbol: parsedBody.data.maxCodeLinePerSymbol,
+      maxCodeLinePerFile: parsedBody.data.maxCodeLinePerFile,
+      maxLinePerSymbol: parsedBody.data.maxLinePerSymbol,
+      maxLinePerFile: parsedBody.data.maxLinePerFile,
+      maxDependencyPerSymbol: parsedBody.data.maxDependencyPerSymbol,
+      maxDependencyPerFile: parsedBody.data.maxDependencyPerFile,
+      maxDependentPerSymbol: parsedBody.data.maxDependentPerSymbol,
+      maxDependentPerFile: parsedBody.data.maxDependentPerFile,
+      maxCyclomaticComplexityPerSymbol:
+        parsedBody.data.maxCyclomaticComplexityPerSymbol,
+      maxCyclomaticComplexityPerFile:
+        parsedBody.data.maxCyclomaticComplexityPerFile,
+    },
   );
 
   if (error) {
@@ -155,6 +173,22 @@ router.patch("/:projectId", authMiddleware, async (ctx) => {
     parsedParams.data.projectId,
     {
       name: parsedBody.data.name,
+      maxCodeCharPerSymbol: parsedBody.data.maxCodeCharPerSymbol,
+      maxCodeCharPerFile: parsedBody.data.maxCodeCharPerFile,
+      maxCharPerSymbol: parsedBody.data.maxCharPerSymbol,
+      maxCharPerFile: parsedBody.data.maxCharPerFile,
+      maxCodeLinePerSymbol: parsedBody.data.maxCodeLinePerSymbol,
+      maxCodeLinePerFile: parsedBody.data.maxCodeLinePerFile,
+      maxLinePerSymbol: parsedBody.data.maxLinePerSymbol,
+      maxLinePerFile: parsedBody.data.maxLinePerFile,
+      maxDependencyPerSymbol: parsedBody.data.maxDependencyPerSymbol,
+      maxDependencyPerFile: parsedBody.data.maxDependencyPerFile,
+      maxDependentPerSymbol: parsedBody.data.maxDependentPerSymbol,
+      maxDependentPerFile: parsedBody.data.maxDependentPerFile,
+      maxCyclomaticComplexityPerSymbol:
+        parsedBody.data.maxCyclomaticComplexityPerSymbol,
+      maxCyclomaticComplexityPerFile:
+        parsedBody.data.maxCyclomaticComplexityPerFile,
     },
   );
 

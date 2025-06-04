@@ -5,15 +5,8 @@ import { ProjectApiTypes } from "@stackcore/core/responses";
 import { toast } from "../../../components/shadcn/hooks/use-toast.tsx";
 import { useCoreApi } from "../../../contexts/CoreApi.tsx";
 
-export type Project = {
-  id: number;
-  name: string;
-  workspace_id: number;
-  created_at: Date;
-};
-
 export type ProjectPageContext = {
-  project: Project;
+  project: ProjectApiTypes.GetProjectDetailsResponse;
 };
 
 export default function ProjectBase() {
@@ -21,7 +14,9 @@ export default function ProjectBase() {
   const coreApi = useCoreApi();
 
   const { projectId } = useParams<{ projectId: string }>();
-  const [project, setProject] = useState<Project | undefined>(undefined);
+  const [project, setProject] = useState<
+    ProjectApiTypes.GetProjectDetailsResponse | undefined
+  >(undefined);
 
   async function getProject() {
     if (!projectId) {

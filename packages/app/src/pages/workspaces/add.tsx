@@ -147,7 +147,7 @@ export default function AddWorkspacePage() {
                   disabled={isBusy}
                   className="w-full"
                 >
-                  {isBusy && <Loader />}
+                  {isBusy && <Loader className="animate-spin" />}
                   {isBusy ? "Creating..." : "Create Workspace"}
                 </Button>
               </form>

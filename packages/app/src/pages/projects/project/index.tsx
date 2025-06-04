@@ -32,6 +32,9 @@ export default function ProjectPage() {
     if (location.pathname.endsWith("manifests")) {
       return "manifests";
     }
+    if (location.pathname.endsWith("settings")) {
+      return "settings";
+    }
     return "manifests"; // Default to manifests for now
   }
 
@@ -69,6 +72,11 @@ export default function ProjectPage() {
               <TabsTrigger value="manifests">
                 <Link to={`/projects/${projectId}/manifests`}>
                   Manifests
+                </Link>
+              </TabsTrigger>
+              <TabsTrigger value="settings">
+                <Link to={`/projects/${projectId}/settings`}>
+                  Settings
                 </Link>
               </TabsTrigger>
             </TabsList>

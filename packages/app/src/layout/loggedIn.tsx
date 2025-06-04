@@ -67,9 +67,14 @@ export default function LoggedInLayout() {
             <div className="flex items-center gap-4 font-bold text-2xl">
               <Link
                 to="/"
-                className="flex items-center gap-2 hover:opacity-80"
+                className="hidden md:flex items-center gap-2 hover:opacity-80 "
               >
-                <img src="/logo.png" alt="NanoAPI" width={48} height={48} />
+                <img
+                  src="/logo.png"
+                  alt="NanoAPI"
+                  width={48}
+                  height={48}
+                />
                 <span>NanoAPI</span>
               </Link>
 

@@ -14,8 +14,24 @@ export class ProjectService {
    */
   public async createProject(
     userId: number,
-    name: string,
-    workspaceId: number,
+    project: {
+      name: string;
+      workspaceId: number;
+      maxCodeCharPerSymbol: number;
+      maxCodeCharPerFile: number;
+      maxCharPerSymbol: number;
+      maxCharPerFile: number;
+      maxCodeLinePerSymbol: number;
+      maxCodeLinePerFile: number;
+      maxLinePerSymbol: number;
+      maxLinePerFile: number;
+      maxDependencyPerSymbol: number;
+      maxDependencyPerFile: number;
+      maxDependentPerSymbol: number;
+      maxDependentPerFile: number;
+      maxCyclomaticComplexityPerSymbol: number;
+      maxCyclomaticComplexityPerFile: number;
+    },
   ): Promise<{
     error?: string;
   }> {
@@ -29,7 +45,7 @@ export class ProjectService {
       )
       .select("user_id")
       .where("user_id", "=", userId)
-      .where("workspace_id", "=", workspaceId)
+      .where("workspace_id", "=", project.workspaceId)
       .where("workspace.deactivated", "=", false)
       .executeTakeFirst();
 
@@ -41,8 +57,8 @@ export class ProjectService {
     const existingProject = await db
       .selectFrom("project")
       .select("id")
-      .where("name", "=", name)
-      .where("workspace_id", "=", workspaceId)
+      .where("name", "=", project.name)
+      .where("workspace_id", "=", project.workspaceId)
       .executeTakeFirst();
 
     if (existingProject) {
@@ -53,8 +69,24 @@ export class ProjectService {
     await db
       .insertInto("project")
       .values({
-        name,
-        workspace_id: workspaceId,
+        name: project.name,
+        workspace_id: project.workspaceId,
+        max_code_char_per_symbol: project.maxCodeCharPerSymbol,
+        max_code_char_per_file: project.maxCodeCharPerFile,
+        max_char_per_symbol: project.maxCharPerSymbol,
+        max_char_per_file: project.maxCharPerFile,
+        max_code_line_per_symbol: project.maxCodeLinePerSymbol,
+        max_code_line_per_file: project.maxCodeLinePerFile,
+        max_line_per_symbol: project.maxLinePerSymbol,
+        max_line_per_file: project.maxLinePerFile,
+        max_dependency_per_symbol: project.maxDependencyPerSymbol,
+        max_dependency_per_file: project.maxDependencyPerFile,
+        max_dependent_per_symbol: project.maxDependentPerSymbol,
+        max_dependent_per_file: project.maxDependentPerFile,
+        max_cyclomatic_complexity_per_symbol:
+          project.maxCyclomaticComplexityPerSymbol,
+        max_cyclomatic_complexity_per_file:
+          project.maxCyclomaticComplexityPerFile,
         created_at: new Date(),
       })
       .execute();
@@ -199,6 +231,20 @@ export class ProjectService {
     projectId: number,
     updates: {
       name: string;
+      maxCodeCharPerSymbol: number;
+      maxCodeCharPerFile: number;
+      maxCharPerSymbol: number;
+      maxCharPerFile: number;
+      maxCodeLinePerSymbol: number;
+      maxCodeLinePerFile: number;
+      maxLinePerSymbol: number;
+      maxLinePerFile: number;
+      maxDependencyPerSymbol: number;
+      maxDependencyPerFile: number;
+      maxDependentPerSymbol: number;
+      maxDependentPerFile: number;
+      maxCyclomaticComplexityPerSymbol: number;
+      maxCyclomaticComplexityPerFile: number;
     },
   ): Promise<{
     error?: string;
@@ -248,6 +294,22 @@ export class ProjectService {
       .updateTable("project")
       .set({
         name: updates.name,
+        max_code_char_per_symbol: updates.maxCodeCharPerSymbol,
+        max_code_char_per_file: updates.maxCodeCharPerFile,
+        max_char_per_symbol: updates.maxCharPerSymbol,
+        max_char_per_file: updates.maxCharPerFile,
+        max_code_line_per_symbol: updates.maxCodeLinePerSymbol,
+        max_code_line_per_file: updates.maxCodeLinePerFile,
+        max_line_per_symbol: updates.maxLinePerSymbol,
+        max_line_per_file: updates.maxLinePerFile,
+        max_dependency_per_symbol: updates.maxDependencyPerSymbol,
+        max_dependency_per_file: updates.maxDependencyPerFile,
+        max_dependent_per_symbol: updates.maxDependentPerSymbol,
+        max_dependent_per_file: updates.maxDependentPerFile,
+        max_cyclomatic_complexity_per_symbol:
+          updates.maxCyclomaticComplexityPerSymbol,
+        max_cyclomatic_complexity_per_file:
+          updates.maxCyclomaticComplexityPerFile,
       })
       .where("id", "=", projectId)
       .execute();

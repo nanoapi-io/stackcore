@@ -128,7 +128,9 @@ export default function IndexPage() {
         <div className="flex flex-col gap-4">
           <Card className="grow flex flex-col justify-center items-center p-4">
             <CardTitle>
-              {isLoadingProjects ? <Loader /> : recentProjects.length}
+              {isLoadingProjects
+                ? <Loader className="animate-spin" />
+                : recentProjects.length}
             </CardTitle>
             <CardDescription>
               Projects in Current Workspace
@@ -170,7 +172,7 @@ export default function IndexPage() {
               }].map(
                 ({ title, badge, workspaces }) => {
                   return (
-                    <div className="space-y-2">
+                    <div className="space-y-2" key={title}>
                       <CardDescription>
                         {title}
                       </CardDescription>

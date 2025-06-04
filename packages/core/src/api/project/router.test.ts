@@ -32,6 +32,20 @@ Deno.test("create a project", async () => {
     const { url, method, body } = ProjectApiTypes.prepareCreateProject({
       name: "Test Project",
       workspaceId: workspace.id,
+      maxCodeCharPerSymbol: 1000,
+      maxCodeCharPerFile: 50000,
+      maxCharPerSymbol: 2000,
+      maxCharPerFile: 100000,
+      maxCodeLinePerSymbol: 50,
+      maxCodeLinePerFile: 2000,
+      maxLinePerSymbol: 100,
+      maxLinePerFile: 4000,
+      maxDependencyPerSymbol: 10,
+      maxDependencyPerFile: 100,
+      maxDependentPerSymbol: 20,
+      maxDependentPerFile: 200,
+      maxCyclomaticComplexityPerSymbol: 10,
+      maxCyclomaticComplexityPerFile: 100,
     });
 
     const createResponse = await api.handle(
@@ -86,14 +100,44 @@ Deno.test("create a project with a duplicate name should fail", async () => {
     const projectService = new ProjectService();
     await projectService.createProject(
       userId,
-      "Test Project",
-      workspace.id,
+      {
+        name: "Test Project",
+        workspaceId: workspace.id,
+        maxCodeCharPerSymbol: 1000,
+        maxCodeCharPerFile: 50000,
+        maxCharPerSymbol: 2000,
+        maxCharPerFile: 100000,
+        maxCodeLinePerSymbol: 50,
+        maxCodeLinePerFile: 2000,
+        maxLinePerSymbol: 100,
+        maxLinePerFile: 4000,
+        maxDependencyPerSymbol: 10,
+        maxDependencyPerFile: 100,
+        maxDependentPerSymbol: 20,
+        maxDependentPerFile: 200,
+        maxCyclomaticComplexityPerSymbol: 10,
+        maxCyclomaticComplexityPerFile: 100,
+      },
     );
 
     // Try to create a project with the same name
     const { url, method, body } = ProjectApiTypes.prepareCreateProject({
       name: "Test Project",
       workspaceId: workspace.id,
+      maxCodeCharPerSymbol: 1000,
+      maxCodeCharPerFile: 50000,
+      maxCharPerSymbol: 2000,
+      maxCharPerFile: 100000,
+      maxCodeLinePerSymbol: 50,
+      maxCodeLinePerFile: 2000,
+      maxLinePerSymbol: 100,
+      maxLinePerFile: 4000,
+      maxDependencyPerSymbol: 10,
+      maxDependencyPerFile: 100,
+      maxDependentPerSymbol: 20,
+      maxDependentPerFile: 200,
+      maxCyclomaticComplexityPerSymbol: 10,
+      maxCyclomaticComplexityPerFile: 100,
     });
 
     const response = await api.handle(
@@ -144,6 +188,20 @@ Deno.test("create a project - non-member of workspace", async () => {
     const { url, method, body } = ProjectApiTypes.prepareCreateProject({
       name: "Unauthorized Project",
       workspaceId: workspace.id,
+      maxCodeCharPerSymbol: 1000,
+      maxCodeCharPerFile: 50000,
+      maxCharPerSymbol: 2000,
+      maxCharPerFile: 100000,
+      maxCodeLinePerSymbol: 50,
+      maxCodeLinePerFile: 2000,
+      maxLinePerSymbol: 100,
+      maxLinePerFile: 4000,
+      maxDependencyPerSymbol: 10,
+      maxDependencyPerFile: 100,
+      maxDependentPerSymbol: 20,
+      maxDependentPerFile: 200,
+      maxCyclomaticComplexityPerSymbol: 10,
+      maxCyclomaticComplexityPerFile: 100,
     });
 
     const response = await api.handle(
@@ -177,6 +235,20 @@ Deno.test("create project - invalid input validation", async () => {
     const { url, method, body } = ProjectApiTypes.prepareCreateProject({
       name: "Test Project",
       workspaceId: 1,
+      maxCodeCharPerSymbol: 1000,
+      maxCodeCharPerFile: 50000,
+      maxCharPerSymbol: 2000,
+      maxCharPerFile: 100000,
+      maxCodeLinePerSymbol: 50,
+      maxCodeLinePerFile: 2000,
+      maxLinePerSymbol: 100,
+      maxLinePerFile: 4000,
+      maxDependencyPerSymbol: 10,
+      maxDependencyPerFile: 100,
+      maxDependentPerSymbol: 20,
+      maxDependentPerFile: 200,
+      maxCyclomaticComplexityPerSymbol: 10,
+      maxCyclomaticComplexityPerFile: 100,
     });
 
     const response = await api.handle(
@@ -196,6 +268,20 @@ Deno.test("create project - invalid input validation", async () => {
       .prepareCreateProject({
         name: "Test Project",
         workspaceId: 1,
+        maxCodeCharPerSymbol: 1000,
+        maxCodeCharPerFile: 50000,
+        maxCharPerSymbol: 2000,
+        maxCharPerFile: 100000,
+        maxCodeLinePerSymbol: 50,
+        maxCodeLinePerFile: 2000,
+        maxLinePerSymbol: 100,
+        maxLinePerFile: 4000,
+        maxDependencyPerSymbol: 10,
+        maxDependencyPerFile: 100,
+        maxDependentPerSymbol: 20,
+        maxDependentPerFile: 200,
+        maxCyclomaticComplexityPerSymbol: 10,
+        maxCyclomaticComplexityPerFile: 100,
       });
 
     const response2 = await api.handle(
@@ -234,7 +320,27 @@ Deno.test("get project details", async () => {
       .executeTakeFirstOrThrow();
 
     const projectService = new ProjectService();
-    await projectService.createProject(userId, "Test Project", workspace.id);
+    await projectService.createProject(
+      userId,
+      {
+        name: "Test Project",
+        workspaceId: workspace.id,
+        maxCodeCharPerSymbol: 1000,
+        maxCodeCharPerFile: 50000,
+        maxCharPerSymbol: 2000,
+        maxCharPerFile: 100000,
+        maxCodeLinePerSymbol: 50,
+        maxCodeLinePerFile: 2000,
+        maxLinePerSymbol: 100,
+        maxLinePerFile: 4000,
+        maxDependencyPerSymbol: 10,
+        maxDependencyPerFile: 100,
+        maxDependentPerSymbol: 20,
+        maxDependentPerFile: 200,
+        maxCyclomaticComplexityPerSymbol: 10,
+        maxCyclomaticComplexityPerFile: 100,
+      },
+    );
 
     const project = await db
       .selectFrom("project")
@@ -259,7 +365,6 @@ Deno.test("get project details", async () => {
 
     assertEquals(response?.status, 200);
     const responseBody = await response?.json();
-    console.log(1111111, responseBody);
     assertEquals(responseBody.id, project.id);
     assertEquals(responseBody.name, "Test Project");
     assertEquals(responseBody.workspace_id, workspace.id);
@@ -291,7 +396,27 @@ Deno.test("get project details - non-member of workspace", async () => {
       .executeTakeFirstOrThrow();
 
     const projectService = new ProjectService();
-    await projectService.createProject(userId, "Test Project", workspace.id);
+    await projectService.createProject(
+      userId,
+      {
+        name: "Test Project",
+        workspaceId: workspace.id,
+        maxCodeCharPerSymbol: 1000,
+        maxCodeCharPerFile: 50000,
+        maxCharPerSymbol: 2000,
+        maxCharPerFile: 100000,
+        maxCodeLinePerSymbol: 50,
+        maxCodeLinePerFile: 2000,
+        maxLinePerSymbol: 100,
+        maxLinePerFile: 4000,
+        maxDependencyPerSymbol: 10,
+        maxDependencyPerFile: 100,
+        maxDependentPerSymbol: 20,
+        maxDependentPerFile: 200,
+        maxCyclomaticComplexityPerSymbol: 10,
+        maxCyclomaticComplexityPerFile: 100,
+      },
+    );
 
     const project = await db
       .selectFrom("project")
@@ -396,7 +521,27 @@ Deno.test("get project details - deactivated workspace", async () => {
       .executeTakeFirstOrThrow();
 
     const projectService = new ProjectService();
-    await projectService.createProject(userId, "Test Project", workspace.id);
+    await projectService.createProject(
+      userId,
+      {
+        name: "Test Project",
+        workspaceId: workspace.id,
+        maxCodeCharPerSymbol: 1000,
+        maxCodeCharPerFile: 50000,
+        maxCharPerSymbol: 2000,
+        maxCharPerFile: 100000,
+        maxCodeLinePerSymbol: 50,
+        maxCodeLinePerFile: 2000,
+        maxLinePerSymbol: 100,
+        maxLinePerFile: 4000,
+        maxDependencyPerSymbol: 10,
+        maxDependencyPerFile: 100,
+        maxDependentPerSymbol: 20,
+        maxDependentPerFile: 200,
+        maxCyclomaticComplexityPerSymbol: 10,
+        maxCyclomaticComplexityPerFile: 100,
+      },
+    );
 
     const project = await db
       .selectFrom("project")
@@ -461,8 +606,24 @@ Deno.test("get user projects", async () => {
     for (let i = 0; i < 10; i++) {
       await projectService.createProject(
         userId,
-        `Project ${i}`,
-        workspace.id,
+        {
+          name: `Project ${i}`,
+          workspaceId: workspace.id,
+          maxCodeCharPerSymbol: 1000,
+          maxCodeCharPerFile: 50000,
+          maxCharPerSymbol: 2000,
+          maxCharPerFile: 100000,
+          maxCodeLinePerSymbol: 50,
+          maxCodeLinePerFile: 2000,
+          maxLinePerSymbol: 100,
+          maxLinePerFile: 4000,
+          maxDependencyPerSymbol: 10,
+          maxDependencyPerFile: 100,
+          maxDependentPerSymbol: 20,
+          maxDependentPerFile: 200,
+          maxCyclomaticComplexityPerSymbol: 10,
+          maxCyclomaticComplexityPerFile: 100,
+        },
       );
     }
 
@@ -521,8 +682,24 @@ Deno.test("get user projects, pagination", async () => {
     for (let i = 0; i < 10; i++) {
       await projectService.createProject(
         userId,
-        `Project ${i}`,
-        workspace.id,
+        {
+          name: `Project ${i}`,
+          workspaceId: workspace.id,
+          maxCodeCharPerSymbol: 1000,
+          maxCodeCharPerFile: 50000,
+          maxCharPerSymbol: 2000,
+          maxCharPerFile: 100000,
+          maxCodeLinePerSymbol: 50,
+          maxCodeLinePerFile: 2000,
+          maxLinePerSymbol: 100,
+          maxLinePerFile: 4000,
+          maxDependencyPerSymbol: 10,
+          maxDependencyPerFile: 100,
+          maxDependentPerSymbol: 20,
+          maxDependentPerFile: 200,
+          maxCyclomaticComplexityPerSymbol: 10,
+          maxCyclomaticComplexityPerFile: 100,
+        },
       );
     }
 
@@ -581,8 +758,24 @@ Deno.test("get user projects, search by name", async () => {
     for (let i = 0; i < 10; i++) {
       await projectService.createProject(
         userId,
-        `Test Project ${i}`,
-        workspace.id,
+        {
+          name: `Test Project ${i}`,
+          workspaceId: workspace.id,
+          maxCodeCharPerSymbol: 1000,
+          maxCodeCharPerFile: 50000,
+          maxCharPerSymbol: 2000,
+          maxCharPerFile: 100000,
+          maxCodeLinePerSymbol: 50,
+          maxCodeLinePerFile: 2000,
+          maxLinePerSymbol: 100,
+          maxLinePerFile: 4000,
+          maxDependencyPerSymbol: 10,
+          maxDependencyPerFile: 100,
+          maxDependentPerSymbol: 20,
+          maxDependentPerFile: 200,
+          maxCyclomaticComplexityPerSymbol: 10,
+          maxCyclomaticComplexityPerFile: 100,
+        },
       );
     }
 
@@ -695,6 +888,20 @@ Deno.test("update a project", async () => {
     const { url, method, body } = ProjectApiTypes.prepareCreateProject({
       name: "Original Project Name",
       workspaceId: workspace.id,
+      maxCodeCharPerSymbol: 1000,
+      maxCodeCharPerFile: 50000,
+      maxCharPerSymbol: 2000,
+      maxCharPerFile: 100000,
+      maxCodeLinePerSymbol: 50,
+      maxCodeLinePerFile: 2000,
+      maxLinePerSymbol: 100,
+      maxLinePerFile: 4000,
+      maxDependencyPerSymbol: 10,
+      maxDependencyPerFile: 100,
+      maxDependentPerSymbol: 20,
+      maxDependentPerFile: 200,
+      maxCyclomaticComplexityPerSymbol: 10,
+      maxCyclomaticComplexityPerFile: 100,
     });
 
     const createResponse = await api.handle(
@@ -721,6 +928,20 @@ Deno.test("update a project", async () => {
     const { url: url2, method: method2, body: body2 } = ProjectApiTypes
       .prepareUpdateProject(project.id, {
         name: "Updated Project Name",
+        maxCodeCharPerSymbol: 1000,
+        maxCodeCharPerFile: 50000,
+        maxCharPerSymbol: 2000,
+        maxCharPerFile: 100000,
+        maxCodeLinePerSymbol: 50,
+        maxCodeLinePerFile: 2000,
+        maxLinePerSymbol: 100,
+        maxLinePerFile: 4000,
+        maxDependencyPerSymbol: 10,
+        maxDependencyPerFile: 100,
+        maxDependentPerSymbol: 20,
+        maxDependentPerFile: 200,
+        maxCyclomaticComplexityPerSymbol: 10,
+        maxCyclomaticComplexityPerFile: 100,
       });
 
     const response = await api.handle(
@@ -776,8 +997,24 @@ Deno.test("update a project - non-member", async () => {
     const projectService = new ProjectService();
     await projectService.createProject(
       userId,
-      "Test Project",
-      workspaceNM.id,
+      {
+        name: "Test Project",
+        workspaceId: workspaceNM.id,
+        maxCodeCharPerSymbol: 1000,
+        maxCodeCharPerFile: 50000,
+        maxCharPerSymbol: 2000,
+        maxCharPerFile: 100000,
+        maxCodeLinePerSymbol: 50,
+        maxCodeLinePerFile: 2000,
+        maxLinePerSymbol: 100,
+        maxLinePerFile: 4000,
+        maxDependencyPerSymbol: 10,
+        maxDependencyPerFile: 100,
+        maxDependentPerSymbol: 20,
+        maxDependentPerFile: 200,
+        maxCyclomaticComplexityPerSymbol: 10,
+        maxCyclomaticComplexityPerFile: 100,
+      },
     );
 
     // Get the project from the database for its ID
@@ -795,6 +1032,20 @@ Deno.test("update a project - non-member", async () => {
       project.id,
       {
         name: "Unauthorized Update",
+        maxCodeCharPerSymbol: 1000,
+        maxCodeCharPerFile: 50000,
+        maxCharPerSymbol: 2000,
+        maxCharPerFile: 100000,
+        maxCodeLinePerSymbol: 50,
+        maxCodeLinePerFile: 2000,
+        maxLinePerSymbol: 100,
+        maxLinePerFile: 4000,
+        maxDependencyPerSymbol: 10,
+        maxDependencyPerFile: 100,
+        maxDependentPerSymbol: 20,
+        maxDependentPerFile: 200,
+        maxCyclomaticComplexityPerSymbol: 10,
+        maxCyclomaticComplexityPerFile: 100,
       },
     );
 
@@ -841,13 +1092,45 @@ Deno.test("update project - duplicate name in same workspace", async () => {
     const projectService = new ProjectService();
     await projectService.createProject(
       userId,
-      "Project 1",
-      workspace.id,
+      {
+        name: "Project 1",
+        workspaceId: workspace.id,
+        maxCodeCharPerSymbol: 1000,
+        maxCodeCharPerFile: 50000,
+        maxCharPerSymbol: 2000,
+        maxCharPerFile: 100000,
+        maxCodeLinePerSymbol: 50,
+        maxCodeLinePerFile: 2000,
+        maxLinePerSymbol: 100,
+        maxLinePerFile: 4000,
+        maxDependencyPerSymbol: 10,
+        maxDependencyPerFile: 100,
+        maxDependentPerSymbol: 20,
+        maxDependentPerFile: 200,
+        maxCyclomaticComplexityPerSymbol: 10,
+        maxCyclomaticComplexityPerFile: 100,
+      },
     );
     await projectService.createProject(
       userId,
-      "Project 2",
-      workspace.id,
+      {
+        name: "Project 2",
+        workspaceId: workspace.id,
+        maxCodeCharPerSymbol: 1000,
+        maxCodeCharPerFile: 50000,
+        maxCharPerSymbol: 2000,
+        maxCharPerFile: 100000,
+        maxCodeLinePerSymbol: 50,
+        maxCodeLinePerFile: 2000,
+        maxLinePerSymbol: 100,
+        maxLinePerFile: 4000,
+        maxDependencyPerSymbol: 10,
+        maxDependencyPerFile: 100,
+        maxDependentPerSymbol: 20,
+        maxDependentPerFile: 200,
+        maxCyclomaticComplexityPerSymbol: 10,
+        maxCyclomaticComplexityPerFile: 100,
+      },
     );
 
     // Get the second project
@@ -862,6 +1145,20 @@ Deno.test("update project - duplicate name in same workspace", async () => {
       project2.id,
       {
         name: "Project 1",
+        maxCodeCharPerSymbol: 1000,
+        maxCodeCharPerFile: 50000,
+        maxCharPerSymbol: 2000,
+        maxCharPerFile: 100000,
+        maxCodeLinePerSymbol: 50,
+        maxCodeLinePerFile: 2000,
+        maxLinePerSymbol: 100,
+        maxLinePerFile: 4000,
+        maxDependencyPerSymbol: 10,
+        maxDependencyPerFile: 100,
+        maxDependentPerSymbol: 20,
+        maxDependentPerFile: 200,
+        maxCyclomaticComplexityPerSymbol: 10,
+        maxCyclomaticComplexityPerFile: 100,
       },
     );
 
@@ -910,8 +1207,24 @@ Deno.test("delete a project", async () => {
     const projectService = new ProjectService();
     await projectService.createProject(
       userId,
-      "Test Project",
-      workspace.id,
+      {
+        name: "Test Project",
+        workspaceId: workspace.id,
+        maxCodeCharPerSymbol: 1000,
+        maxCodeCharPerFile: 50000,
+        maxCharPerSymbol: 2000,
+        maxCharPerFile: 100000,
+        maxCodeLinePerSymbol: 50,
+        maxCodeLinePerFile: 2000,
+        maxLinePerSymbol: 100,
+        maxLinePerFile: 4000,
+        maxDependencyPerSymbol: 10,
+        maxDependencyPerFile: 100,
+        maxDependentPerSymbol: 20,
+        maxDependentPerFile: 200,
+        maxCyclomaticComplexityPerSymbol: 10,
+        maxCyclomaticComplexityPerFile: 100,
+      },
     );
 
     // Get the project from the database for its ID
@@ -974,8 +1287,24 @@ Deno.test("delete a project - non-member", async () => {
     const projectService = new ProjectService();
     await projectService.createProject(
       userId,
-      "Test Project",
-      workspaceNM.id,
+      {
+        name: "Test Project",
+        workspaceId: workspaceNM.id,
+        maxCodeCharPerSymbol: 1000,
+        maxCodeCharPerFile: 50000,
+        maxCharPerSymbol: 2000,
+        maxCharPerFile: 100000,
+        maxCodeLinePerSymbol: 50,
+        maxCodeLinePerFile: 2000,
+        maxLinePerSymbol: 100,
+        maxLinePerFile: 4000,
+        maxDependencyPerSymbol: 10,
+        maxDependencyPerFile: 100,
+        maxDependentPerSymbol: 20,
+        maxDependentPerFile: 200,
+        maxCyclomaticComplexityPerSymbol: 10,
+        maxCyclomaticComplexityPerFile: 100,
+      },
     );
 
     // Get the project from the database for its ID

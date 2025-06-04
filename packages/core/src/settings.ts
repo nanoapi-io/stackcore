@@ -29,6 +29,9 @@ export default {
   INVITATION: {
     EXPIRY_DAYS: 7,
   },
+  MANIFEST: {
+    DEFAULT_VERSION: 1,
+  },
   STRIPE: {
     SECRET_KEY: getEnv("STRIPE_API_KEY", "sk_test_secret"),
     WEBHOOK_SECRET: getEnv("STRIPE_WEBHOOK_SECRET", "whsec_secret"),
