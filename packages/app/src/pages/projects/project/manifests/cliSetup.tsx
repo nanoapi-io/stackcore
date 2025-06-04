@@ -6,18 +6,18 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "../../../../../components/shadcn/Card.tsx";
-import { Button } from "../../../../../components/shadcn/Button.tsx";
+} from "../../../../components/shadcn/Card.tsx";
+import { Button } from "../../../../components/shadcn/Button.tsx";
 import { CheckCircle, Copy, FileText, Terminal } from "lucide-react";
 import { toast } from "sonner";
-import type { ProjectPageContext } from "../../base.tsx";
+import type { ProjectPageContext } from "../base.tsx";
 import {
   Alert,
   AlertDescription,
   AlertTitle,
-} from "../../../../../components/shadcn/Alert.tsx";
+} from "../../../../components/shadcn/Alert.tsx";
 
-export default function ProjectManifestsAddCli() {
+export default function ProjectManifestsCliSetup() {
   const context = useOutletContext<ProjectPageContext>();
   const [copied, setCopied] = useState(false);
 

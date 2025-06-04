@@ -23,10 +23,11 @@ import ProfilePage from "./pages/profile.tsx";
 import ProjectBase from "./pages/projects/project/base.tsx";
 import ProjectIndex from "./pages/projects/project/index.tsx";
 import ProjectManifests from "./pages/projects/project/manifests/index.tsx";
-import ProjectManifestsAdd from "./pages/projects/project/manifests/add/index.tsx";
+import ProjectManifestsAdd from "./pages/projects/project/manifests/add.tsx.tsx";
+import ProjectManifestsCliSetup from "./pages/projects/project/manifests/cliSetup.tsx";
 import ProjectManifest from "./pages/projects/project/manifests/manifest.tsx";
-import ProjectManifestsAddCli from "./pages/projects/project/manifests/add/cli.tsx";
 import ProjectSettings from "./pages/projects/project/settings.tsx";
+import type { BreadcrumbHandle } from "./components/AutoBreadcrumb.tsx";
 
 const router = createBrowserRouter([
   {
@@ -44,44 +45,175 @@ const router = createBrowserRouter([
         </WorkspaceProvider>
       </RequireAuth>
     ),
+    handle: {
+      breadcrumb: {
+        title: "Dashboard",
+        href: "/",
+      },
+    } satisfies BreadcrumbHandle,
     children: [
-      { index: true, Component: IndexPage },
-      { path: "profile", Component: ProfilePage },
+      {
+        index: true,
+        Component: IndexPage,
+      },
+      {
+        path: "profile",
+        Component: ProfilePage,
+        handle: {
+          breadcrumb: {
+            title: "Profile",
+            href: "/profile",
+          },
+        } satisfies BreadcrumbHandle,
+      },
       { path: "invitations/claim", Component: InvitationClaimPage },
-      { path: "workspaces/add", Component: AddWorkspacePage },
+      {
+        path: "workspaces/add",
+        Component: AddWorkspacePage,
+        handle: {
+          breadcrumb: {
+            title: "Add Workspace",
+            href: "/workspaces/add",
+          },
+        } satisfies BreadcrumbHandle,
+      },
       {
         path: "workspaces/:workspaceId",
         Component: WorkspaceBase,
+        handle: {
+          breadcrumb: {
+            title: (params) => `Workspace ${params.workspaceId}`,
+            href: (params) => `/workspaces/${params.workspaceId}`,
+          },
+        } satisfies BreadcrumbHandle,
         children: [
           { index: true, element: <Navigate to="members" replace /> },
-          { path: "members", Component: WorkspaceMembers },
+          {
+            path: "members",
+            Component: WorkspaceMembers,
+            handle: {
+              breadcrumb: {
+                title: "Members",
+                href: (params) => `/workspaces/${params.workspaceId}/members`,
+              },
+            } satisfies BreadcrumbHandle,
+          },
           {
             path: "subscription",
             Component: WorkspaceSubscription,
+            handle: {
+              breadcrumb: {
+                title: "Subscription",
+                href: (params) =>
+                  `/workspaces/${params.workspaceId}/subscription`,
+              },
+            } satisfies BreadcrumbHandle,
           },
         ],
       },
-      { path: "projects", Component: ProjectsPage },
-      { path: "projects/add", Component: AddProjectPage },
       {
-        path: "projects/:projectId",
-        Component: ProjectBase,
+        path: "projects",
+        handle: {
+          breadcrumb: {
+            title: "Projects",
+            href: "/projects",
+          },
+        } satisfies BreadcrumbHandle,
         children: [
           {
-            path: "",
-            Component: ProjectIndex,
+            index: true,
+            Component: ProjectsPage,
+          },
+          {
+            path: "add",
+            Component: AddProjectPage,
+            handle: {
+              breadcrumb: {
+                title: "Add Project",
+                href: "/projects/add",
+              },
+            } satisfies BreadcrumbHandle,
+          },
+          {
+            path: ":projectId",
+            Component: ProjectBase,
+            handle: {
+              breadcrumb: {
+                title: (params) => `Project ${params.projectId}`,
+                href: (params) => `/projects/${params.projectId}`,
+              },
+            } satisfies BreadcrumbHandle,
             children: [
-              { index: true, element: <Navigate to="manifests" replace /> },
-              { path: "manifests", Component: ProjectManifests },
-              { path: "settings", Component: ProjectSettings },
+              {
+                path: "",
+                Component: ProjectIndex,
+                children: [
+                  { index: true, element: <Navigate to="manifests" replace /> },
+                  {
+                    path: "manifests",
+                    handle: {
+                      breadcrumb: {
+                        title: "Manifests",
+                        href: (params) =>
+                          `/projects/${params.projectId}/manifests`,
+                      },
+                    } satisfies BreadcrumbHandle,
+                    children: [
+                      {
+                        index: true,
+                        Component: ProjectManifests,
+                      },
+                      {
+                        path: "add",
+                        Component: ProjectManifestsAdd,
+                        handle: {
+                          breadcrumb: {
+                            title: "Add Manifest",
+                            href: (params) =>
+                              `/projects/${params.projectId}/manifests/add`,
+                          },
+                        } satisfies BreadcrumbHandle,
+                      },
+                      {
+                        path: "cliSetup",
+                        Component: ProjectManifestsCliSetup,
+                        handle: {
+                          breadcrumb: {
+                            title: "CLI Setup",
+                            href: (params) =>
+                              `/projects/${params.projectId}/manifests/add/cli`,
+                          },
+                        } satisfies BreadcrumbHandle,
+                      },
+                    ],
+                  },
+                  {
+                    path: "settings",
+                    Component: ProjectSettings,
+                    handle: {
+                      breadcrumb: {
+                        title: "Settings",
+                        href: (params) =>
+                          `/projects/${params.projectId}/settings`,
+                      },
+                    } satisfies BreadcrumbHandle,
+                  },
+                ],
+              },
+
+              {
+                path: "manifests/:manifestId",
+                Component: ProjectManifest,
+                handle: {
+                  breadcrumb: {
+                    title: (params) => `Manifest ${params.manifestId}`,
+                    href: (params) =>
+                      `/projects/${params.projectId}/manifests/${params.manifestId}`,
+                  },
+                } satisfies BreadcrumbHandle,
+              },
             ],
           },
-          { path: "manifests/add", Component: ProjectManifestsAdd },
-          {
-            path: "manifests/add/cli",
-            Component: ProjectManifestsAddCli,
-          },
-          { path: "manifests/:manifestId", Component: ProjectManifest },
         ],
       },
     ],

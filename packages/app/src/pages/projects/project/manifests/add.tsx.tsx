@@ -6,12 +6,12 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "../../../../../components/shadcn/Card.tsx";
-import { Input } from "../../../../../components/shadcn/Input.tsx";
-import { Button } from "../../../../../components/shadcn/Button.tsx";
+} from "../../../../components/shadcn/Card.tsx";
+import { Input } from "../../../../components/shadcn/Input.tsx";
+import { Button } from "../../../../components/shadcn/Button.tsx";
 import { ExternalLink, Loader, Terminal, Upload } from "lucide-react";
 import { toast } from "sonner";
-import { useCoreApi } from "../../../../../contexts/CoreApi.tsx";
+import { useCoreApi } from "../../../../contexts/CoreApi.tsx";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,14 +23,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "../../../../../components/shadcn/Form.tsx";
+} from "../../../../components/shadcn/Form.tsx";
 import { ManifestApiTypes } from "@stackcore/core/responses";
-import type { ProjectPageContext } from "../../base.tsx";
+import type { ProjectPageContext } from "../base.tsx";
 import {
   Alert,
   AlertDescription,
   AlertTitle,
-} from "../../../../../components/shadcn/Alert.tsx";
+} from "../../../../components/shadcn/Alert.tsx";
 
 const formSchema = z.object({
   branch: z.string().optional(),
@@ -123,7 +123,7 @@ export default function ProjectManifestsAdd() {
               You can also upload manifests programmatically using our CLI tool,
               perfect for CI/CD pipelines.
               <Link
-                to={`/projects/${context.project.id}/manifests/add/cli`}
+                to={`/projects/${context.project.id}/manifests/cliSetup`}
               >
                 <Button variant="link" size="sm">
                   <ExternalLink />

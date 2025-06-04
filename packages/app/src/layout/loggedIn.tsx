@@ -37,6 +37,7 @@ import {
   CommandList,
 } from "../components/shadcn/Command.tsx";
 import { Badge } from "../components/shadcn/Badge.tsx";
+import { AutoBreadcrumb } from "../components/AutoBreadcrumb.tsx";
 
 export default function LoggedInLayout() {
   const { logout } = useCoreApi();
@@ -78,7 +79,7 @@ export default function LoggedInLayout() {
                 <span>NanoAPI</span>
               </Link>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-4">
                 <Link to="/">
                   <Button variant="outline" size="icon">
                     <Home />
@@ -160,39 +161,57 @@ export default function LoggedInLayout() {
                     </Command>
                   </PopoverContent>
                 </Popover>
+
+                <AutoBreadcrumb />
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-              >
-                {theme === "light" ? <Moon /> : <Sun />}
-              </Button>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon">
-                    <Menu />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Menu />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56">
+                <DropdownMenuItem asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      setTheme(theme === "light" ? "dark" : "light")}
+                    className="w-full justify-start"
+                  >
+                    {theme === "light" ? <Moon /> : <Sun />}
+                    Change theme
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56">
-                  <DropdownMenuItem asChild>
-                    <Link to="/profile" className="flex items-center gap-2">
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start"
+                    asChild
+                  >
+                    <Link to="/profile">
                       <UserCog size={16} />
                       Profile
                     </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={logout}>
+                  </Button>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={logout}
+                  >
                     <LogOut size={16} />
                     Log out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+                  </Button>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>
