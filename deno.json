@@ -4,6 +4,7 @@
     "./packages/core"
   ],
   "nodeModulesDir": "auto",
+  "lock": false,
   "tasks": {
     "dev:app": "deno task --config ./packages/app/deno.json dev",
     "dev:core": "deno task --config ./packages/core/deno.json dev",
