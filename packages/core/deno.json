@@ -3,7 +3,8 @@
   "exports": "./src/index.ts",
   "tasks": {
     "dev": "deno run --env-file=../../.env -A --watch src/index.ts",
-    "migrate": "deno run -A src/db/migrator.ts"
+    "migrate": "deno run -A src/db/migrator.ts",
+    "build": "deno compile --allow-all --output ./dist/core ./src/index.ts"
   },
   "imports": {
     "@oak/oak": "jsr:@oak/oak@^17.1.4",
