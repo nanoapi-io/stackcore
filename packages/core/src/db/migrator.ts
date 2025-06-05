@@ -3,7 +3,7 @@ import { promises } from "node:fs";
 import { FileMigrationProvider, Migrator } from "kysely";
 import { db, destroyKyselyDb, initKyselyDb } from "./database.ts";
 
-async function migrateToLatest() {
+export async function migrateToLatest() {
   const migrator = new Migrator({
     db,
     provider: new FileMigrationProvider({
