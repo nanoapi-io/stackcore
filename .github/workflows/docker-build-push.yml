@@ -10,7 +10,7 @@ env:
   GCP_REGISTRY: europe-west4-docker.pkg.dev
   GCP_PROJECT_ID: nanoapi-registry
   GCP_REPOSITORY: nanoapi-registry
-  GCP_IMAGE_NAME: stackcore
+  GCP_IMAGE_NAME: stackcore/core
 
 jobs:
   build-and-push:
