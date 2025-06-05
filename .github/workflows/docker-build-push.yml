@@ -28,12 +28,9 @@ jobs:
         with:
           deno-version: v2.3.5
 
-      - name: Install dependencies
-        run: |
-          deno install --allow-scripts
-
       - name: Build Deno application
         run: |
+          deno install --allow-scripts
           deno task build:core
 
       # GitHub Container Registry login
