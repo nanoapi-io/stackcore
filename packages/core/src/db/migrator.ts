@@ -29,6 +29,4 @@ export async function migrateToLatest() {
     console.error(error);
     Deno.exit(1);
   }
-
-  await db.destroy();
 }
