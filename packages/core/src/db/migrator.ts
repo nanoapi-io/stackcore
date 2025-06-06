@@ -1,7 +1,7 @@
 import * as path from "@std/path";
 import { promises } from "node:fs";
 import { FileMigrationProvider, Migrator } from "kysely";
-import { db, destroyKyselyDb, initKyselyDb } from "./database.ts";
+import { db } from "./database.ts";
 
 export async function migrateToLatest() {
   const migrator = new Migrator({
@@ -32,7 +32,3 @@ export async function migrateToLatest() {
 
   await db.destroy();
 }
-
-initKyselyDb();
-await migrateToLatest();
-await destroyKyselyDb();

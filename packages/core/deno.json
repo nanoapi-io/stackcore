@@ -3,7 +3,7 @@
   "exports": "./src/index.ts",
   "tasks": {
     "dev": "deno run --env-file=../../.env -A --watch src/index.ts",
-    "migrate": "deno run -A src/db/migrator.ts",
+    "migrate": "deno run -A src/db/scripts/migrate.ts",
     "build": "deno compile --allow-all --include src/db/migrations --output ./dist/core ./src/index.ts"
   },
   "imports": {
