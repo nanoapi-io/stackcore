@@ -30,7 +30,7 @@ jobs:
 
       - name: Build Deno application
         run: |
-          deno install --allow-scripts
+          deno install --allow-scripts --reload
           deno task build:core
 
       # GitHub Container Registry login
