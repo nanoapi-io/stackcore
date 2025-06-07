@@ -11,7 +11,6 @@
     "dev:runner": "deno task --config ./packages/runner/deno.json dev",
     "build:app": "deno task --config ./packages/app/deno.json build",
     "build:core": "deno task --config ./packages/core/deno.json build",
-    "build": "deno task build:app && deno task build:core",
     "test": "STRIPE_USE_MOCK=true deno test -A",
     "db:docker": "docker container rm stackcore-pg --force || true && docker run --name stackcore-pg -e POSTGRES_PASSWORD=password -e POSTGRES_USER=user -e POSTGRES_DB=core -p 5432:5432 -d postgres:latest",
     "db:migrate": "deno task --config ./packages/core/deno.json migrate -A",

@@ -1,0 +1,49 @@
+name: Test and lint
+on:
+  push
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.3.5
+
+      - name: Install dependencies
+        run: |
+          deno install --allow-scripts --reload
+
+      - name: Lint
+        run: deno lint
+
+      - name: Fmt check
+        run: deno fmt --check
+  
+  test:
+    runs-on: ubuntu-latest
+    services:
+      stripe-mock:
+        image: stripe/stripe-mock:latest
+        ports:
+          - 12111:12111
+          - 12112:12112
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.3.5
+
+      - name: Install dependencies
+        run: |
+          deno install --allow-scripts --reload
+
+      - name: Test
+        run: deno task test
