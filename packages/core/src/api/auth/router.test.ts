@@ -115,6 +115,17 @@ Deno.test("request otp for existing user", async () => {
       .where("id", "=", userId)
       .executeTakeFirstOrThrow();
 
+    // set otp_requested_at in the past to make sure the user can request an OTP again
+    await db
+      .updateTable("user")
+      .set({
+        otp_requested_at: new Date(
+          Date.now() - settings.OTP.REQUEST_INTERVAL_SECONDS * 1000,
+        ),
+      })
+      .where("id", "=", userId)
+      .execute();
+
     assertEquals(user.email, email);
     assertEquals(user.otp, null);
     assertEquals(user.otp_expires_at, null);
@@ -159,7 +170,12 @@ Deno.test("verify otp for new user", async () => {
     const email = `test-${crypto.randomUUID()}@example.com`;
 
     const authService = new AuthService();
-    const otp = await authService.requestOtp(email);
+    await authService.requestOtp(email);
+    const { otp } = await db.selectFrom("user")
+      .where("email", "=", email)
+      .select("otp")
+      .executeTakeFirstOrThrow();
+    if (!otp) throw new Error("Failed to get OTP");
 
     const requestInfo = prepareVerifyOtp({ email, otp });
 
@@ -229,6 +245,74 @@ Deno.test("verify otp for new user", async () => {
   }
 });
 
+Deno.test("request otp - should prevent spam requests within interval", async () => {
+  initKyselyDb();
+  await resetTables();
+
+  try {
+    const email = `test-${crypto.randomUUID()}@example.com`;
+
+    // First OTP request should succeed
+    const firstRequestInfo = prepareRequestOtp({ email });
+    const firstResponse = await api.handle(
+      new Request(`http://localhost:3000${firstRequestInfo.url}`, {
+        method: firstRequestInfo.method,
+        body: JSON.stringify(firstRequestInfo.body),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }),
+    );
+
+    assertEquals(firstResponse!.status, 200);
+    const firstResponseBody = await firstResponse?.json();
+    assertEquals(firstResponseBody.message, "OTP sent successfully");
+
+    // Verify user was created with OTP
+    const user = await db
+      .selectFrom("user")
+      .selectAll()
+      .where("email", "=", email)
+      .executeTakeFirst();
+
+    assertNotEquals(user, undefined);
+    assertNotEquals(user?.otp, null);
+    assertNotEquals(user?.otp_requested_at, null);
+
+    // Second OTP request immediately after should be rejected
+    const secondRequestInfo = prepareRequestOtp({ email });
+    const secondResponse = await api.handle(
+      new Request(`http://localhost:3000${secondRequestInfo.url}`, {
+        method: secondRequestInfo.method,
+        body: JSON.stringify(secondRequestInfo.body),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }),
+    );
+
+    assertEquals(secondResponse!.status, 400);
+    const secondResponseBody = await secondResponse?.json();
+    assertEquals(secondResponseBody.error, "otp_already_requested");
+
+    // Verify the OTP and timestamp weren't updated
+    const userAfterSecondRequest = await db
+      .selectFrom("user")
+      .selectAll()
+      .where("email", "=", email)
+      .executeTakeFirst();
+
+    assertEquals(userAfterSecondRequest?.otp, user?.otp);
+    assertEquals(
+      userAfterSecondRequest?.otp_requested_at?.getTime(),
+      user?.otp_requested_at?.getTime(),
+    );
+  } finally {
+    await resetTables();
+    await destroyKyselyDb();
+  }
+});
+
 Deno.test("verify otp for existing user", async () => {
   initKyselyDb();
   await resetTables();
@@ -270,8 +354,24 @@ Deno.test("verify otp for existing user", async () => {
 
     assertEquals(personalWorkspaceMember.role, ADMIN_ROLE);
 
+    // set otp_requested_at in the past to make sure the user can request an OTP again
+    await db
+      .updateTable("user")
+      .set({
+        otp_requested_at: new Date(
+          Date.now() - settings.OTP.REQUEST_INTERVAL_SECONDS * 1000,
+        ),
+      })
+      .where("id", "=", userId)
+      .execute();
+
     const authService = new AuthService();
-    const otp = await authService.requestOtp(email);
+    await authService.requestOtp(email);
+    const { otp } = await db.selectFrom("user")
+      .where("email", "=", email)
+      .select("otp")
+      .executeTakeFirstOrThrow();
+    if (!otp) throw new Error("Failed to get OTP");
 
     const requestInfo = prepareVerifyOtp({ email, otp });
 
@@ -332,7 +432,13 @@ Deno.test("verify otp - should block after max failed attempts", async () => {
     const authService = new AuthService();
 
     // Request OTP
-    const validOtp = await authService.requestOtp(email);
+    await authService.requestOtp(email);
+    const { otp: validOtp } = await db.selectFrom("user")
+      .where("email", "=", email)
+      .select("otp")
+      .executeTakeFirstOrThrow();
+    if (!validOtp) throw new Error("Failed to get OTP");
+
     const wrongOtp = "000000"; // Wrong OTP
 
     // Make 3 failed attempts (assuming MAX_ATTEMPTS is 3)
@@ -391,79 +497,98 @@ Deno.test("verify otp - should block after max failed attempts", async () => {
   }
 });
 
-Deno.test("verify otp - should reset attempts on new OTP request", async () => {
-  initKyselyDb();
-  await resetTables();
+Deno.test(
+  "verify otp - should reset attempts on new OTP request",
+  async () => {
+    initKyselyDb();
+    await resetTables();
 
-  try {
-    const email = `test-${crypto.randomUUID()}@example.com`;
+    try {
+      const email = `test-${crypto.randomUUID()}@example.com`;
 
-    // Request initial OTP
-    const requestOtpInfo = prepareRequestOtp({ email });
-    await api.handle(
-      new Request(`http://localhost:3000${requestOtpInfo.url}`, {
-        method: requestOtpInfo.method,
-        body: JSON.stringify(requestOtpInfo.body),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }),
-    );
-
-    // Make some failed attempts
-    const wrongOtp = "000000";
-    for (let i = 0; i < 2; i++) {
-      const verifyInfo = prepareVerifyOtp({ email, otp: wrongOtp });
+      // Request initial OTP
+      const requestOtpInfo = prepareRequestOtp({ email });
       await api.handle(
-        new Request(`http://localhost:3000${verifyInfo.url}`, {
-          method: verifyInfo.method,
-          body: JSON.stringify(verifyInfo.body),
+        new Request(`http://localhost:3000${requestOtpInfo.url}`, {
+          method: requestOtpInfo.method,
+          body: JSON.stringify(requestOtpInfo.body),
           headers: {
             "Content-Type": "application/json",
           },
         }),
       );
+
+      // Make some failed attempts
+      const wrongOtp = "000000";
+      for (let i = 0; i < 2; i++) {
+        const verifyInfo = prepareVerifyOtp({ email, otp: wrongOtp });
+        await api.handle(
+          new Request(`http://localhost:3000${verifyInfo.url}`, {
+            method: verifyInfo.method,
+            body: JSON.stringify(verifyInfo.body),
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }),
+        );
+      }
+
+      // Verify attempts were recorded
+      let user = await db
+        .selectFrom("user")
+        .selectAll()
+        .where("email", "=", email)
+        .executeTakeFirstOrThrow();
+      assertEquals(user.otp_attempts, 2);
+
+      // set otp_requested_at in the past to make sure the user can request an OTP again
+      await db
+        .updateTable("user")
+        .set({
+          otp_requested_at: new Date(
+            Date.now() - settings.OTP.REQUEST_INTERVAL_SECONDS * 1000,
+          ),
+        })
+        .where("id", "=", user.id)
+        .execute();
+
+      // Request new OTP - should reset attempts
+      const authService = new AuthService();
+      await authService.requestOtp(email);
+      const { otp } = await db.selectFrom("user")
+        .where("email", "=", email)
+        .selectAll()
+        .executeTakeFirstOrThrow();
+      if (!otp) throw new Error("Failed to get OTP");
+
+      user = await db
+        .selectFrom("user")
+        .selectAll()
+        .where("email", "=", email)
+        .executeTakeFirstOrThrow();
+      assertEquals(user.otp_attempts, 0); // Should be reset
+
+      // Should be able to verify with new OTP
+      const newVerifyInfo = prepareVerifyOtp({ email, otp });
+      const response = await api.handle(
+        new Request(`http://localhost:3000${newVerifyInfo.url}`, {
+          method: newVerifyInfo.method,
+          body: JSON.stringify(newVerifyInfo.body),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }),
+      );
+
+      assertEquals(response!.status, 200);
+      const responseBody = await response!.json();
+      assertGreater(responseBody.token.length, 0);
+    } finally {
+      await resetTables();
+      await destroyKyselyDb();
     }
-
-    // Verify attempts were recorded
-    let user = await db
-      .selectFrom("user")
-      .selectAll()
-      .where("email", "=", email)
-      .executeTakeFirstOrThrow();
-    assertEquals(user.otp_attempts, 2);
-
-    // Request new OTP - should reset attempts
-    const authService = new AuthService();
-    const newOtp = await authService.requestOtp(email);
-
-    user = await db
-      .selectFrom("user")
-      .selectAll()
-      .where("email", "=", email)
-      .executeTakeFirstOrThrow();
-    assertEquals(user.otp_attempts, 0); // Should be reset
-
-    // Should be able to verify with new OTP
-    const newVerifyInfo = prepareVerifyOtp({ email, otp: newOtp });
-    const response = await api.handle(
-      new Request(`http://localhost:3000${newVerifyInfo.url}`, {
-        method: newVerifyInfo.method,
-        body: JSON.stringify(newVerifyInfo.body),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }),
-    );
-
-    assertEquals(response!.status, 200);
-    const responseBody = await response!.json();
-    assertGreater(responseBody.token.length, 0);
-  } finally {
-    await resetTables();
-    await destroyKyselyDb();
-  }
-});
+  },
+);
 
 Deno.test("verify otp - should track failed attempts correctly", async () => {
   initKyselyDb();

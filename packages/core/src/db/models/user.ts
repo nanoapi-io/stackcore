@@ -11,6 +11,7 @@ export interface UserTable {
   email: string;
   otp: string | null;
   otp_attempts: number;
+  otp_requested_at: ColumnType<Date | null>;
   otp_expires_at: ColumnType<Date | null>;
   last_login_at: ColumnType<Date | null>;
   created_at: ColumnType<Date>;

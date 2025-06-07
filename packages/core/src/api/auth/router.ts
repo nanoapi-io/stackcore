@@ -18,7 +18,13 @@ router.post("/requestOtp", async (ctx) => {
   }
 
   const authService = new AuthService();
-  await authService.requestOtp(parsedBody.data.email);
+  const response = await authService.requestOtp(parsedBody.data.email);
+
+  if (response.error) {
+    ctx.response.status = Status.BadRequest;
+    ctx.response.body = { error: response.error };
+    return;
+  }
 
   ctx.response.status = Status.OK;
   ctx.response.body = { message: "OTP sent successfully" };
