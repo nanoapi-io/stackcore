@@ -23,10 +23,18 @@ jobs:
 
       - name: Fmt check
         run: deno fmt --check
-  
+
   test:
     runs-on: ubuntu-latest
     services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: password
+          POSTGRES_USER: user
+          POSTGRES_DB: core
+        ports:
+          - 5432:5432
       stripe-mock:
         image: stripe/stripe-mock:latest
         ports:
