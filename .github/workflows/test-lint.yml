@@ -53,5 +53,8 @@ jobs:
         run: |
           deno install --allow-scripts --reload
 
+      - name: Run migrations
+        run: deno task db:migrate
+
       - name: Test
         run: deno task test
