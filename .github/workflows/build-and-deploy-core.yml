@@ -1,8 +1,7 @@
 name: Build and Push Docker Image
 
 on:
-  push:
-    branches: [main]
+  push
 
 env:
   GITHUB_REGISTRY: ghcr.io
@@ -53,6 +52,8 @@ jobs:
 
       # Build and push to both registries
       - name: Build and push Docker image
+        # only build on main branch
+        if: github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v5
         with:
           context: packages/core
@@ -66,6 +67,8 @@ jobs:
 
       # Output the image URLs for easy reference
       - name: Output image URLs
+        # only output on main branch
+        if: github.ref == 'refs/heads/main'
         run: |
           echo "Images pushed to:"
           echo "GitHub: ${{ env.GITHUB_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}:${{ github.ref_name }}"
@@ -75,6 +78,8 @@ jobs:
 
       # Update Cloud Run service with the new image
       - name: Deploy to Cloud Run
+        # only deploy on main branch
+        if: github.ref == 'refs/heads/main'
         run: |
           gcloud run deploy stackcore-core \
             --image=${{ env.GCP_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/${{ env.GCP_REPOSITORY }}/${{ env.GCP_IMAGE_NAME }}:${{ github.ref_name }} \
