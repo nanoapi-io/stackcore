@@ -5,7 +5,13 @@ export async function createTestUserAndToken() {
   const email = `test-${crypto.randomUUID()}@example.com`;
 
   const authService = new AuthService();
-  const otp = await authService.requestOtp(email);
+  await authService.requestOtp(email);
+  const { otp } = await db.selectFrom("user")
+    .where("email", "=", email)
+    .select("otp")
+    .executeTakeFirstOrThrow();
+
+  if (!otp) throw new Error("Failed to get OTP");
 
   const { token } = await authService.verifyOtp(email, otp);
   if (!token) throw new Error("Failed to verify OTP");

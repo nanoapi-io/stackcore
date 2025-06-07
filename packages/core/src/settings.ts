@@ -19,6 +19,7 @@ function getEnv(key: string, defaultValue: string) {
 export default {
   SECRET_KEY: getEnv("SECRET_KEY", "secret"),
   OTP: {
+    REQUEST_INTERVAL_SECONDS: 10,
     EXPIRY_MINUTES: 5,
     MAX_ATTEMPTS: 3,
     SKIP_OTP: getEnv("SKIP_OTP", "false") === "true",

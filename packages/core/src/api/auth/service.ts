@@ -23,6 +23,7 @@ export const secretCryptoKey = await crypto.subtle.importKey(
 export const invalidOtpErrorCode = "invalid_otp";
 export const otpExpiredErrorCode = "otp_expired";
 export const otpMaxAttemptsErrorCode = "otp_max_attempts";
+export const otpAlreadyRequestedErrorCode = "otp_already_requested";
 
 export class AuthService {
   private generateOtp() {
@@ -34,7 +35,9 @@ export class AuthService {
   /**
    * Generate and save an OTP for a user
    */
-  public async requestOtp(email: string): Promise<string> {
+  public async requestOtp(
+    email: string,
+  ): Promise<{ error?: string }> {
     // Generate a 6-digit OTP
     const otp = this.generateOtp();
 
@@ -49,12 +52,25 @@ export class AuthService {
       .executeTakeFirst();
 
     if (existingUser) {
+      // check if the user has already requested an OTP in the last 10 minutes
+      if (
+        existingUser.otp_requested_at &&
+        existingUser.otp_requested_at > new Date(
+            Date.now() - settings.OTP.REQUEST_INTERVAL_SECONDS * 1000,
+          )
+      ) {
+        return { error: otpAlreadyRequestedErrorCode };
+      }
+    }
+
+    if (existingUser) {
       // Update existing user with new OTP
       await db
         .updateTable("user")
         .set({
           otp,
           otp_attempts: 0,
+          otp_requested_at: new Date(),
           otp_expires_at: expiresAt,
         })
         .where("email", "=", email)
@@ -67,6 +83,7 @@ export class AuthService {
           email,
           otp,
           otp_attempts: 0,
+          otp_requested_at: new Date(),
           otp_expires_at: expiresAt,
           created_at: new Date(),
         })
@@ -76,7 +93,7 @@ export class AuthService {
     // Send OTP to user via email
     sendOtpEmail(email, otp);
 
-    return otp;
+    return {};
   }
 
   /**

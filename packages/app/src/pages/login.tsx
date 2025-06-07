@@ -79,9 +79,20 @@ export default function LoginPage() {
         body,
       );
 
+      if (!response.ok && response.status === 400) {
+        const { error } = await response.json() as { error: string };
+        if (error === "otp_already_requested") {
+          toast.error(
+            "One time password already requested, please wait and try again later",
+          );
+          setIsBusy(false);
+          return;
+        }
+        throw new Error(error);
+      }
+
       if (!response.ok || response.status !== 200) {
-        const data = await response.json();
-        throw new Error(data.error);
+        throw new Error("Failed to send one time password");
       }
 
       setStep("otp");
