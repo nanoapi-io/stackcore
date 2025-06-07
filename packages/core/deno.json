@@ -17,6 +17,7 @@
     "pg": "npm:pg@^8.16.0",
     "pg-pool": "npm:pg-pool@^3.10.0",
     "djwt": "https://deno.land/x/djwt@v3.0.2/mod.ts",
+    "resend": "npm:resend@^4.5.2",
     "stripe": "npm:stripe@^18.2.1",
     "zod": "npm:zod@^3.24.4"
   }

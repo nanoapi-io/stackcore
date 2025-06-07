@@ -88,4 +88,9 @@ export default {
     PASSWORD: getEnv("DATABASE_PASSWORD", "password"),
     DATABASE: getEnv("DATABASE_NAME", "core"),
   },
+  EMAIL: {
+    RESEND_API_KEY: getEnv("RESEND_API_KEY", "resend_api_key"),
+    FROM_EMAIL: getEnv("RESEND_FROM_EMAIL", "noreply@nanoapi.io"),
+    USE_CONSOLE: getEnv("EMAIL_USE_CONSOLE", "true") === "true",
+  },
 };

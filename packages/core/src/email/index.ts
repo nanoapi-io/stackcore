@@ -2,18 +2,70 @@ import type {
   StripeBillingCycle,
   StripeProduct,
 } from "../db/models/workspace.ts";
-import { ConsoleEmailService } from "./console/index.ts";
+import { Resend } from "resend";
+import settings from "../settings.ts";
 
-export function getEmailService() {
-  return new ConsoleEmailService();
+export type SendEmail = (options: {
+  to: string[];
+  cc?: string[];
+  bcc?: string[];
+  subject: string;
+  text: string;
+  html?: string;
+}) => Promise<void>;
+
+const resend = new Resend(settings.EMAIL.RESEND_API_KEY);
+
+const sendEmailWithResend: SendEmail = async (options: {
+  to: string[];
+  cc?: string[];
+  bcc?: string[];
+  subject: string;
+  text: string;
+  html?: string;
+}) => {
+  const response = await resend.emails.send({
+    from: `${settings.EMAIL.FROM_EMAIL} <${settings.EMAIL.FROM_EMAIL}>`,
+    to: options.to,
+    cc: options.cc,
+    bcc: options.bcc,
+    subject: options.subject,
+    text: options.text,
+    html: options.html,
+  });
+
+  if (response.error) {
+    throw new Error(`Failed to send email: ${response.error.message}`);
+  }
+};
+
+// deno-lint-ignore require-await
+const sendEmailWithConsole: SendEmail = async (options: {
+  to: string[];
+  cc?: string[];
+  bcc?: string[];
+  subject: string;
+  text: string;
+  html?: string;
+}) => {
+  console.info(`Sending email to ${options.to}: ${options.subject}`);
+  console.info(options.text);
+};
+
+function getSendEmail() {
+  if (settings.EMAIL.USE_CONSOLE) {
+    return sendEmailWithConsole;
+  }
+
+  return sendEmailWithResend;
 }
 
 export function sendOtpEmail(email: string, otp: string) {
-  const emailService = getEmailService();
-  emailService.sendEmail(
-    email,
-    "Your One-Time Password (OTP)",
-    `Hi there,
+  const sendEmail = getSendEmail();
+  sendEmail({
+    to: [email],
+    subject: "Your One-Time Password (OTP)",
+    text: `Hi there,
 
 You've requested a one-time password to access your account. Please use the code below to complete your authentication:
 
@@ -25,15 +77,15 @@ If you didn't request this code, please ignore this email or contact our support
 
 Best regards,
 The Team`,
-  );
+  });
 }
 
 export function sendWelcomeEmail(email: string) {
-  const emailService = getEmailService();
-  emailService.sendEmail(
-    email,
-    "Welcome to our platform!",
-    `Hi there,
+  const sendEmail = getSendEmail();
+  sendEmail({
+    to: [email],
+    subject: "Welcome to our platform!",
+    text: `Hi there,
 
 Welcome to our platform! We're thrilled to have you join our community.
 
@@ -50,7 +102,7 @@ We're excited to see what you'll accomplish with our platform.
 
 Best regards,
 The Team`,
-  );
+  });
 }
 
 export function sendInvitationEmail(
@@ -59,17 +111,17 @@ export function sendInvitationEmail(
   invitationUuid: string,
   returnUrl: string,
 ) {
-  const emailService = getEmailService();
+  const sendEmail = getSendEmail();
 
   const searchParams = new URLSearchParams();
   searchParams.set("invitationUuid", invitationUuid);
 
   const invitationLink = `${returnUrl}?${searchParams.toString()}`;
 
-  emailService.sendEmail(
-    email,
-    `Invitation to join ${workspaceName}`,
-    `Hi there,
+  sendEmail({
+    to: [email],
+    subject: `Invitation to join ${workspaceName}`,
+    text: `Hi there,
 
 You've been invited to join "${workspaceName}"!
 
@@ -83,7 +135,7 @@ We look forward to collaborating with you!
 
 Best regards,
 The Team`,
-  );
+  });
 }
 
 export function sendSubscriptionUpgradedEmail(
@@ -100,11 +152,11 @@ export function sendSubscriptionUpgradedEmail(
     };
   },
 ) {
-  const emailService = getEmailService();
-  emailService.sendEmail(
-    payload.email,
-    "Subscription upgraded",
-    `Hi there,
+  const sendEmail = getSendEmail();
+  sendEmail({
+    to: [payload.email],
+    subject: "Subscription upgraded",
+    text: `Hi there,
 
 Your subscription for workspace "${payload.workspaceName}" has been successfully upgraded!
 
@@ -121,7 +173,7 @@ If you have any questions about your upgraded subscription, please don't hesitat
 
 Best regards,
 The Team`,
-  );
+  });
 }
 
 export function sendSubscriptionDowngradedEmail(
@@ -139,11 +191,11 @@ export function sendSubscriptionDowngradedEmail(
     newSubscriptionDate: string;
   },
 ) {
-  const emailService = getEmailService();
-  emailService.sendEmail(
-    payload.email,
-    "Subscription downgraded",
-    `Hi there,
+  const sendEmail = getSendEmail();
+  sendEmail({
+    to: [payload.email],
+    subject: "Subscription downgraded",
+    text: `Hi there,
 
 Your subscription for workspace "${payload.workspaceName}" has been scheduled for downgrade.
 
@@ -161,5 +213,5 @@ If you have any questions, please don't hesitate to contact our support team.
 
 Best regards,
 The Team`,
-  );
+  });
 }
