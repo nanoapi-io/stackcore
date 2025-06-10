@@ -6,6 +6,7 @@ import type {
   CreateWorkspaceResponse,
   GetWorkspacesResponse,
 } from "./types.ts";
+import settings from "../../settings.ts";
 
 export const workspaceAlreadyExistsErrorCode = "workspace_already_exists";
 export const workspaceNotFoundError = "workspace_not_found";
@@ -90,6 +91,7 @@ export class WorkspaceService {
         customer.id,
         "BASIC",
         "MONTHLY",
+        settings.STRIPE.BILLING_THRESHOLD_BASIC,
       );
 
       const accessEnabled = shouldHaveAccess(subscription.status);

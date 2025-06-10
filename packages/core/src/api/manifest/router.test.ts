@@ -231,6 +231,89 @@ Deno.test("create manifest - invalid input validation", async () => {
   }
 });
 
+Deno.test("create manifest - workspace access disabled", async () => {
+  initKyselyDb();
+  await resetTables();
+
+  try {
+    const { userId, token } = await createTestUserAndToken();
+
+    const workspaceService = new WorkspaceService();
+    await workspaceService.createTeamWorkspace("Test Workspace", userId);
+
+    const workspace = await db
+      .selectFrom("workspace")
+      .selectAll()
+      .where("name", "=", "Test Workspace")
+      .executeTakeFirstOrThrow();
+
+    // Disable workspace access
+    await db
+      .updateTable("workspace")
+      .set({ access_enabled: false })
+      .where("id", "=", workspace.id)
+      .execute();
+
+    const projectService = new ProjectService();
+    const config = getDefaultProjectConfig();
+    await projectService.createProject(
+      userId,
+      {
+        name: "Test Project",
+        workspaceId: workspace.id,
+        maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
+        maxCodeCharPerFile: config.maxCodeCharPerFile,
+        maxCharPerSymbol: config.maxCharPerSymbol,
+        maxCharPerFile: config.maxCharPerFile,
+        maxCodeLinePerSymbol: config.maxCodeLinePerSymbol,
+        maxCodeLinePerFile: config.maxCodeLinePerFile,
+        maxLinePerSymbol: config.maxLinePerSymbol,
+        maxLinePerFile: config.maxLinePerFile,
+        maxDependencyPerSymbol: config.maxDependencyPerSymbol,
+        maxDependencyPerFile: config.maxDependencyPerFile,
+        maxDependentPerSymbol: config.maxDependentPerSymbol,
+        maxDependentPerFile: config.maxDependentPerFile,
+        maxCyclomaticComplexityPerSymbol:
+          config.maxCyclomaticComplexityPerSymbol,
+        maxCyclomaticComplexityPerFile: config.maxCyclomaticComplexityPerFile,
+      },
+    );
+
+    const project = await db
+      .selectFrom("project")
+      .selectAll()
+      .where("name", "=", "Test Project")
+      .executeTakeFirstOrThrow();
+
+    // Try to create a manifest with disabled workspace access
+    const { url, method, body } = ManifestApiTypes.prepareCreateManifest({
+      projectId: project.id,
+      branch: "main",
+      commitSha: "abc123",
+      commitShaDate: new Date(),
+      manifest: { test: "data" },
+    });
+
+    const response = await api.handle(
+      new Request(`http://localhost:3000${url}`, {
+        method,
+        body: JSON.stringify(body),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+      }),
+    );
+
+    assertEquals(response?.status, 400);
+    const responseBody = await response?.json();
+    assertEquals(responseBody.error, "access_disabled");
+  } finally {
+    await resetTables();
+    await destroyKyselyDb();
+  }
+});
+
 // --- GET MANIFESTS TESTS ---
 Deno.test("get manifests", async () => {
   initKyselyDb();

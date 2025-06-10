@@ -10,6 +10,7 @@ import {
 } from "../../db/models/workspace.ts";
 
 export type SubscriptionDetails = {
+  currentUsage: number;
   product: StripeProduct;
   billingCycle: StripeBillingCycle | null;
   hasDefaultPaymentMethod: boolean;

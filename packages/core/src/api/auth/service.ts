@@ -193,6 +193,7 @@ export class AuthService {
           customer.id,
           BASIC_PRODUCT,
           MONTHLY_BILLING_CYCLE,
+          settings.STRIPE.BILLING_THRESHOLD_BASIC,
         );
 
         const accessEnabled = shouldHaveAccess(subscription.status);
