@@ -51,10 +51,10 @@ export function shouldHaveAccess(
     // invoice cannot be paid,
     // after 23h will move to incomplete_expired, where we will block access
     case "incomplete":
+      return true;
     // this will move to unpaid eventually,
     // once stripe has exhausted all retry (can be configured)
     case "past_due":
-      return true;
     // most likely user changed their subscription.
     // We block access, when new subscription is created,
     // another event is triggered and access is restored

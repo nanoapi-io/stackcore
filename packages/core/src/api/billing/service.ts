@@ -61,8 +61,24 @@ export class BillingService {
     }
 
     const stripeService = new StripeService();
+
+    const customer = await stripeService.getCustomer(
+      workspace.stripe_customer_id,
+    );
+
+    let hasDefaultPaymentMethod = false;
+    if (typeof customer === "object" && "invoice_settings" in customer) {
+      hasDefaultPaymentMethod =
+        customer.invoice_settings.default_payment_method !== null;
+    }
+
     const subscription = await stripeService.getCustomerSubscription(
       workspace.stripe_customer_id,
+    );
+
+    const currentUsage = await stripeService.getCurrentUsage(
+      workspace.stripe_customer_id,
+      subscription,
     );
 
     if (subscription.items.data.length !== 1) {
@@ -104,9 +120,10 @@ export class BillingService {
 
     if (!productInfo) {
       const subscriptionDetails: SubscriptionDetails = {
+        currentUsage,
         product: CUSTOM_PRODUCT,
         billingCycle: null,
-        hasDefaultPaymentMethod: subscription.default_payment_method !== null,
+        hasDefaultPaymentMethod,
         cancelAt: null,
         newProductWhenCanceled: null,
         newBillingCycleWhenCanceled: null,
@@ -126,9 +143,10 @@ export class BillingService {
     }
 
     const subscriptionDetails: SubscriptionDetails = {
+      currentUsage,
       product: productInfo.product,
       billingCycle: productInfo.billingCycle,
-      hasDefaultPaymentMethod: subscription.default_payment_method !== null,
+      hasDefaultPaymentMethod,
       cancelAt: cancelAt ? new Date(cancelAt * 1000) : null,
       newProductWhenCanceled,
       newBillingCycleWhenCanceled,
@@ -302,6 +320,7 @@ export class BillingService {
         workspace.stripe_customer_id,
         product,
         billingCycle,
+        null,
         "upgrade",
       );
     } catch (error) {
@@ -436,6 +455,7 @@ export class BillingService {
         workspace.stripe_customer_id,
         product,
         billingCycle,
+        null,
         "downgrade",
       );
     } catch (error) {
@@ -582,6 +602,7 @@ export class BillingService {
       customer.id,
       newProduct as StripeProduct,
       newLicensePeriod as StripeBillingCycle,
+      null,
     );
 
     const accessEnabled = shouldHaveAccess(newSubscription.status);
@@ -601,9 +622,18 @@ export class BillingService {
       | Stripe.CustomerSubscriptionUpdatedEvent,
   ) {
     const subscription = event.data.object;
-    const customer = subscription.customer as Stripe.Customer;
+    const customer = subscription.customer;
+
+    if (typeof customer === "string") {
+      console.error(
+        `Skipping webhook for subscription ${subscription.id} because customer is a string, this should not happen`,
+      );
+      return;
+    }
 
     const accessEnabled = shouldHaveAccess(subscription.status);
+
+    const stripeService = new StripeService();
 
     await db
       .updateTable("workspace")
@@ -612,6 +642,13 @@ export class BillingService {
       })
       .where("stripe_customer_id", "=", customer.id)
       .execute();
+
+    if (
+      subscription.items.data.some((item) => item.billing_thresholds) &&
+      subscription.default_payment_method
+    ) {
+      await stripeService.removeBillingThresholdFromSubscription(subscription);
+    }
   }
 
   private async handleCustomerUpdated(
@@ -633,5 +670,12 @@ export class BillingService {
       })
       .where("stripe_customer_id", "=", customer.id)
       .execute();
+
+    if (
+      subscription.items.data.some((item) => item.billing_thresholds) &&
+      subscription.default_payment_method
+    ) {
+      await stripeService.removeBillingThresholdFromSubscription(subscription);
+    }
   }
 }

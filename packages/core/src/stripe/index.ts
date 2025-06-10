@@ -83,6 +83,7 @@ export class StripeService {
     stripeCustomerId: string,
     product: StripeProduct,
     licensePeriod: StripeBillingCycle,
+    billingThreshold: number | null,
   ) {
     const priceId = this.getStandardStripeProductPriceId(
       product,
@@ -94,11 +95,21 @@ export class StripeService {
       items: [
         {
           price: priceId,
+          billing_thresholds: billingThreshold
+            ? {
+              usage_gte: billingThreshold,
+            }
+            : undefined,
         },
       ],
     });
 
     return subscription;
+  }
+
+  public async getCustomer(stripeCustomerId: string) {
+    const customer = await this.stripe.customers.retrieve(stripeCustomerId);
+    return customer;
   }
 
   public async getCustomerSubscription(stripeCustomerId: string) {
@@ -120,6 +131,7 @@ export class StripeService {
     stripeCustomerId: string,
     product: StripeProduct,
     licensePeriod: StripeBillingCycle,
+    billingThreshold: number | null,
     switchMethod: "upgrade" | "downgrade",
   ) {
     const subscription = await this.getCustomerSubscription(stripeCustomerId);
@@ -143,6 +155,11 @@ export class StripeService {
           {
             id: existingItemId,
             price: newPriceId,
+            billing_thresholds: billingThreshold
+              ? {
+                usage_gte: billingThreshold,
+              }
+              : undefined,
           },
         ],
         // Do not prorate the new price, instead we start new billing cycle immediately
@@ -178,6 +195,31 @@ export class StripeService {
         new_product_when_canceled: null,
         new_billing_cycle_when_canceled: null,
       },
+    });
+  }
+
+  public async setBillingThresholdForSubscription(
+    subscription: stripe.Subscription,
+    billingThreshold: number,
+  ) {
+    await this.stripe.subscriptions.update(subscription.id, {
+      items: subscription.items.data.map((item) => ({
+        id: item.id,
+        billing_thresholds: {
+          usage_gte: billingThreshold,
+        },
+      })),
+    });
+  }
+
+  public async removeBillingThresholdFromSubscription(
+    subscription: stripe.Subscription,
+  ) {
+    await this.stripe.subscriptions.update(subscription.id, {
+      items: subscription.items.data.map((item) => ({
+        id: item.id,
+        billing_thresholds: undefined,
+      })),
     });
   }
 
@@ -241,5 +283,41 @@ export class StripeService {
     );
 
     return event;
+  }
+
+  public async getCurrentUsage(
+    stripeCustomerId: string,
+    subscription: stripe.Subscription,
+  ) {
+    const startTime = new Date(
+      subscription.items.data[0].current_period_start * 1000,
+    );
+    startTime.setUTCDate(startTime.getUTCDate());
+    startTime.setUTCHours(0, 0, 0, 0);
+    const startTimeTimestamp = Math.floor(startTime.getTime() / 1000);
+
+    const endTime = new Date(
+      subscription.items.data[0].current_period_end * 1000,
+    );
+    endTime.setUTCDate(endTime.getUTCDate());
+    endTime.setUTCHours(0, 0, 0, 0);
+    const endTimeTimestamp = Math.floor(endTime.getTime() / 1000);
+
+    const eventSummaries = await this.stripe.billing.meters
+      .listEventSummaries(
+        settings.STRIPE.METER.CREDIT_USAGE_METER_ID,
+        {
+          customer: stripeCustomerId,
+          start_time: startTimeTimestamp,
+          end_time: endTimeTimestamp,
+        },
+      );
+
+    let totalUsage = 0;
+    for (const eventSummary of eventSummaries.data) {
+      totalUsage += eventSummary.aggregated_value;
+    }
+
+    return totalUsage;
   }
 }

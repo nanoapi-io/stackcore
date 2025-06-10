@@ -38,8 +38,15 @@ export default {
     WEBHOOK_SECRET: getEnv("STRIPE_WEBHOOK_SECRET", "whsec_secret"),
     USE_MOCK: getEnv("STRIPE_USE_MOCK", "false") === "true",
     METER: {
-      CREDIT_USAGE_EVENT_NAME: "credits-usage",
+      CREDIT_USAGE_METER_ID: getEnv(
+        "STRIPE_METER_CREDIT_USAGE_METER_ID",
+        "meter_1234567890",
+      ),
+      CREDIT_USAGE_EVENT_NAME: "credit_usage",
+      CREDIT_USAGE_MANIFEST_CREATE: 1,
     },
+    // This is to make sure that BASIC user that exceed their included credits have a card on file
+    BILLING_THRESHOLD_BASIC: 6,
     PRODUCTS: {
       [BASIC_PRODUCT]: {
         [MONTHLY_BILLING_CYCLE]: {

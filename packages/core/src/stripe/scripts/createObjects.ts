@@ -1,6 +1,13 @@
-import { getStripe } from "../index.ts";
+import Stripe from "stripe";
 
-const stripe = getStripe();
+const stripeApiKey = prompt("Enter your Stripe API key:");
+
+if (!stripeApiKey) {
+  console.error("❌ Stripe API key is required");
+  Deno.exit(1);
+}
+
+const stripe = new Stripe(stripeApiKey);
 
 const METER_EVENT_NAME = "credit_usage";
 
@@ -18,7 +25,6 @@ async function createMeter() {
       type: "by_id",
       event_payload_key: "stripe_customer_id",
     },
-    event_time_window: "day",
     value_settings: {
       event_payload_key: "value",
     },
@@ -109,81 +115,79 @@ const premiumProduct = await createProduct("Premium", "Premium subscription");
 console.info("✓ All products created successfully\n");
 
 console.info("Creating prices...");
-// Basic product prices
-
-// Basic monthly
+// Basic monthly USD
 const basicMonthlyPrice = await createPrice(basicProduct.id, meterId, {
-  nickname: "Basic Monthly",
+  nickname: "Basic Monthly USD",
   currency: "usd",
   subscriptionPrice: 0, // free
-  includedCredits: 50, // 50 credits free per month
-  overagePrice: 50, // 0.50 USD per credit after that
+  includedCredits: 5, // 5 credits free per month
+  overagePrice: 200, // 2.00 USD per credit after that
   interval: "month",
 });
 
-// Basic yearly
-const basicYearlyPrice = await createPrice(basicProduct.id, meterId, {
-  nickname: "Basic Yearly",
-  currency: "usd",
-  subscriptionPrice: 0, // free
-  includedCredits: 50 * 12, // 50 credits free per month
-  overagePrice: 50, // 0.50 USD per credit after that
-  interval: "year",
-});
-
-// Pro monthly
+// Pro monthly USD
 const proMonthlyPrice = await createPrice(proProduct.id, meterId, {
   nickname: "Pro Monthly",
   currency: "usd",
-  subscriptionPrice: 1000, // 10 USD per month
-  includedCredits: 500, // 500 credits free per month
-  overagePrice: 25, // 0.25 USD per credit after that
+  subscriptionPrice: 3000, // 30 USD per month
+  includedCredits: 50, // 50 credits free per month
+  overagePrice: 100, // 1.00 USD per credit after that
   interval: "month",
 });
 
-// Pro yearly
+// Pro yearly USD
 const proYearlyPrice = await createPrice(proProduct.id, meterId, {
   nickname: "Pro Yearly",
   currency: "usd",
-  subscriptionPrice: 1000 * 10, // 10 USD per month (2 months free)
-  includedCredits: 500 * 12, // 500 credits free per month
-  overagePrice: 25, // 0.25 USD per credit after that
+  subscriptionPrice: 3000 * 10, // 30 USD per month (2 months free)
+  includedCredits: 50 * 12, // 50 credits free per month
+  overagePrice: 100, // 1.00 USD per credit after that
   interval: "year",
 });
 
-// Premium monthly
+// Premium monthly USD
 const premiumMonthlyPrice = await createPrice(premiumProduct.id, meterId, {
   nickname: "Premium Monthly",
   currency: "usd",
-  subscriptionPrice: 5000, // 50 USD per month
-  includedCredits: 5000, // 5000 credits free per month
-  overagePrice: 10, // 0.10 USD per credit after that
+  subscriptionPrice: 10000, // 100 USD per month
+  includedCredits: 250, // 250 credits free per month
+  overagePrice: 50, // 0.50 USD per credit after that
   interval: "month",
 });
 
-// Premium yearly
+// Premium yearly USD
 const premiumYearlyPrice = await createPrice(premiumProduct.id, meterId, {
   nickname: "Premium Yearly",
   currency: "usd",
-  subscriptionPrice: 5000 * 10, // 50 USD per month (2 months free)
-  includedCredits: 5000 * 12, // 5000 credits free per month
-  overagePrice: 10, // 0.10 USD per credit after that
+  subscriptionPrice: 10000 * 10, // 100 USD per month (2 months free)
+  includedCredits: 250 * 12, // 250 credits free per month
+  overagePrice: 50, // 0.50 USD per credit after that
   interval: "year",
 });
 
-console.info("✓ All prices created successfully\n");
+console.info("✓ All stripe objects created successfully\n");
 
-console.info("=== Summary ===");
-console.info(`Meter ID: ${meterId}`);
-console.info("\nProduct and Price IDs:");
-console.info(
-  `Basic product ID:   ${basicProduct.id},   Monthly Price ID: ${basicMonthlyPrice.id},   Yearly Price ID: ${basicYearlyPrice.id}`,
-);
-console.info(
-  `Pro product ID:     ${proProduct.id},     Monthly Price ID: ${proMonthlyPrice.id},     Yearly Price ID: ${proYearlyPrice.id}`,
-);
-console.info(
-  `Premium product ID: ${premiumProduct.id}, Monthly Price ID: ${premiumMonthlyPrice.id}, Yearly Price ID: ${premiumYearlyPrice.id}`,
-);
-console.info("\n✓ Script completed successfully");
+console.info(`
+=== Summary ===
+Meter ID:                 ${meterId}
+Basic product ID:         ${basicProduct.id}
+Basic monthly price ID:   ${basicMonthlyPrice.id}
+Pro product ID:           ${proProduct.id}
+Pro monthly price ID:     ${proMonthlyPrice.id}
+Pro yearly price ID:      ${proYearlyPrice.id}
+Premium product ID:       ${premiumProduct.id}
+Premium monthly price ID: ${premiumMonthlyPrice.id}
+Premium yearly price ID:  ${premiumYearlyPrice.id}
+`);
+
+console.info(`
+=== Environment variables ===
+STRIPE_METER_CREDIT_USAGE_METER_ID=${meterId}
+STRIPE_PRODUCT_BASIC_MONTHLY_PRICE_ID=${basicMonthlyPrice.id}
+STRIPE_PRODUCT_PRO_MONTHLY_PRICE_ID=${proMonthlyPrice.id}
+STRIPE_PRODUCT_PRO_YEARLY_PRICE_ID=${proYearlyPrice.id}
+STRIPE_PRODUCT_PREMIUM_MONTHLY_PRICE_ID=${premiumMonthlyPrice.id}
+STRIPE_PRODUCT_PREMIUM_YEARLY_PRICE_ID=${premiumYearlyPrice.id}
+`);
+
 Deno.exit(0);

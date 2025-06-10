@@ -210,6 +210,7 @@ export default function WorkspaceSubscription() {
                 <TableHead>Subscription status</TableHead>
                 <TableHead>Payment method</TableHead>
                 <TableHead>Current Subscription</TableHead>
+                <TableHead>Current Credits Usage</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -299,6 +300,11 @@ export default function WorkspaceSubscription() {
                     )}
                   </div>
                 </TableCell>
+                <TableCell>
+                  <Badge variant="secondary">
+                    {subscription.currentUsage} credits
+                  </Badge>
+                </TableCell>
               </TableRow>
             </TableBody>
           </Table>
@@ -368,8 +374,8 @@ export default function WorkspaceSubscription() {
                       title="Basic"
                       description="Perfect for trying out the platform"
                       features={[
-                        "50 credits included",
-                        "0.50 USD per additional credit",
+                        "5 credits included per month",
+                        "2.00 USD per additional credit",
                       ]}
                       subscriptionPrice="Free"
                       billingCycle={WorkspaceApiTypes
@@ -389,8 +395,8 @@ export default function WorkspaceSubscription() {
                       title="Pro"
                       description="Great for small teams and growing businesses"
                       features={[
-                        "100 credits included",
-                        "0.25 USD per additional credit",
+                        "50 credits included per month",
+                        "1.00 USD per additional credit",
                       ]}
                       subscriptionPrice="20 USD/month"
                       billingCycle={WorkspaceApiTypes
@@ -410,9 +416,8 @@ export default function WorkspaceSubscription() {
                       title="Premium"
                       description="Perfect for medium teams with high volume needs"
                       features={[
-                        "500 credits included",
-                        "0.10 USD per additional credit",
-                        "Support through discord and email (under 24h)",
+                        "250 credits included per month",
+                        "0.50 USD per additional credit",
                       ]}
                       subscriptionPrice="50 USD/month"
                       billingCycle={WorkspaceApiTypes
@@ -431,7 +436,9 @@ export default function WorkspaceSubscription() {
                       product={WorkspaceApiTypes.CUSTOM_PRODUCT}
                       title="Custom pricing"
                       description="Everything tailored to your needs"
-                      features={[]}
+                      features={[
+                        "Anything you need",
+                      ]}
                       subscriptionPrice="Custom"
                       billingCycle={WorkspaceApiTypes
                         .MONTHLY_BILLING_CYCLE}
@@ -454,9 +461,9 @@ export default function WorkspaceSubscription() {
                       title="Pro"
                       description="Great for small teams and growing businesses"
                       features={[
-                        "100 credits included",
-                        "0.25 USD per additional credit",
-                        "Save 20% compared to monthly subscription",
+                        "50 credits included per month",
+                        "1.00 USD per additional credit",
+                        "2 months free compared to monthly subscription",
                       ]}
                       subscriptionPrice="200 USD/year"
                       billingCycle={WorkspaceApiTypes
@@ -476,10 +483,9 @@ export default function WorkspaceSubscription() {
                       title="Premium"
                       description="Perfect for medium teams with high volume needs"
                       features={[
-                        "500 credits included",
-                        "0.10 USD per additional credit",
-                        "Support through discord and email (under 24h)",
-                        "Save 20% compared to monthly subscription",
+                        "250 credits included per month",
+                        "0.50 USD per additional credit",
+                        "2 months free compared to monthly subscription",
                       ]}
                       subscriptionPrice="500 USD/year"
                       billingCycle={WorkspaceApiTypes
@@ -498,7 +504,9 @@ export default function WorkspaceSubscription() {
                       product={WorkspaceApiTypes.CUSTOM_PRODUCT}
                       title="Custom pricing"
                       description="Everything tailored to your needs"
-                      features={[]}
+                      features={[
+                        "Anything you need",
+                      ]}
                       subscriptionPrice="Custom"
                       billingCycle={WorkspaceApiTypes
                         .YEARLY_BILLING_CYCLE}

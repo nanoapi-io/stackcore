@@ -2,6 +2,7 @@ import { db } from "../../db/database.ts";
 import type { DependencyManifest } from "../../manifest/dependencyManifest/types.ts";
 import { generateAuditManifest } from "../../manifest/service.ts";
 import settings from "../../settings.ts";
+import { StripeService } from "../../stripe/index.ts";
 import type {
   GetManifestAuditResponse,
   GetManifestDetailsResponse,
@@ -13,6 +14,7 @@ export const projectNotFoundError = "project_not_found";
 export const notAMemberOfWorkspaceError = "not_a_member_of_workspace";
 export const failedToGenerateAuditManifestError =
   "failed_to_generate_audit_manifest";
+export const accessDisabledError = "access_disabled";
 
 export class ManifestService {
   /**
@@ -46,6 +48,24 @@ export class ManifestService {
       return { error: projectNotFoundError };
     }
 
+    const workspace = await db
+      .selectFrom("workspace")
+      .innerJoin("project", "project.workspace_id", "workspace.id")
+      .innerJoin("member", "member.workspace_id", "workspace.id")
+      .where("project.id", "=", projectId)
+      .where("member.user_id", "=", userId)
+      .where("workspace.deactivated", "=", false)
+      .selectAll("workspace")
+      .executeTakeFirstOrThrow();
+
+    if (!workspace.stripe_customer_id) {
+      throw new Error("Workspace does not have a stripe customer ID");
+    }
+
+    if (!workspace.access_enabled) {
+      return { error: accessDisabledError };
+    }
+
     // Create the manifest
     const newManifest = await db
       .insertInto("manifest")
@@ -60,6 +80,13 @@ export class ManifestService {
       })
       .returningAll()
       .executeTakeFirstOrThrow();
+
+    const stripeService = new StripeService();
+
+    await stripeService.sendUsageEvent(
+      workspace.stripe_customer_id,
+      settings.STRIPE.METER.CREDIT_USAGE_MANIFEST_CREATE,
+    );
 
     return { id: newManifest.id };
   }
