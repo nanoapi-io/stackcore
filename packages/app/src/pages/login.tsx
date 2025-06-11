@@ -175,7 +175,7 @@ export default function LoginPage() {
             <CardTitle className="flex flex-col items-center gap-2">
               <img src="/logo.png" alt="Logo" width={32} height={32} />
               <div className="text-2xl">
-                Welcome to Stackcore
+                Welcome to NanoAPI
               </div>
             </CardTitle>
             <CardDescription>
