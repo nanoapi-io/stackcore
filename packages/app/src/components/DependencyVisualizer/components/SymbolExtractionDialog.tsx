@@ -21,6 +21,7 @@ import { ScrollArea } from "../../shadcn/Scrollarea.tsx";
 import { toast } from "sonner";
 
 export default function SymbolExtractionDialog(props: {
+  manifestId: number;
   children: React.ReactNode;
   filePath: string;
   symbolIds: string[];
@@ -32,7 +33,9 @@ export default function SymbolExtractionDialog(props: {
     const symbolOptions = props.symbolIds.map((symbolId) => {
       return `--symbol="${props.filePath}|${symbolId}"`;
     });
-    return `napi extract ${symbolOptions.join(" ")}`;
+    return `napi extract --manifestId=${props.manifestId} ${
+      symbolOptions.join(" ")
+    }`;
   };
 
   const copyToClipboard = async () => {

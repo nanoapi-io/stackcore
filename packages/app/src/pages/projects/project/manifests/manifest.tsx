@@ -10,7 +10,9 @@ import { Loader } from "lucide-react";
 import DependencyVisualizer from "../../../../components/DependencyVisualizer/DependencyVisualizer.tsx";
 
 export default function ProjectManifest() {
-  const { manifestId } = useParams<{ manifestId: string }>();
+  const { manifestId } = useParams<{
+    manifestId: string;
+  }>();
   const coreApi = useCoreApi();
 
   const [isBusy, setIsBusy] = useState(true);
@@ -90,6 +92,7 @@ export default function ProjectManifest() {
 
   return (
     <DependencyVisualizer
+      manifestId={manifestData?.id || 0}
       dependencyManifest={manifestData?.manifest as DependencyManifest}
       auditManifest={auditManifest as AuditManifest}
     />

@@ -43,13 +43,15 @@ export default function SymbolVisualizer(
   );
 
   function handleDependencyDepthChange(depth: number) {
-    setSearchParams({ dependencyDepth: depth.toString() });
+    searchParams.set("dependencyDepth", depth.toString());
+    setSearchParams(searchParams);
     setDependencyDepth(depth);
     // TODO do something with the symbolVisualizer
   }
 
   function handleDependentDepthChange(depth: number) {
-    setSearchParams({ dependentDepth: depth.toString() });
+    searchParams.set("dependentDepth", depth.toString());
+    setSearchParams(searchParams);
     setDependentDepth(depth);
     // TODO do something with the symbolVisualizer
   }
@@ -64,6 +66,7 @@ export default function SymbolVisualizer(
 
   const [detailsPane, setDetailsPane] = useState<
     {
+      manifestId: number;
       fileDependencyManifest: DependencyManifest[string];
       symbolDependencyManifest: DependencyManifest[string]["symbols"][string];
       fileAuditManifest: AuditManifest[string];
@@ -191,6 +194,7 @@ export default function SymbolVisualizer(
           const fileAuditManifest = props.auditManifest[filePath];
           const symbolAuditManifest = fileAuditManifest.symbols[symbolId];
           setDetailsPane({
+            manifestId: props.manifestId,
             fileDependencyManifest,
             symbolDependencyManifest,
             fileAuditManifest,

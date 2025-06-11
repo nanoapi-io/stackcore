@@ -34,9 +34,11 @@ export default function ProjectVisualizer(props: VisualizerContext) {
 
   function handleMetricChange(metric: Metric | undefined) {
     if (metric) {
-      setSearchParams({ metric: metric });
+      searchParams.set("metric", metric);
+      setSearchParams(searchParams);
     } else {
-      setSearchParams({});
+      searchParams.delete("metric");
+      setSearchParams(searchParams);
     }
     setMetric(metric);
   }
@@ -50,6 +52,7 @@ export default function ProjectVisualizer(props: VisualizerContext) {
 
   const [detailsPane, setDetailsPane] = useState<
     {
+      manifestId: number;
       fileDependencyManifest: DependencyManifest[string];
       fileAuditManifest: AuditManifest[string];
     } | undefined
@@ -152,6 +155,7 @@ export default function ProjectVisualizer(props: VisualizerContext) {
         onClose={() => setContextMenu(undefined)}
         onOpenDetails={(filePath) => {
           setDetailsPane({
+            manifestId: props.manifestId,
             fileDependencyManifest: props.dependencyManifest[filePath],
             fileAuditManifest: props.auditManifest[filePath],
           });

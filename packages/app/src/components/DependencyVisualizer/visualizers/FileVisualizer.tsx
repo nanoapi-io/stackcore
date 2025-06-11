@@ -39,9 +39,11 @@ export default function FileVisualizer(
 
   function handleMetricChange(metric: Metric | undefined) {
     if (metric) {
-      setSearchParams({ metric: metric });
+      searchParams.set("metric", metric);
+      setSearchParams(searchParams);
     } else {
-      setSearchParams({});
+      searchParams.delete("metric");
+      setSearchParams(searchParams);
     }
     setMetric(metric);
   }
@@ -56,6 +58,7 @@ export default function FileVisualizer(
 
   const [detailsPane, setDetailsPane] = useState<
     {
+      manifestId: number;
       fileDependencyManifest: DependencyManifest[string];
       symbolDependencyManifest: DependencyManifest[string]["symbols"][string];
       fileAuditManifest: AuditManifest[string];
@@ -198,6 +201,7 @@ export default function FileVisualizer(
           const fileAuditManifest = props.auditManifest[filePath];
           const symbolAuditManifest = fileAuditManifest.symbols[symbolId];
           setDetailsPane({
+            manifestId: props.manifestId,
             fileDependencyManifest,
             symbolDependencyManifest,
             fileAuditManifest,

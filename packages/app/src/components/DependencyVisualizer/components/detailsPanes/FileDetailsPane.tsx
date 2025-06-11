@@ -25,6 +25,7 @@ import SymbolExtractionDialog from "../SymbolExtractionDialog.tsx";
 
 export default function FileDetailsPane(props: {
   context: {
+    manifestId: number;
     fileDependencyManifest: DependencyManifest[string];
     fileAuditManifest: AuditManifest[string];
   } | undefined;
@@ -72,6 +73,7 @@ export default function FileDetailsPane(props: {
               </Link>
             </Button>
             <SymbolExtractionDialog
+              manifestId={props.context?.manifestId || 0}
               filePath={props.context?.fileDependencyManifest.filePath || ""}
               symbolIds={Object.keys(
                 props.context?.fileDependencyManifest.symbols || {},
@@ -167,6 +169,7 @@ export default function FileDetailsPane(props: {
                       </Link>
                     </Button>
                     <SymbolExtractionDialog
+                      manifestId={props.context?.manifestId || 0}
                       filePath={props.context?.fileDependencyManifest
                         .filePath || ""}
                       symbolIds={[symbol.id]}
