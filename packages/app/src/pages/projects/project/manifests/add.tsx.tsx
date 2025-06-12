@@ -31,6 +31,7 @@ import {
   AlertDescription,
   AlertTitle,
 } from "../../../../components/shadcn/Alert.tsx";
+import { Badge } from "../../../../components/shadcn/Badge.tsx";
 
 const formSchema = z.object({
   branch: z.string().optional(),
@@ -112,8 +113,13 @@ export default function ProjectManifestsAdd() {
             <Terminal />
             CLI Alternative
           </CardTitle>
-          <CardDescription>
-            Prefer automation? Use our CLI tool instead
+          <CardDescription className="space-y-1">
+            <div>
+              Prefer automation? Use our CLI tool instead
+            </div>
+            <Badge>
+              Cost 1 credit per upload
+            </Badge>
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -142,8 +148,13 @@ export default function ProjectManifestsAdd() {
             <Upload />
             Upload Manifest
           </CardTitle>
-          <CardDescription>
-            Upload a JSON manifest file for project: {context.project.name}
+          <CardDescription className="space-y-1">
+            <div>
+              Upload a JSON manifest file for project: {context.project.name}
+            </div>
+            <Badge>
+              Cost 1 credit per upload
+            </Badge>
           </CardDescription>
         </CardHeader>
         <CardContent>

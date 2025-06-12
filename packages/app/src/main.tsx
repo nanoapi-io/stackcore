@@ -145,6 +145,17 @@ const router = createBrowserRouter([
             } satisfies BreadcrumbHandle,
             children: [
               {
+                path: "manifests/add",
+                Component: ProjectManifestsAdd,
+                handle: {
+                  breadcrumb: {
+                    title: "Add Manifest",
+                    href: (params) =>
+                      `/projects/${params.projectId}/manifests/add`,
+                  },
+                } satisfies BreadcrumbHandle,
+              },
+              {
                 path: "",
                 Component: ProjectIndex,
                 children: [
@@ -163,17 +174,7 @@ const router = createBrowserRouter([
                         index: true,
                         Component: ProjectManifests,
                       },
-                      {
-                        path: "add",
-                        Component: ProjectManifestsAdd,
-                        handle: {
-                          breadcrumb: {
-                            title: "Add Manifest",
-                            href: (params) =>
-                              `/projects/${params.projectId}/manifests/add`,
-                          },
-                        } satisfies BreadcrumbHandle,
-                      },
+
                       {
                         path: "cliSetup",
                         Component: ProjectManifestsCliSetup,
