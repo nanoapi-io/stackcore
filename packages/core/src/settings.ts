@@ -101,4 +101,7 @@ export default {
     FROM_EMAIL: getEnv("RESEND_FROM_EMAIL", "noreply@nanoapi.io"),
     USE_CONSOLE: getEnv("EMAIL_USE_CONSOLE", "true") === "true",
   },
+  SENTRY: {
+    DSN: Deno.env.get("SENTRY_DSN"),
+  },
 };

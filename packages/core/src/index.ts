@@ -1,6 +1,18 @@
 import { initKyselyDb } from "./db/database.ts";
 import api from "./api/index.ts";
 import { migrateToLatest } from "./db/migrator.ts";
+import * as Sentry from "@sentry/deno";
+import settings from "./settings.ts";
+
+if (settings.SENTRY.DSN) {
+  console.info("Initializing Sentry...");
+  Sentry.init({
+    dsn: settings.SENTRY.DSN,
+  });
+  console.info("Sentry initialized");
+} else {
+  console.error("Skipping Sentry initialization, no DSN provided");
+}
 
 initKyselyDb();
 

@@ -40,4 +40,8 @@ router.get("/readiness", async (ctx) => {
   };
 });
 
+router.get("/test-error", () => {
+  throw new Error("Test error");
+});
+
 export default router;
