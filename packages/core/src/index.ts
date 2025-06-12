@@ -9,6 +9,13 @@ if (settings.SENTRY.DSN) {
   Sentry.init({
     dsn: settings.SENTRY.DSN,
   });
+
+  // Oak handles errors automatically
+  // So we capture them here so sentry can get them
+  api.addEventListener("error", (event) => {
+    Sentry.captureException(event.error);
+  });
+
   console.info("Sentry initialized");
 } else {
   console.error("Skipping Sentry initialization, no DSN provided");
