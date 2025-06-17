@@ -23,7 +23,6 @@ import ProfilePage from "./pages/profile.tsx";
 import ProjectBase from "./pages/projects/project/base.tsx";
 import ProjectIndex from "./pages/projects/project/index.tsx";
 import ProjectManifests from "./pages/projects/project/manifests/index.tsx";
-import ProjectManifestsAdd from "./pages/projects/project/manifests/add.tsx.tsx";
 import ProjectManifestsCliSetup from "./pages/projects/project/manifests/cliSetup.tsx";
 import ProjectManifest from "./pages/projects/project/manifests/manifest.tsx";
 import ProjectSettings from "./pages/projects/project/settings.tsx";
@@ -145,13 +144,13 @@ const router = createBrowserRouter([
             } satisfies BreadcrumbHandle,
             children: [
               {
-                path: "manifests/add",
-                Component: ProjectManifestsAdd,
+                path: "manifests/cliSetup",
+                Component: ProjectManifestsCliSetup,
                 handle: {
                   breadcrumb: {
-                    title: "Add Manifest",
+                    title: "CLI Setup",
                     href: (params) =>
-                      `/projects/${params.projectId}/manifests/add`,
+                      `/projects/${params.projectId}/manifests/add/cli`,
                   },
                 } satisfies BreadcrumbHandle,
               },
@@ -162,6 +161,7 @@ const router = createBrowserRouter([
                   { index: true, element: <Navigate to="manifests" replace /> },
                   {
                     path: "manifests",
+                    Component: ProjectManifests,
                     handle: {
                       breadcrumb: {
                         title: "Manifests",
@@ -169,24 +169,6 @@ const router = createBrowserRouter([
                           `/projects/${params.projectId}/manifests`,
                       },
                     } satisfies BreadcrumbHandle,
-                    children: [
-                      {
-                        index: true,
-                        Component: ProjectManifests,
-                      },
-
-                      {
-                        path: "cliSetup",
-                        Component: ProjectManifestsCliSetup,
-                        handle: {
-                          breadcrumb: {
-                            title: "CLI Setup",
-                            href: (params) =>
-                              `/projects/${params.projectId}/manifests/add/cli`,
-                          },
-                        } satisfies BreadcrumbHandle,
-                      },
-                    ],
                   },
                   {
                     path: "settings",

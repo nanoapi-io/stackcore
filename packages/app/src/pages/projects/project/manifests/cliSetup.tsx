@@ -36,24 +36,32 @@ export default function ProjectManifestsCliSetup() {
   const cliCommands = [
     {
       title: "Install the CLI",
-      command: "npm install -g @stackcore/cli",
-      description: "Install the StackCore CLI globally on your system",
+      command: "https://github.com/nanoapi-io/napi",
+      description:
+        "Follow the instructions to install napi CLI globally on your system",
     },
     {
       title: "Login to your account",
-      command: "napi auth login",
-      description: "Authenticate with your StackCore account",
+      command: "napi login",
+      description: "Authenticate with your nanoapi account",
+    },
+    {
+      title: "Initialize your project (if not already done)",
+      command: "napi init",
+      description:
+        `You will be prompted to select an existing project, select project "${context.project.name}"`,
     },
     {
       title: "Generate the manifest",
       command: "napi manifest generate",
-      description: "Generate a manifest file with metadata",
+      description: "This will generate a manifest and push it to your project.",
     },
     {
-      title: "Upload with commit info (optional)",
+      title: "Generate the manifest (in a CI/CD pipeline)",
       command:
-        `napi manifest push --project-id ${context.project.id} --file ./manifest.json --commit-sha $(git rev-parse HEAD) --branch $(git branch --show-current)`,
-      description: "Automatically include Git commit information",
+        "napi manifest generate --branch=${{ github.ref_name }} --commit-sha=${{ github.sha }} --commit-sha-date=${{ github.event_time }}",
+      description:
+        "This will generate a manifest and push it to your project without prompting.",
     },
   ];
 
@@ -66,8 +74,8 @@ export default function ProjectManifestsCliSetup() {
             CLI Instructions
           </CardTitle>
           <CardDescription>
-            Upload manifests programmatically using our CLI tool for{" "}
-            {context.project.name}
+            Upload manifests programmatically using our CLI tool for your
+            project: {context.project.name}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

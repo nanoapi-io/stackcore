@@ -213,7 +213,7 @@ export default function ProjectManifests() {
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-sm"
           />
-          <Link to={`/projects/${context.project.id}/manifests/add`}>
+          <Link to={`/projects/${context.project.id}/manifests/cliSetup`}>
             <Button>
               <Plus />
               Add Manifest
