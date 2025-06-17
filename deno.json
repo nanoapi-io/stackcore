@@ -19,6 +19,12 @@
     "stripe:forward": "deno task stripe:cli listen --forward-to http://host.docker.internal:4000/billing/webhook",
     "stripe:mock": "docker run --rm -it -p 12111-12112:12111-12112 stripe/stripe-mock:latest"
   },
+  "lint": {
+    "exclude": [
+      "packages/app/dist/**/*",
+      "packages/app/public/tarteaucitron/**/*"
+    ]
+  },
   "compilerOptions": {
     "strict": true
   }

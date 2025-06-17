@@ -17,7 +17,7 @@ jobs:
       - name: Build Deno SPA
         run: |
           deno install --allow-scripts --reload
-          VITE_API_URL=https://api.nanoapi.io deno task build:app
+          VITE_API_URL=${{ vars.VITE_API_URL }} VITE_GOOGLE_ANALYTICS_ID=${{ vars.VITE_GOOGLE_ANALYTICS_ID }} deno task build:app
 
       - name: Deploy to Firebase
         # only deploy on main branch
