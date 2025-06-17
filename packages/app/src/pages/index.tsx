@@ -221,6 +221,17 @@ export default function IndexPage() {
           </CardContent>
         </Card>
       </div>
+      <div className="text-center text-sm text-muted-foreground">
+        Need some help? Email us at:
+        <Link to="mailto:support@nanapi.com?subject=Help with nanoapi dashboard">
+          <Button
+            variant="link"
+            size="sm"
+          >
+            support@nanapi.com
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 }

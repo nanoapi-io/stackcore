@@ -15,7 +15,7 @@ import {
 } from "../components/shadcn/InputOTP.tsx";
 import { toast } from "sonner";
 import { ArrowRight, ChevronLeft, Loader, Mail, Shield } from "lucide-react";
-import { useNavigate, useSearchParams } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { useCoreApi } from "../contexts/CoreApi.tsx";
 import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -334,6 +334,43 @@ export default function LoginPage() {
                 </Button>
               </p>
             )}
+        </div>
+        <div className="flex flex-col items-center gap-1">
+          <div className="flex gap-2">
+            <Link
+              to="https://docs.nanoapi.io/default-guide/legal/terms-of-service"
+              target="_blank"
+            >
+              <Button
+                variant="link"
+                size="sm"
+              >
+                Terms of Service
+              </Button>
+            </Link>
+            <Link
+              to="https://docs.nanoapi.io/default-guide/legal/privacy-policy"
+              target="_blank"
+            >
+              <Button
+                variant="link"
+                size="sm"
+              >
+                Privacy Policy
+              </Button>
+            </Link>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Need some help? Email us at:
+            <Link to="mailto:support@nanapi.com?subject=Help with login/signup">
+              <Button
+                variant="link"
+                size="sm"
+              >
+                support@nanapi.com
+              </Button>
+            </Link>
+          </p>
         </div>
       </div>
     </div>
