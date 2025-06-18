@@ -40,13 +40,6 @@ jobs:
         ports:
           - 12111:12111
           - 12112:12112
-      fake-gcs-server:
-        image: fsouza/fake-gcs-server:latest
-        ports:
-          - 4443:4443
-        options: >-
-          -scheme http
-          -public-host localhost:4443
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -59,6 +52,13 @@ jobs:
       - name: Install dependencies
         run: |
           deno install --allow-scripts --reload
+
+      - uses: fsouza/fake-gcs-action@v0.4.1
+        with:
+          version: "latest"
+          backend: memory
+          public-host: "localhost:4443"
+          scheme: http
 
       - name: Run migrations
         run: deno task db:migrate
