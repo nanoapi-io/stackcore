@@ -16,7 +16,7 @@ export interface ManifestTable {
   commitShaDate: ColumnType<Date> | null;
   // manifest
   version: number;
-  manifest: ColumnType<object>;
+  manifest: ColumnType<string>;
 }
 
 export type Manifest = Selectable<ManifestTable>;

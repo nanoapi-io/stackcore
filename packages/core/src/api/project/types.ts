@@ -3,6 +3,7 @@ import type { Project } from "../../db/models/project.ts";
 
 export const createProjectPayloadSchema = z.object({
   name: z.string(),
+  repoUrl: z.string(),
   workspaceId: z.number(),
   maxCodeCharPerSymbol: z.number().int().min(1),
   maxCodeCharPerFile: z.number().int().min(1),
@@ -69,6 +70,7 @@ export function prepareGetProjectDetails(projectId: number) {
 
 export const updateProjectSchema = z.object({
   name: z.string(),
+  repoUrl: z.string(),
   maxCodeCharPerSymbol: z.number().int().min(1),
   maxCodeCharPerFile: z.number().int().min(1),
   maxCharPerSymbol: z.number().int().min(1),

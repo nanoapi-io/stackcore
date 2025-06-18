@@ -8,6 +8,11 @@ import type {
   GetManifestDetailsResponse,
   GetManifestsResponse,
 } from "./types.ts";
+import {
+  downloadJsonFromBucket,
+  getPublicLink,
+  uploadJsonToBucket,
+} from "../../bucketStorage/index.ts";
 
 export const manifestNotFoundError = "manifest_not_found";
 export const projectNotFoundError = "project_not_found";
@@ -66,6 +71,9 @@ export class ManifestService {
       return { error: accessDisabledError };
     }
 
+    const manifestFileName = `${projectId}-${Date.now()}.json`;
+    await uploadJsonToBucket(manifest, manifestFileName);
+
     // Create the manifest
     const newManifest = await db
       .insertInto("manifest")
@@ -75,7 +83,7 @@ export class ManifestService {
         commitSha,
         commitShaDate,
         version: settings.MANIFEST.DEFAULT_VERSION,
-        manifest,
+        manifest: manifestFileName,
         created_at: new Date(),
       })
       .returningAll()
@@ -216,7 +224,12 @@ export class ManifestService {
       return { error: manifestNotFoundError };
     }
 
-    return manifest;
+    const publicLink = await getPublicLink(manifest.manifest);
+
+    return {
+      ...manifest,
+      manifest: publicLink,
+    };
   }
 
   /**
@@ -284,10 +297,14 @@ export class ManifestService {
       return { error: projectNotFoundError };
     }
 
+    const manifestJson = await downloadJsonFromBucket(
+      manifest.manifest,
+    ) as DependencyManifest;
+
     try {
       const auditManifest = generateAuditManifest(
         manifest.version,
-        manifest.manifest as DependencyManifest,
+        manifestJson,
         {
           file: {
             maxCodeChar: project.max_char_per_file,

@@ -104,4 +104,10 @@ export default {
   SENTRY: {
     DSN: Deno.env.get("SENTRY_DSN"),
   },
+  GCP_BUCKET: {
+    USE_FAKE_GCS_SERVER: getEnv("GCP_USE_FAKE_GCS_SERVER", "false") === "true",
+    PROJECT_ID: getEnv("GCP_PROJECT_ID", "your-project-id"),
+    BUCKET_NAME: getEnv("GCP_BUCKET_NAME", "your-bucket-name"),
+    SIGNED_URL_EXPIRY_SECONDS: 60 * 60,
+  },
 };

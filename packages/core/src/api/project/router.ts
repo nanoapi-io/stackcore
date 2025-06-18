@@ -32,6 +32,7 @@ router.post("/", authMiddleware, async (ctx) => {
     session.userId,
     {
       name: parsedBody.data.name,
+      repoUrl: parsedBody.data.repoUrl,
       workspaceId: parsedBody.data.workspaceId,
       maxCodeCharPerSymbol: parsedBody.data.maxCodeCharPerSymbol,
       maxCodeCharPerFile: parsedBody.data.maxCodeCharPerFile,
@@ -174,6 +175,7 @@ router.patch("/:projectId", authMiddleware, async (ctx) => {
     parsedParams.data.projectId,
     {
       name: parsedBody.data.name,
+      repoUrl: parsedBody.data.repoUrl,
       maxCodeCharPerSymbol: parsedBody.data.maxCodeCharPerSymbol,
       maxCodeCharPerFile: parsedBody.data.maxCodeCharPerFile,
       maxCharPerSymbol: parsedBody.data.maxCharPerSymbol,

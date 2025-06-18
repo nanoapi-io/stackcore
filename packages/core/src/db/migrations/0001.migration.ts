@@ -7,6 +7,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn("id", "serial", (col) => col.primaryKey())
     .addColumn("email", "varchar(255)", (col) => col.notNull().unique())
     .addColumn("otp", "varchar(6)")
+    .addColumn("otp_requested_at", "timestamp")
     .addColumn("otp_attempts", "integer", (col) => col.notNull())
     .addColumn("otp_expires_at", "timestamp")
     .addColumn("last_login_at", "timestamp")
@@ -124,6 +125,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .createTable("project")
     .addColumn("id", "serial", (col) => col.primaryKey())
     .addColumn("name", "varchar(255)", (col) => col.notNull())
+    .addColumn("repo_url", "varchar(255)", (col) => col.notNull())
     .addColumn("workspace_id", "integer", (col) => col.notNull())
     .addColumn("max_code_char_per_symbol", "integer", (col) => col.notNull())
     .addColumn("max_code_char_per_file", "integer", (col) => col.notNull())
@@ -174,7 +176,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn("commitSha", "varchar(255)")
     .addColumn("commitShaDate", "timestamp")
     .addColumn("version", "integer", (col) => col.notNull())
-    .addColumn("manifest", "jsonb", (col) => col.notNull())
+    .addColumn("manifest", "varchar(255)", (col) => col.notNull())
     .addForeignKeyConstraint(
       "manifest_project_fk",
       ["project_id"],

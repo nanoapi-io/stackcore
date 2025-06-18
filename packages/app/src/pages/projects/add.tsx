@@ -47,6 +47,7 @@ export default function AddProjectPage() {
 
   const formSchema = z.object({
     name: z.string().min(1, "Project name is required").max(100),
+    repoUrl: z.string().url("Invalid repository URL"),
     maxCodeCharPerSymbol: z.number().int().min(1, "Must be at least 1"),
     maxCodeCharPerFile: z.number().int().min(1, "Must be at least 1"),
     maxCharPerSymbol: z.number().int().min(1, "Must be at least 1"),
@@ -74,6 +75,7 @@ export default function AddProjectPage() {
     disabled: isBusy,
     defaultValues: {
       name: "",
+      repoUrl: "",
       maxCodeCharPerSymbol: 1000,
       maxCodeCharPerFile: 50000,
       maxCharPerSymbol: 2000,
@@ -102,6 +104,7 @@ export default function AddProjectPage() {
     try {
       const { url, method, body } = ProjectApiTypes.prepareCreateProject({
         name: values.name,
+        repoUrl: values.repoUrl,
         workspaceId: selectedWorkspaceId,
         maxCodeCharPerSymbol: values.maxCodeCharPerSymbol,
         maxCodeCharPerFile: values.maxCodeCharPerFile,
@@ -320,6 +323,28 @@ export default function AddProjectPage() {
                         </FormControl>
                         <FormDescription>
                           A unique name for your project within this workspace
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="repoUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Repository URL{" "}
+                          <span className="text-destructive">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="https://github.com/user/repo"
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          The URL of the repository for this project
                         </FormDescription>
                         <FormMessage />
                       </FormItem>

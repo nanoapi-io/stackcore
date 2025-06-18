@@ -51,6 +51,7 @@ Deno.test("create a manifest", async () => {
       userId,
       {
         name: "Test Project",
+        repoUrl: "https://github.com/test/test",
         workspaceId: workspace.id,
         maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
         maxCodeCharPerFile: config.maxCodeCharPerFile,
@@ -141,6 +142,7 @@ Deno.test("create a manifest - non-member of workspace", async () => {
       userId,
       {
         name: "Test Project",
+        repoUrl: "https://github.com/test/test",
         workspaceId: workspace.id,
         maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
         maxCodeCharPerFile: config.maxCodeCharPerFile,
@@ -260,6 +262,7 @@ Deno.test("create manifest - workspace access disabled", async () => {
       userId,
       {
         name: "Test Project",
+        repoUrl: "https://github.com/test/test",
         workspaceId: workspace.id,
         maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
         maxCodeCharPerFile: config.maxCodeCharPerFile,
@@ -338,6 +341,7 @@ Deno.test("get manifests", async () => {
       userId,
       {
         name: "Test Project",
+        repoUrl: "https://github.com/test/test",
         workspaceId: workspace.id,
         maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
         maxCodeCharPerFile: config.maxCodeCharPerFile,
@@ -429,6 +433,7 @@ Deno.test("get manifests with workspace filter", async () => {
       userId,
       {
         name: "Test Project",
+        repoUrl: "https://github.com/test/test",
         workspaceId: workspace.id,
         maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
         maxCodeCharPerFile: config.maxCodeCharPerFile,
@@ -513,6 +518,7 @@ Deno.test("get manifests with search", async () => {
       userId,
       {
         name: "Test Project",
+        repoUrl: "https://github.com/test/test",
         workspaceId: workspace.id,
         maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
         maxCodeCharPerFile: config.maxCodeCharPerFile,
@@ -608,6 +614,7 @@ Deno.test("get manifests - pagination", async () => {
       userId,
       {
         name: "Test Project",
+        repoUrl: "https://github.com/test/test",
         workspaceId: workspace.id,
         maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
         maxCodeCharPerFile: config.maxCodeCharPerFile,
@@ -736,6 +743,7 @@ Deno.test("get manifest details", async () => {
       userId,
       {
         name: "Test Project",
+        repoUrl: "https://github.com/test/test",
         workspaceId: workspace.id,
         maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
         maxCodeCharPerFile: config.maxCodeCharPerFile,
@@ -776,6 +784,12 @@ Deno.test("get manifest details", async () => {
       throw new Error(createResponse.error);
     }
 
+    await db
+      .selectFrom("manifest")
+      .selectAll()
+      .where("id", "=", createResponse.id)
+      .executeTakeFirstOrThrow();
+
     const { url, method } = ManifestApiTypes.prepareGetManifestDetails(
       createResponse.id,
     );
@@ -796,8 +810,15 @@ Deno.test("get manifest details", async () => {
     assertEquals(manifest.branch, "main");
     assertEquals(manifest.commitSha, "abc123");
     assertEquals(manifest.version, 1);
-    assertEquals(manifest.manifest.test, "data");
-    assertEquals(manifest.manifest.complex.nested, "value");
+    assertEquals(manifest.manifest.length > 0, true);
+
+    // get the content of the manifest from the bucket
+    const manifestContentResponse = await fetch(
+      manifest.manifest,
+    );
+    const manifestContent = await manifestContentResponse.json();
+    assertEquals(manifestContent.test, "data");
+    assertEquals(manifestContent.complex.nested, "value");
   } finally {
     await resetTables();
     await destroyKyselyDb();
@@ -827,6 +848,7 @@ Deno.test("get manifest details - non-member", async () => {
       userId,
       {
         name: "Test Project",
+        repoUrl: "https://github.com/test/test",
         workspaceId: workspace.id,
         maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
         maxCodeCharPerFile: config.maxCodeCharPerFile,
@@ -915,6 +937,7 @@ Deno.test("delete a manifest", async () => {
       userId,
       {
         name: "Test Project",
+        repoUrl: "https://github.com/test/test",
         workspaceId: workspace.id,
         maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
         maxCodeCharPerFile: config.maxCodeCharPerFile,
@@ -1007,6 +1030,7 @@ Deno.test("delete a manifest - non-member", async () => {
       userId,
       {
         name: "Test Project",
+        repoUrl: "https://github.com/test/test",
         workspaceId: workspace.id,
         maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
         maxCodeCharPerFile: config.maxCodeCharPerFile,
@@ -1104,6 +1128,7 @@ Deno.test("get manifest audit", async () => {
       userId,
       {
         name: "Test Project",
+        repoUrl: "https://github.com/test/test",
         workspaceId: workspace.id,
         maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
         maxCodeCharPerFile: config.maxCodeCharPerFile,
@@ -1255,6 +1280,7 @@ Deno.test("get manifest audit - non-member", async () => {
       userId,
       {
         name: "Test Project",
+        repoUrl: "https://github.com/test/test",
         workspaceId: workspace.id,
         maxCodeCharPerSymbol: config.maxCodeCharPerSymbol,
         maxCodeCharPerFile: config.maxCodeCharPerFile,
