@@ -31,6 +31,7 @@ Deno.test("create a project", async () => {
     // Create a project via API
     const { url, method, body } = ProjectApiTypes.prepareCreateProject({
       name: "Test Project",
+      repoUrl: "https://github.com/test/test",
       workspaceId: workspace.id,
       maxCodeCharPerSymbol: 1000,
       maxCodeCharPerFile: 50000,
@@ -105,6 +106,7 @@ Deno.test("create a project with a duplicate name should fail", async () => {
       userId,
       {
         name: "Test Project",
+        repoUrl: "https://github.com/test/test",
         workspaceId: workspace.id,
         maxCodeCharPerSymbol: 1000,
         maxCodeCharPerFile: 50000,
@@ -126,6 +128,7 @@ Deno.test("create a project with a duplicate name should fail", async () => {
     // Try to create a project with the same name
     const { url, method, body } = ProjectApiTypes.prepareCreateProject({
       name: "Test Project",
+      repoUrl: "https://github.com/test/test",
       workspaceId: workspace.id,
       maxCodeCharPerSymbol: 1000,
       maxCodeCharPerFile: 50000,
@@ -190,6 +193,7 @@ Deno.test("create a project - non-member of workspace", async () => {
     // Try to create a project in an workspace the user is not a member of
     const { url, method, body } = ProjectApiTypes.prepareCreateProject({
       name: "Unauthorized Project",
+      repoUrl: "https://github.com/test/test",
       workspaceId: workspace.id,
       maxCodeCharPerSymbol: 1000,
       maxCodeCharPerFile: 50000,
@@ -237,6 +241,7 @@ Deno.test("create project - invalid input validation", async () => {
     // Test with invalid JSON
     const { url, method, body } = ProjectApiTypes.prepareCreateProject({
       name: "Test Project",
+      repoUrl: "https://github.com/test/test",
       workspaceId: 1,
       maxCodeCharPerSymbol: 1000,
       maxCodeCharPerFile: 50000,
@@ -270,6 +275,7 @@ Deno.test("create project - invalid input validation", async () => {
     const { url: url2, method: method2, body: body2 } = ProjectApiTypes
       .prepareCreateProject({
         name: "Test Project",
+        repoUrl: "https://github.com/test/test",
         workspaceId: 1,
         maxCodeCharPerSymbol: 1000,
         maxCodeCharPerFile: 50000,
@@ -327,6 +333,7 @@ Deno.test("get project details", async () => {
       userId,
       {
         name: "Test Project",
+        repoUrl: "https://github.com/test/test",
         workspaceId: workspace.id,
         maxCodeCharPerSymbol: 1000,
         maxCodeCharPerFile: 50000,
@@ -370,6 +377,7 @@ Deno.test("get project details", async () => {
     const responseBody = await response?.json();
     assertEquals(responseBody.id, project.id);
     assertEquals(responseBody.name, "Test Project");
+    assertEquals(responseBody.repo_url, "https://github.com/test/test");
     assertEquals(responseBody.workspace_id, workspace.id);
     assertEquals(
       new Date(responseBody.created_at).getTime(),
@@ -403,6 +411,7 @@ Deno.test("get project details - non-member of workspace", async () => {
       userId,
       {
         name: "Test Project",
+        repoUrl: "https://github.com/test/test",
         workspaceId: workspace.id,
         maxCodeCharPerSymbol: 1000,
         maxCodeCharPerFile: 50000,
@@ -528,6 +537,7 @@ Deno.test("get project details - deactivated workspace", async () => {
       userId,
       {
         name: "Test Project",
+        repoUrl: "https://github.com/test/test",
         workspaceId: workspace.id,
         maxCodeCharPerSymbol: 1000,
         maxCodeCharPerFile: 50000,
@@ -611,6 +621,7 @@ Deno.test("get user projects", async () => {
         userId,
         {
           name: `Project ${i}`,
+          repoUrl: "https://github.com/test/test",
           workspaceId: workspace.id,
           maxCodeCharPerSymbol: 1000,
           maxCodeCharPerFile: 50000,
@@ -652,6 +663,10 @@ Deno.test("get user projects", async () => {
     assertEquals(responseBody.results.length, 5);
     for (let i = 0; i < 5; i++) {
       assertEquals(responseBody.results[i].name, `Project ${i}`);
+      assertEquals(
+        responseBody.results[i].repo_url,
+        "https://github.com/test/test",
+      );
       assertEquals(responseBody.results[i].workspace_id, workspace.id);
     }
   } finally {
@@ -687,6 +702,7 @@ Deno.test("get user projects, pagination", async () => {
         userId,
         {
           name: `Project ${i}`,
+          repoUrl: "https://github.com/test/test",
           workspaceId: workspace.id,
           maxCodeCharPerSymbol: 1000,
           maxCodeCharPerFile: 50000,
@@ -728,6 +744,10 @@ Deno.test("get user projects, pagination", async () => {
     assertEquals(responseBody.results.length, 5);
     for (let i = 0; i < 5; i++) {
       assertEquals(responseBody.results[i].name, `Project ${i + 5}`);
+      assertEquals(
+        responseBody.results[i].repo_url,
+        "https://github.com/test/test",
+      );
       assertEquals(responseBody.results[i].workspace_id, workspace.id);
     }
   } finally {
@@ -763,6 +783,7 @@ Deno.test("get user projects, search by name", async () => {
         userId,
         {
           name: `Test Project ${i}`,
+          repoUrl: "https://github.com/test/test",
           workspaceId: workspace.id,
           maxCodeCharPerSymbol: 1000,
           maxCodeCharPerFile: 50000,
@@ -890,6 +911,7 @@ Deno.test("update a project", async () => {
     // Create a project via API
     const { url, method, body } = ProjectApiTypes.prepareCreateProject({
       name: "Original Project Name",
+      repoUrl: "https://github.com/test/test",
       workspaceId: workspace.id,
       maxCodeCharPerSymbol: 1000,
       maxCodeCharPerFile: 50000,
@@ -931,6 +953,7 @@ Deno.test("update a project", async () => {
     const { url: url2, method: method2, body: body2 } = ProjectApiTypes
       .prepareUpdateProject(project.id, {
         name: "Updated Project Name",
+        repoUrl: "https://github.com/test/test",
         maxCodeCharPerSymbol: 1000,
         maxCodeCharPerFile: 50000,
         maxCharPerSymbol: 2000,
@@ -1002,6 +1025,7 @@ Deno.test("update a project - non-member", async () => {
       userId,
       {
         name: "Test Project",
+        repoUrl: "https://github.com/test/test",
         workspaceId: workspaceNM.id,
         maxCodeCharPerSymbol: 1000,
         maxCodeCharPerFile: 50000,
@@ -1035,6 +1059,7 @@ Deno.test("update a project - non-member", async () => {
       project.id,
       {
         name: "Unauthorized Update",
+        repoUrl: "https://github.com/test/test",
         maxCodeCharPerSymbol: 1000,
         maxCodeCharPerFile: 50000,
         maxCharPerSymbol: 2000,
@@ -1097,6 +1122,7 @@ Deno.test("update project - duplicate name in same workspace", async () => {
       userId,
       {
         name: "Project 1",
+        repoUrl: "https://github.com/test/test",
         workspaceId: workspace.id,
         maxCodeCharPerSymbol: 1000,
         maxCodeCharPerFile: 50000,
@@ -1118,6 +1144,7 @@ Deno.test("update project - duplicate name in same workspace", async () => {
       userId,
       {
         name: "Project 2",
+        repoUrl: "https://github.com/test/test",
         workspaceId: workspace.id,
         maxCodeCharPerSymbol: 1000,
         maxCodeCharPerFile: 50000,
@@ -1148,6 +1175,7 @@ Deno.test("update project - duplicate name in same workspace", async () => {
       project2.id,
       {
         name: "Project 1",
+        repoUrl: "https://github.com/test/test",
         maxCodeCharPerSymbol: 1000,
         maxCodeCharPerFile: 50000,
         maxCharPerSymbol: 2000,
@@ -1212,6 +1240,7 @@ Deno.test("delete a project", async () => {
       userId,
       {
         name: "Test Project",
+        repoUrl: "https://github.com/test/test",
         workspaceId: workspace.id,
         maxCodeCharPerSymbol: 1000,
         maxCodeCharPerFile: 50000,
@@ -1292,6 +1321,7 @@ Deno.test("delete a project - non-member", async () => {
       userId,
       {
         name: "Test Project",
+        repoUrl: "https://github.com/test/test",
         workspaceId: workspaceNM.id,
         maxCodeCharPerSymbol: 1000,
         maxCodeCharPerFile: 50000,

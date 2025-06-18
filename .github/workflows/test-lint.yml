@@ -53,6 +53,13 @@ jobs:
         run: |
           deno install --allow-scripts --reload
 
+      - uses: fsouza/fake-gcs-action@v0.4.1
+        with:
+          version: "latest"
+          backend: memory
+          public-host: "localhost:4443"
+          scheme: http
+
       - name: Run migrations
         run: deno task db:migrate
 

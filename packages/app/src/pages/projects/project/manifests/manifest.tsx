@@ -21,13 +21,24 @@ export default function ProjectManifest() {
     ManifestApiTypes.GetManifestDetailsResponse | undefined
   >(undefined);
 
-  const [_dependencyManifest, setDependencyManifest] = useState<
+  const [dependencyManifest, setDependencyManifest] = useState<
     DependencyManifest | undefined
   >(undefined);
 
   const [auditManifest, setAuditManifest] = useState<
     ManifestApiTypes.GetManifestAuditResponse | undefined
   >(undefined);
+
+  async function fetchManifest(url: string) {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error("Failed to fetch manifest");
+    }
+    const manifest = await response
+      .json() as unknown as DependencyManifest;
+
+    return manifest;
+  }
 
   useEffect(() => {
     async function fetchData() {
@@ -53,9 +64,12 @@ export default function ProjectManifest() {
           throw new Error("Failed to fetch manifest");
         }
 
-        const manifest = await manifestResponse.json();
+        const manifest = await manifestResponse
+          .json() as ManifestApiTypes.GetManifestDetailsResponse;
         setManifestData(manifest);
-        setDependencyManifest(manifest.manifest);
+
+        const dependencyManifest = await fetchManifest(manifest.manifest);
+        setDependencyManifest(dependencyManifest);
 
         // Fetch audit manifest
         const { url: auditUrl, method: auditMethod } = ManifestApiTypes
@@ -93,7 +107,7 @@ export default function ProjectManifest() {
   return (
     <DependencyVisualizer
       manifestId={manifestData?.id || 0}
-      dependencyManifest={manifestData?.manifest as DependencyManifest}
+      dependencyManifest={dependencyManifest as DependencyManifest}
       auditManifest={auditManifest as AuditManifest}
     />
   );
