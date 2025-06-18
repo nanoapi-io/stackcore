@@ -1,3 +1,7 @@
+/** @jsx React.createElement */
+/** @jsxFrag React.Fragment */
+import React from "react";
+import ReactDOM from "react-dom/server";
 import type { ReactNode } from "react";
 import {
   Body,
@@ -20,7 +24,8 @@ const bodyStyle = {
 };
 
 const sectionStyle = {
-  textAlign: "center",
+  // deno-lint-ignore no-explicit-any
+  textAlign: "center" as any,
 };
 
 const tableStyle = {

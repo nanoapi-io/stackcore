@@ -27,5 +27,8 @@
     "resend": "npm:resend@^4.5.2",
     "stripe": "npm:stripe@^18.2.1",
     "zod": "npm:zod@^3.24.4"
+  },
+  "compilerOptions": {
+    "jsx": "react"
   }
 }

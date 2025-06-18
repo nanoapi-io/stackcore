@@ -1,3 +1,7 @@
+/** @jsx React.createElement */
+/** @jsxFrag React.Fragment */
+// deno-lint-ignore no-undef
+import React from "react";
 import {
   Button,
   Column,

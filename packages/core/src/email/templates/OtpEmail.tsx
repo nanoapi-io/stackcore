@@ -1,3 +1,6 @@
+/** @jsx React.createElement */
+/** @jsxFrag React.Fragment */
+import React from "react";
 import { Heading, Section, Text } from "@react-email/components";
 import { baseTemplate } from "./base.tsx";
 import { headingStyle } from "./styles.tsx";
@@ -12,7 +15,8 @@ const codeStyle = {
   color: "#222",
   fontFamily: "roboto mono, monospace",
   fontSize: "28px",
-  textAlign: "center",
+  // deno-lint-ignore no-explicit-any
+  textAlign: "center" as any,
   letterSpacing: "5px",
 };
 
