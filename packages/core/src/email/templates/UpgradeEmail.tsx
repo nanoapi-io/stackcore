@@ -1,5 +1,6 @@
 /** @jsx React.createElement */
 /** @jsxFrag React.Fragment */
+// deno-lint-ignore verbatim-module-syntax
 import React from "react";
 import { Heading, Section, Text } from "@react-email/components";
 import { baseTemplate } from "./base.tsx";

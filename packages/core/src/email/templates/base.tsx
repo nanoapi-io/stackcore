@@ -1,7 +1,8 @@
 /** @jsx React.createElement */
 /** @jsxFrag React.Fragment */
+
+// deno-lint-ignore verbatim-module-syntax
 import React from "react";
-import ReactDOM from "react-dom/server";
 import type { ReactNode } from "react";
 import {
   Body,

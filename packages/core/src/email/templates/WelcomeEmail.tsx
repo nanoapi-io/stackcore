@@ -1,6 +1,7 @@
 /** @jsx React.createElement */
 /** @jsxFrag React.Fragment */
 // deno-lint-ignore no-undef
+// deno-lint-ignore verbatim-module-syntax
 import React from "react";
 import {
   Button,
