@@ -91,7 +91,7 @@ export class AuthService {
     }
 
     // Send OTP to user via email
-    sendOtpEmail(email, otp);
+    await sendOtpEmail(email, otp);
 
     return {};
   }
@@ -208,7 +208,7 @@ export class AuthService {
           .execute();
       });
 
-      sendWelcomeEmail(email);
+      await sendWelcomeEmail(email);
     }
 
     await db

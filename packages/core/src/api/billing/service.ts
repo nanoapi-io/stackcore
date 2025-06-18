@@ -356,7 +356,7 @@ export class BillingService {
       .execute();
 
     for (const email of emails) {
-      sendSubscriptionUpgradedEmail({
+      await sendSubscriptionUpgradedEmail({
         email: email.email,
         workspaceName: workspace.name,
         oldSubscription,
@@ -495,7 +495,7 @@ export class BillingService {
       : "unknown";
 
     for (const email of emails) {
-      sendSubscriptionDowngradedEmail({
+      await sendSubscriptionDowngradedEmail({
         email: email.email,
         workspaceName: workspace.name,
         oldSubscription,
