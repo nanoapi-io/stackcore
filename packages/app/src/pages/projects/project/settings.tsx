@@ -46,6 +46,7 @@ export default function ProjectSettings() {
 
   const formSchema = z.object({
     name: z.string().min(1, "Project name is required").max(100),
+    repoUrl: z.string().url("Invalid repository URL"),
     maxCodeCharPerSymbol: z.number().int().min(1, "Must be at least 1"),
     maxCodeCharPerFile: z.number().int().min(1, "Must be at least 1"),
     maxCharPerSymbol: z.number().int().min(1, "Must be at least 1"),
@@ -73,6 +74,7 @@ export default function ProjectSettings() {
     disabled: isBusy,
     defaultValues: {
       name: context.project.name,
+      repoUrl: context.project.repo_url,
       maxCodeCharPerSymbol: context.project.max_code_char_per_symbol,
       maxCodeCharPerFile: context.project.max_code_char_per_file,
       maxCharPerSymbol: context.project.max_char_per_symbol,
@@ -100,6 +102,7 @@ export default function ProjectSettings() {
         context.project.id,
         {
           name: values.name,
+          repoUrl: values.repoUrl,
           maxCodeCharPerSymbol: values.maxCodeCharPerSymbol,
           maxCodeCharPerFile: values.maxCodeCharPerFile,
           maxCharPerSymbol: values.maxCharPerSymbol,
@@ -298,6 +301,28 @@ export default function ProjectSettings() {
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="repoUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Repository URL{" "}
+                        <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="https://github.com/user/repo"
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        The URL of the repository for this project
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
               {/* Configuration Tabs */}
@@ -380,6 +405,7 @@ export default function ProjectSettings() {
                 </Button>
                 <Button
                   variant="outline"
+                  type="button"
                   onClick={() =>
                     navigate(`/projects/${context.project.id}/manifests`)}
                   disabled={isBusy}

@@ -16,6 +16,7 @@ export class ProjectService {
     userId: number,
     project: {
       name: string;
+      repoUrl: string;
       workspaceId: number;
       maxCodeCharPerSymbol: number;
       maxCodeCharPerFile: number;
@@ -74,6 +75,7 @@ export class ProjectService {
       .insertInto("project")
       .values({
         name: project.name,
+        repo_url: project.repoUrl,
         workspace_id: project.workspaceId,
         max_code_char_per_symbol: project.maxCodeCharPerSymbol,
         max_code_char_per_file: project.maxCodeCharPerFile,
@@ -236,6 +238,7 @@ export class ProjectService {
     projectId: number,
     updates: {
       name: string;
+      repoUrl: string;
       maxCodeCharPerSymbol: number;
       maxCodeCharPerFile: number;
       maxCharPerSymbol: number;
@@ -299,6 +302,7 @@ export class ProjectService {
       .updateTable("project")
       .set({
         name: updates.name,
+        repo_url: updates.repoUrl,
         max_code_char_per_symbol: updates.maxCodeCharPerSymbol,
         max_code_char_per_file: updates.maxCodeCharPerFile,
         max_char_per_symbol: updates.maxCharPerSymbol,

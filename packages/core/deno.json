@@ -7,6 +7,7 @@
     "build": "deno compile --allow-all --include src/db/migrations --output ./dist/core ./src/index.ts"
   },
   "imports": {
+    "@google-cloud/storage": "npm:@google-cloud/storage@^7.16.0",
     "@oak/oak": "jsr:@oak/oak@^17.1.4",
     "@sentry/deno": "npm:@sentry/deno@^9.28.1",
     "@std/assert": "jsr:@std/assert@1",

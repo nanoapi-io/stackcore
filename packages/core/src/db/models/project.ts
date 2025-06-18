@@ -9,6 +9,7 @@ import type {
 export interface ProjectTable {
   id: Generated<number>;
   name: string;
+  repo_url: string;
   workspace_id: number;
   max_code_char_per_symbol: number;
   max_code_char_per_file: number;
