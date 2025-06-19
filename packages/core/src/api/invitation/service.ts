@@ -67,7 +67,7 @@ export class InvitationService {
       .executeTakeFirstOrThrow();
 
     // Send the invitation email to the specified address
-    sendInvitationEmail(
+    await sendInvitationEmail(
       email,
       workspace.name,
       invitation.uuid,
