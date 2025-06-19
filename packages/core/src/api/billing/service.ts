@@ -355,14 +355,12 @@ export class BillingService {
       .where("member.role", "=", ADMIN_ROLE)
       .execute();
 
-    for (const email of emails) {
-      await sendSubscriptionUpgradedEmail({
-        email: email.email,
-        workspaceName: workspace.name,
-        oldSubscription,
-        newSubscription,
-      });
-    }
+    await sendSubscriptionUpgradedEmail({
+      emails: emails.map((e) => e.email),
+      workspaceName: workspace.name,
+      oldSubscription,
+      newSubscription,
+    });
 
     return {};
   }
@@ -494,15 +492,13 @@ export class BillingService {
       ? currentSubscription.cancelAt.toISOString()
       : "unknown";
 
-    for (const email of emails) {
-      await sendSubscriptionDowngradedEmail({
-        email: email.email,
-        workspaceName: workspace.name,
-        oldSubscription,
-        newSubscription,
-        newSubscriptionDate,
-      });
-    }
+    await sendSubscriptionDowngradedEmail({
+      emails: emails.map((e) => e.email),
+      workspaceName: workspace.name,
+      oldSubscription,
+      newSubscription,
+      newSubscriptionDate,
+    });
 
     return {};
   }

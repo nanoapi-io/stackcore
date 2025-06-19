@@ -1,7 +1,3 @@
-/** @jsx React.createElement */
-/** @jsxFrag React.Fragment */
-// deno-lint-ignore verbatim-module-syntax
-import React from "react";
 import { Heading, Section, Text } from "@react-email/components";
 import { baseTemplate } from "./base.tsx";
 import { headingStyle } from "./styles.tsx";
@@ -10,8 +6,8 @@ import type {
   StripeProduct,
 } from "../../db/models/workspace.ts";
 
-type UpgradeEmailProps = {
-  email: string;
+const UpgradeEmail = (props: {
+  emails: string[];
   workspaceName: string;
   oldSubscription: {
     product: StripeProduct;
@@ -21,9 +17,7 @@ type UpgradeEmailProps = {
     product: StripeProduct;
     billingCycle: StripeBillingCycle | null;
   };
-};
-
-const UpgradeEmail = (props: UpgradeEmailProps) => {
+}) => {
   const previewText = "Confirmation of your subscription upgrade | NanoAPI";
   return baseTemplate(
     previewText,
@@ -67,7 +61,7 @@ const UpgradeEmail = (props: UpgradeEmailProps) => {
 };
 
 UpgradeEmail.PreviewProps = {
-  email: "test@nanoapi.io",
+  emails: ["test@nanoapi.io"],
   workspaceName: "My Workspace",
   oldSubscription: {
     product: "Basic Plan",

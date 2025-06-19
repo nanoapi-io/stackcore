@@ -1,31 +1,10 @@
-/** @jsx React.createElement */
-/** @jsxFrag React.Fragment */
-// deno-lint-ignore verbatim-module-syntax
-import React from "react";
 import { Heading, Section, Text } from "@react-email/components";
 import { baseTemplate } from "./base.tsx";
 import { headingStyle } from "./styles.tsx";
 
-const codeStyle = {
-  display: "inline-block",
-  padding: "16px 4.5%",
-  width: "90.5%",
-  backgroundColor: "#f4f4f4",
-  borderRadius: "5px",
-  border: "1px solid #eee",
-  color: "#222",
-  fontFamily: "roboto mono, monospace",
-  fontSize: "28px",
-  // deno-lint-ignore no-explicit-any
-  textAlign: "center" as any,
-  letterSpacing: "5px",
-};
-
-type OtpEmailProps = {
+const OtpEmail = ({ otp }: {
   otp: string;
-};
-
-const OtpEmail = ({ otp }: OtpEmailProps) => {
+}) => {
   const previewText = `Your one-time password (OTP) code is ${otp}`;
   return baseTemplate(
     previewText,
@@ -40,7 +19,24 @@ const OtpEmail = ({ otp }: OtpEmailProps) => {
         the code below to complete your authentication:
       </Text>
 
-      <code style={codeStyle}>{otp}</code>
+      <code
+        style={{
+          display: "inline-block",
+          padding: "16px 4.5%",
+          width: "90.5%",
+          backgroundColor: "#f4f4f4",
+          borderRadius: "5px",
+          border: "1px solid #eee",
+          color: "#222",
+          fontFamily: "roboto mono, monospace",
+          fontSize: "28px",
+          // deno-lint-ignore no-explicit-any
+          textAlign: "center" as any,
+          letterSpacing: "5px",
+        }}
+      >
+        {otp}
+      </code>
 
       <Text>
         This code is valid for a limited time and can only be used once. For

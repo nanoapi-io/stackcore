@@ -1,8 +1,3 @@
-/** @jsx React.createElement */
-/** @jsxFrag React.Fragment */
-// deno-lint-ignore no-undef
-// deno-lint-ignore verbatim-module-syntax
-import React from "react";
 import {
   Button,
   Column,
@@ -36,8 +31,8 @@ const WelcomeEmail = () => {
             "Create your first workspace or join an existing one",
             "Invite team members to collaborate with you",
           ].map((item, index) => (
-            <li>
-              <p key={index} style={{ fontSize: "14px" }}>{item}</p>
+            <li key={index}>
+              <p style={{ fontSize: "14px" }}>{item}</p>
             </li>
           ))}
         </ul>

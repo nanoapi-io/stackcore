@@ -1,27 +1,18 @@
-/** @jsx React.createElement */
-/** @jsxFrag React.Fragment */
-// deno-lint-ignore verbatim-module-syntax
-import React from "react";
 import { Button, Heading, Section, Text } from "@react-email/components";
 import { baseTemplate } from "./base.tsx";
 import { headingStyle } from "./styles.tsx";
 
-type InvitationEmailProps = {
+const InvitationEmail = (props: {
   workspaceName: string;
   invitationLink: string;
-};
-
-const InvitationEmail = ({
-  workspaceName,
-  invitationLink,
-}: InvitationEmailProps) => {
-  const previewText = `Invitation to join "${workspaceName}" on NanoAPI`;
+}) => {
+  const previewText = `Invitation to join "${props.workspaceName}" on NanoAPI`;
   return baseTemplate(
     previewText,
     <>
       <Section>
         <Heading as="h2" style={headingStyle}>
-          You have been invited to join "{workspaceName}"
+          You have been invited to join "{props.workspaceName}"
         </Heading>
         <Text>
           We're excited to have you as part of our team. To get started, simply
@@ -33,7 +24,7 @@ const InvitationEmail = ({
         style={{ display: "flex", justifyContent: "center", padding: 20 }}
       >
         <Button
-          href={invitationLink}
+          href={props.invitationLink}
           style={{
             boxSizing: "border-box",
             padding: 12,

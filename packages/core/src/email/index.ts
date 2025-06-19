@@ -1,10 +1,8 @@
-import type { ReactNode } from "react";
 import type {
   StripeBillingCycle,
   StripeProduct,
 } from "../db/models/workspace.ts";
 import { Resend } from "resend";
-import { render } from "@react-email/render";
 import settings from "../settings.ts";
 
 import OtpEmail from "./templates/OtpEmail.tsx";
@@ -12,14 +10,31 @@ import WelcomeEmail from "./templates/WelcomeEmail.tsx";
 import InvitationEmail from "./templates/InvitationEmail.tsx";
 import UpgradeEmail from "./templates/UpgradeEmail.tsx";
 import DowngradeEmail from "./templates/DowngradeEmail.tsx";
+import type { ReactNode } from "react";
+import { renderToString } from "react-dom/server";
+import { convert } from "html-to-text";
+
+async function getPlainText(react: ReactNode) {
+  const emailText = await renderToString(react);
+  const plainText = convert(emailText, {
+    selectors: [
+      { selector: "img", format: "skip" },
+      { selector: "[data-skip-in-text=true]", format: "skip" },
+      {
+        selector: "a",
+        options: { linkBrackets: false },
+      },
+    ],
+  });
+  return plainText;
+}
 
 export type SendEmail = (options: {
   to: string[];
   cc?: string[];
   bcc?: string[];
   subject: string;
-  text: string;
-  react?: ReactNode;
+  react: ReactNode;
 }) => Promise<void>;
 
 const resend = new Resend(settings.EMAIL.RESEND_API_KEY);
@@ -29,16 +44,17 @@ const sendEmailWithResend: SendEmail = async (options: {
   cc?: string[];
   bcc?: string[];
   subject: string;
-  text: string;
-  react?: ReactNode;
+  react: ReactNode;
 }) => {
+  const emailPlainText = await getPlainText(options.react);
+
   const response = await resend.emails.send({
     from: `${settings.EMAIL.FROM_EMAIL} <${settings.EMAIL.FROM_EMAIL}>`,
     to: options.to,
     cc: options.cc,
     bcc: options.bcc,
     subject: options.subject,
-    text: options.text,
+    text: emailPlainText,
     react: options.react,
   });
 
@@ -47,51 +63,40 @@ const sendEmailWithResend: SendEmail = async (options: {
   }
 };
 
-// deno-lint-ignore require-await
 const sendEmailWithConsole: SendEmail = async (options: {
   to: string[];
   cc?: string[];
   bcc?: string[];
   subject: string;
-  text: string;
-  react?: ReactNode;
+  react: ReactNode;
 }) => {
+  const emailPlainText = await getPlainText(options.react);
+
   console.info(`Sending email to ${options.to}: ${options.subject}`);
-  console.info(options.text);
+  console.info(emailPlainText);
 };
 
 function getSendEmail() {
   if (settings.EMAIL.USE_CONSOLE) {
     return sendEmailWithConsole;
   }
-
   return sendEmailWithResend;
 }
 
 export async function sendOtpEmail(email: string, otp: string) {
-  const emailPlainText = await render(OtpEmail({ otp }), {
-    plainText: true,
-  });
-
   const sendEmail = getSendEmail();
-  sendEmail({
+  await sendEmail({
     to: [email],
     subject: "Your One-Time Password (OTP)",
-    text: emailPlainText,
     react: OtpEmail({ otp }),
   });
 }
 
 export async function sendWelcomeEmail(email: string) {
-  const emailPlainText = await render(WelcomeEmail(), {
-    plainText: true,
-  });
-
   const sendEmail = getSendEmail();
-  sendEmail({
+  await sendEmail({
     to: [email],
     subject: "Welcome to our platform!",
-    text: emailPlainText,
     react: WelcomeEmail(),
   });
 }
@@ -109,20 +114,9 @@ export async function sendInvitationEmail(
 
   const invitationLink = `${returnUrl}?${searchParams.toString()}`;
 
-  const emailPlainText = await render(
-    InvitationEmail({
-      workspaceName,
-      invitationLink,
-    }),
-    {
-      plainText: true,
-    },
-  );
-
-  sendEmail({
+  await sendEmail({
     to: [email],
     subject: `Invitation to join ${workspaceName}`,
-    text: emailPlainText,
     react: InvitationEmail({
       workspaceName,
       invitationLink,
@@ -132,7 +126,7 @@ export async function sendInvitationEmail(
 
 export async function sendSubscriptionUpgradedEmail(
   payload: {
-    email: string;
+    emails: string[];
     workspaceName: string;
     oldSubscription: {
       product: StripeProduct;
@@ -144,25 +138,17 @@ export async function sendSubscriptionUpgradedEmail(
     };
   },
 ) {
-  const emailPlainText = await render(
-    UpgradeEmail(payload),
-    {
-      plainText: true,
-    },
-  );
-
   const sendEmail = getSendEmail();
-  sendEmail({
-    to: [payload.email],
+  await sendEmail({
+    to: payload.emails,
     subject: "Subscription upgraded",
-    text: emailPlainText,
     react: UpgradeEmail(payload),
   });
 }
 
 export async function sendSubscriptionDowngradedEmail(
   payload: {
-    email: string;
+    emails: string[];
     workspaceName: string;
     oldSubscription: {
       product: StripeProduct;
@@ -175,18 +161,10 @@ export async function sendSubscriptionDowngradedEmail(
     newSubscriptionDate: string;
   },
 ) {
-  const emailPlainText = await render(
-    DowngradeEmail(payload),
-    {
-      plainText: true,
-    },
-  );
-
   const sendEmail = getSendEmail();
-  sendEmail({
-    to: [payload.email],
+  await sendEmail({
+    to: payload.emails,
     subject: "Subscription downgraded",
-    text: emailPlainText,
     react: DowngradeEmail(payload),
   });
 }

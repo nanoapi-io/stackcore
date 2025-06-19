@@ -1,8 +1,3 @@
-/** @jsx React.createElement */
-/** @jsxFrag React.Fragment */
-
-// deno-lint-ignore verbatim-module-syntax
-import React from "react";
 import type { ReactNode } from "react";
 import {
   Body,
@@ -20,33 +15,24 @@ import {
   Text,
 } from "@react-email/components";
 
-const bodyStyle = {
-  fontFamily: "Arial, sans-serif",
-};
-
-const sectionStyle = {
-  // deno-lint-ignore no-explicit-any
-  textAlign: "center" as any,
-};
-
-const tableStyle = {
-  width: "100%",
-};
-
-const containerStyle = {
-  backgroundColor: "#ffffff",
-  margin: "0 auto",
-  padding: "20px 0 48px",
-  marginBottom: "64px",
-};
-
 export const baseTemplate = (previewText: string, children: ReactNode) => {
   return (
     <Html>
       <Head />
-      <Body style={bodyStyle}>
+      <Body
+        style={{
+          fontFamily: "Arial, sans-serif",
+        }}
+      >
         <Preview>{previewText}</Preview>
-        <Container style={containerStyle}>
+        <Container
+          style={{
+            backgroundColor: "#ffffff",
+            margin: "0 auto",
+            padding: "20px 0 48px",
+            marginBottom: "64px",
+          }}
+        >
           <div
             style={{
               display: "flex",
@@ -77,9 +63,21 @@ export const baseTemplate = (previewText: string, children: ReactNode) => {
           <Hr />
           {children}
           <Hr />
-          <Section style={sectionStyle}>
-            <table style={tableStyle}>
-              <tr style={tableStyle}>
+          <Section
+            style={{
+              textAlign: "center",
+            }}
+          >
+            <table
+              style={{
+                width: "100%",
+              }}
+            >
+              <tr
+                style={{
+                  width: "100%",
+                }}
+              >
                 <td align="center">
                   <Img
                     alt="React Email logo"
@@ -88,7 +86,11 @@ export const baseTemplate = (previewText: string, children: ReactNode) => {
                   />
                 </td>
               </tr>
-              <tr style={tableStyle}>
+              <tr
+                style={{
+                  width: "100%",
+                }}
+              >
                 <td align="center">
                   <Text
                     style={{

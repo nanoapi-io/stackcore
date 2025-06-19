@@ -1,7 +1,3 @@
-/** @jsx React.createElement */
-/** @jsxFrag React.Fragment */
-// deno-lint-ignore verbatim-module-syntax
-import React from "react";
 import { Heading, Section, Text } from "@react-email/components";
 import { baseTemplate } from "./base.tsx";
 import { headingStyle } from "./styles.tsx";
@@ -10,8 +6,8 @@ import type {
   StripeProduct,
 } from "../../db/models/workspace.ts";
 
-type DowngradeEmailProps = {
-  email: string;
+const DowngradeEmail = (props: {
+  emails: string[];
   workspaceName: string;
   oldSubscription: {
     product: StripeProduct;
@@ -22,9 +18,7 @@ type DowngradeEmailProps = {
     billingCycle: StripeBillingCycle | null;
   };
   newSubscriptionDate: string;
-};
-
-const DowngradeEmail = (props: DowngradeEmailProps) => {
+}) => {
   const previewText = "Confirmation of your subscription downgrade | NanoAPI";
   return baseTemplate(
     previewText,
@@ -72,7 +66,7 @@ const DowngradeEmail = (props: DowngradeEmailProps) => {
 };
 
 DowngradeEmail.PreviewProps = {
-  email: "test@nanoapi.io",
+  emails: ["test@nanoapi.io"],
   workspaceName: "My Workspace",
   oldSubscription: {
     product: "Pro Plan",
