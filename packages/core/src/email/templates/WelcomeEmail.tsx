@@ -1,117 +1,112 @@
-import {
-  Button,
-  Column,
-  Heading,
-  Link,
-  Row,
-  Section,
-  Text,
-} from "@react-email/components";
 import { baseTemplate } from "./base.tsx";
-import { headingStyle } from "./styles.tsx";
+import { sharedStyles } from "./sharedStyles.ts";
 
 const WelcomeEmail = () => {
   const previewText = "Welcome to NanoAPI - Your account has been created!";
+
   return baseTemplate(
     previewText,
     <>
-      <Section>
-        <Heading style={headingStyle}>
-          Welcome to our platform! We're thrilled to have you join our
-          community.
-        </Heading>
-        <Text>
-          Your account has been successfully created and you're all set to get
-          started. Here's what you can do next:
-        </Text>
-        <ul>
-          {[
-            "Explore the dashboard and familiarize yourself with the interface",
-            "Set up your profile and preferences",
-            "Create your first workspace or join an existing one",
-            "Invite team members to collaborate with you",
-          ].map((item, index) => (
-            <li key={index}>
-              <p style={{ fontSize: "14px" }}>{item}</p>
+      {/* Header */}
+      <div style={{ ...sharedStyles.centerText, ...sharedStyles.section }}>
+        <div style={{ ...sharedStyles.iconCircle, backgroundColor: "#4f46e5" }}>
+          🎉
+        </div>
+        <h1 style={sharedStyles.heading}>Welcome to NanoAPI!</h1>
+        <p style={sharedStyles.body}>
+          Your account has been successfully created and you're ready to start
+          building amazing software architecture.
+        </p>
+      </div>
+
+      {/* Getting Started */}
+      <div style={{ ...sharedStyles.section, ...sharedStyles.contentSpacing }}>
+        <h2 style={sharedStyles.subheading}>Getting Started</h2>
+        <div style={sharedStyles.card}>
+          <ul style={{ margin: 0, paddingLeft: "20px" }}>
+            <li style={sharedStyles.body}>
+              Read our documentation to learn the basics
             </li>
-          ))}
-        </ul>
-        <Text>
-          We also recommend checking out our{" "}
-          <Link href="https://docs.nanoapi.io/default-guide/welcome">
-            documentation
-          </Link>{" "}
-          as well as{" "}
-          <Link href="https://github.com/nanoapi-io/napi?tab=readme-ov-file#installation">
-            downloading the CLI to get started
-          </Link>.
-        </Text>
-        <Text>
-          If you have any questions or need assistance getting started, our
-          support team is here to help. Don't hesitate to reach out!
-        </Text>
-        <Text>
-          We're excited to see what you'll accomplish with our platform.
-        </Text>
-        <Row>
-          <Column align="center">
-            <Row>
-              <td
-                align="center"
-                colSpan={1}
-                style={{ paddingRight: 16, width: "50%" }}
+            <li style={sharedStyles.body}>
+              Download the CLI for powerful local development:{" "}
+              <a
+                href="https://github.com/nanoapi-io/napi"
+                style={sharedStyles.link}
               >
-                <Button
-                  href="https://docs.nanoapi.io/default-guide/welcome"
-                  style={{
-                    width: "100%",
-                    boxSizing: "border-box",
-                    paddingLeft: 20,
-                    paddingRight: 20,
-                    paddingTop: 12,
-                    paddingBottom: 12,
-                    borderRadius: 8,
-                    borderWidth: 1,
-                    borderStyle: "solid",
-                    borderColor: "rgb(229,231,235)",
-                    textAlign: "center",
-                    backgroundColor: "rgb(255,255,255)",
-                    fontWeight: 600,
-                    color: "rgb(17,24,39)",
-                  }}
-                >
-                  Read the docs
-                </Button>
-              </td>
-              <td
-                align="center"
-                colSpan={1}
-                style={{ paddingLeft: 16, width: "50%" }}
-              >
-                <Button
-                  href="https://app.nanoapi.io"
-                  style={{
-                    width: "100%",
-                    boxSizing: "border-box",
-                    paddingLeft: 20,
-                    paddingRight: 20,
-                    paddingTop: 12,
-                    paddingBottom: 12,
-                    borderRadius: 8,
-                    backgroundColor: "rgb(79,70,229)",
-                    textAlign: "center",
-                    fontWeight: 600,
-                    color: "rgb(255,255,255)",
-                  }}
-                >
-                  Open the app
-                </Button>
-              </td>
-            </Row>
-          </Column>
-        </Row>
-        <Text>Best regards - Team Nano</Text>
-      </Section>
+                github.com/nanoapi-io/napi
+              </a>
+            </li>
+            <li style={sharedStyles.body}>
+              Create your first workspace or join an existing one
+            </li>
+            <li style={sharedStyles.body}>
+              Invite team members to collaborate with you
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      {/* Call to Action */}
+      <div
+        style={{
+          ...sharedStyles.card,
+          ...sharedStyles.centerText,
+          ...sharedStyles.contentSpacing,
+        }}
+      >
+        <h3 style={sharedStyles.subheading}>Ready to get started?</h3>
+        <p style={sharedStyles.body}>
+          Jump into the app or explore our documentation to begin your journey.
+        </p>
+        <div
+          style={{
+            display: "flex",
+            gap: "12px",
+            justifyContent: "center",
+            flexWrap: "wrap",
+          }}
+        >
+          <a href="https://app.nanoapi.io" style={sharedStyles.primaryButton}>
+            Open the App
+          </a>
+          <a
+            href="https://docs.nanoapi.io/default-guide/welcome"
+            style={sharedStyles.secondaryButton}
+          >
+            Read the Docs
+          </a>
+        </div>
+      </div>
+
+      {/* Support */}
+      <div
+        style={{
+          ...sharedStyles.warningBox,
+          ...sharedStyles.centerText,
+          ...sharedStyles.contentSpacing,
+        }}
+      >
+        <p style={{ ...sharedStyles.small, color: "#92400e", margin: 0 }}>
+          Need help? Our support team is here for you! Contact us at{" "}
+          <a
+            href="mailto:support@nanoapi.io"
+            style={{ ...sharedStyles.link, color: "#92400e" }}
+          >
+            support@nanoapi.io
+          </a>
+        </p>
+      </div>
+
+      {/* Footer */}
+      <div style={{ ...sharedStyles.divider, ...sharedStyles.centerText }}>
+        <p style={{ ...sharedStyles.body, margin: "0 0 8px 0" }}>
+          We're excited to see what you'll build with NanoAPI! 🚀
+        </p>
+        <p style={sharedStyles.small}>
+          Best regards,<br />
+          The NanoAPI Team
+        </p>
+      </div>
     </>,
   );
 };

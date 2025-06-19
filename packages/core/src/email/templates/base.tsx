@@ -1,169 +1,242 @@
 import type { ReactNode } from "react";
-import {
-  Body,
-  Column,
-  Container,
-  Head,
-  Heading,
-  Hr,
-  Html,
-  Img,
-  Link,
-  Preview,
-  Row,
-  Section,
-  Text,
-} from "@react-email/components";
+import type { CSSProperties } from "react";
 
 export const baseTemplate = (previewText: string, children: ReactNode) => {
+  const socialLinkStyle: CSSProperties = {
+    display: "inline-block",
+    padding: "8px",
+    borderRadius: "6px",
+    backgroundColor: "#ffffff",
+    border: "1px solid #e5e7eb",
+    transition: "all 0.2s ease",
+    textDecoration: "none",
+  };
+
+  const socialIconStyle: CSSProperties = {
+    display: "block",
+    width: "24px",
+    height: "24px",
+  };
+
   return (
-    <Html>
-      <Head />
-      <Body
+    <html>
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="description" content={previewText} />
+        <title>NanoAPI</title>
+      </head>
+      <body
         style={{
-          fontFamily: "Arial, sans-serif",
+          fontFamily:
+            "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+          margin: 0,
+          padding: 0,
+          backgroundColor: "#f9fafb",
+          color: "#374151",
+          lineHeight: 1.6,
         }}
       >
-        <Preview>{previewText}</Preview>
-        <Container
+        <div
           style={{
-            backgroundColor: "#ffffff",
+            maxWidth: "600px",
             margin: "0 auto",
-            padding: "20px 0 48px",
-            marginBottom: "64px",
+            backgroundColor: "#ffffff",
+            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+            borderRadius: "8px",
+            overflow: "hidden",
           }}
         >
+          {/* Header */}
           <div
             style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              padding: "32px 24px",
+              textAlign: "center",
+              borderBottom: "1px solid #e5e7eb",
+              backgroundColor: "#ffffff",
             }}
           >
-            <Img
-              alt="NanoAPI logo"
-              height="48"
-              src="https://raw.githubusercontent.com/nanoapi-io/napi/refs/heads/main/media/android-chrome-192x192.png"
-              width="48"
-              style={{ marginRight: 8 }}
-            />
-            <Heading
+            <div
               style={{
-                marginTop: 8,
-                marginBottom: 8,
-                fontSize: 24,
-                lineHeight: "32px",
-                fontWeight: 600,
-                color: "rgb(17,24,39)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "12px",
+                marginBottom: "16px",
               }}
             >
-              NanoAPI
-            </Heading>
+              <img
+                alt="NanoAPI logo"
+                height="32"
+                src="https://raw.githubusercontent.com/nanoapi-io/napi/refs/heads/main/media/android-chrome-192x192.png"
+                width="32"
+                style={{ borderRadius: "6px" }}
+              />
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: "20px",
+                  fontWeight: "700",
+                  color: "#111827",
+                  letterSpacing: "-0.025em",
+                }}
+              >
+                NanoAPI
+              </h1>
+            </div>
+            <p
+              style={{
+                margin: 0,
+                fontSize: "14px",
+                color: "#6b7280",
+                fontWeight: "500",
+              }}
+            >
+              Software Architecture for the AI Age
+            </p>
           </div>
-          <Hr />
-          {children}
-          <Hr />
-          <Section
+
+          {/* Content */}
+          <div
             style={{
+              padding: "32px 24px",
+              backgroundColor: "#ffffff",
+            }}
+          >
+            {children}
+          </div>
+
+          {/* Footer */}
+          <div
+            style={{
+              padding: "24px",
+              backgroundColor: "#f9fafb",
+              borderTop: "1px solid #e5e7eb",
               textAlign: "center",
             }}
           >
-            <table
+            <div
               style={{
-                width: "100%",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "16px",
               }}
             >
-              <tr
+              {/* Social Links */}
+              <div
                 style={{
-                  width: "100%",
+                  display: "flex",
+                  gap: "12px",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: "8px",
                 }}
               >
-                <td align="center">
-                  <Img
-                    alt="React Email logo"
-                    height="48"
-                    src="https://raw.githubusercontent.com/nanoapi-io/napi/refs/heads/main/media/android-chrome-192x192.png"
+                <a
+                  href="https://discord.gg/dFWTtRvJdk"
+                  style={socialLinkStyle}
+                  title="Join our Discord Server"
+                >
+                  <img
+                    alt="Discord Server"
+                    src="https://cdn-icons-png.flaticon.com/512/5968/5968898.png"
+                    style={socialIconStyle}
                   />
-                </td>
-              </tr>
-              <tr
+                </a>
+                <a
+                  href="https://www.youtube.com/@Nano-API"
+                  style={socialLinkStyle}
+                  title="Subscribe to our YouTube Channel"
+                >
+                  <img
+                    alt="YouTube"
+                    src="https://cdn-icons-png.flaticon.com/512/5968/5968975.png"
+                    style={socialIconStyle}
+                  />
+                </a>
+                <a
+                  href="https://www.linkedin.com/company/nanoapi/"
+                  style={socialLinkStyle}
+                  title="Follow us on LinkedIn"
+                >
+                  <img
+                    alt="LinkedIn"
+                    src="https://cdn-icons-png.flaticon.com/512/5968/5968924.png"
+                    style={socialIconStyle}
+                  />
+                </a>
+                <a
+                  href="https://github.com/nanoapi-io"
+                  style={socialLinkStyle}
+                  title="Follow us on GitHub"
+                >
+                  <img
+                    alt="GitHub"
+                    src="https://cdn-icons-png.flaticon.com/512/5968/5968866.png"
+                    style={socialIconStyle}
+                  />
+                </a>
+              </div>
+
+              {/* Footer Text */}
+              <div
                 style={{
-                  width: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "4px",
                 }}
               >
-                <td align="center">
-                  <Text
+                <div
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    color: "#374151",
+                  }}
+                >
+                  NanoAPI
+                </div>
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "#9ca3af",
+                    textAlign: "center",
+                  }}
+                >
+                  <a
+                    href="https://nanoapi.io"
                     style={{
-                      marginTop: 8,
-                      marginBottom: 8,
-                      fontSize: 16,
-                      lineHeight: "24px",
-                      fontWeight: 600,
-                      color: "rgb(17,24,39)",
+                      color: "#6b7280",
+                      textDecoration: "underline",
                     }}
                   >
-                    NanoAPI
-                  </Text>
-                  <Text
+                    https://nanoapi.io
+                  </a>
+                </div>
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "#9ca3af",
+                    textAlign: "center",
+                  }}
+                >
+                  Need help? Contact us at{" "}
+                  <a
+                    href="mailto:support@nanoapi.io"
                     style={{
-                      marginTop: 4,
-                      marginBottom: "0px",
-                      fontSize: 16,
-                      lineHeight: "24px",
-                      color: "rgb(107,114,128)",
+                      color: "#6b7280",
+                      textDecoration: "underline",
                     }}
                   >
-                    Software Architecture for the AI Age
-                  </Text>
-                </td>
-              </tr>
-              <tr>
-                <td align="center">
-                  <Row
-                    style={{
-                      display: "table-cell",
-                      height: 44,
-                      width: 56,
-                      verticalAlign: "bottom",
-                    }}
-                  >
-                    <Column style={{ paddingRight: 8 }}>
-                      <Link href="https://discord.gg/dFWTtRvJdk">
-                        <Img
-                          alt="Discord Server"
-                          height="36"
-                          src="https://cdn-icons-png.flaticon.com/512/5968/5968898.png"
-                          width="36"
-                        />
-                      </Link>
-                    </Column>
-                    <Column style={{ paddingRight: 8 }}>
-                      <Link href="https://www.youtube.com/@Nano-API">
-                        <Img
-                          alt="YouTube"
-                          height="36"
-                          src="https://cdn-icons-png.flaticon.com/512/5968/5968975.png"
-                          width="36"
-                        />
-                      </Link>
-                    </Column>
-                    <Column>
-                      <Link href="https://www.linkedin.com/company/nanoapi/">
-                        <Img
-                          alt="Linkedin"
-                          height="36"
-                          src="https://cdn-icons-png.flaticon.com/512/5968/5968924.png"
-                          width="36"
-                        />
-                      </Link>
-                    </Column>
-                  </Row>
-                </td>
-              </tr>
-            </table>
-          </Section>
-        </Container>
-      </Body>
-    </Html>
+                    support@nanoapi.io
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </body>
+    </html>
   );
 };
