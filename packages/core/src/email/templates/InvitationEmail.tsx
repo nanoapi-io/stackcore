@@ -1,5 +1,4 @@
 import { baseTemplate } from "./base.tsx";
-import { sharedStyles } from "./sharedStyles.ts";
 
 const InvitationEmail = (props: {
   workspaceName: string;
@@ -7,94 +6,169 @@ const InvitationEmail = (props: {
 }) => {
   const previewText = `Invitation to join "${props.workspaceName}" on NanoAPI`;
 
-  return baseTemplate(
-    previewText,
-    <>
-      {/* Header */}
-      <div style={{ ...sharedStyles.centerText, ...sharedStyles.section }}>
-        <div style={{ ...sharedStyles.iconCircle, backgroundColor: "#4f46e5" }}>
-          👥
-        </div>
-        <h1 style={sharedStyles.heading}>You're Invited!</h1>
-        <p style={sharedStyles.body}>
-          Join <strong>"{props.workspaceName}"</strong> on NanoAPI
-        </p>
-      </div>
-
-      {/* Invitation Details */}
-      <div
-        style={{
-          ...sharedStyles.card,
-          ...sharedStyles.centerText,
-          ...sharedStyles.contentSpacing,
-        }}
-      >
-        <p style={sharedStyles.body}>
-          We're excited to have you as part of our team! To get started, simply
-          click the button below to accept your invitation and set up your
-          account.
-        </p>
-        <a href={props.invitationLink} style={sharedStyles.primaryButton}>
-          Accept Invitation
-        </a>
-      </div>
-
-      {/* What you'll get */}
-      <div style={{ ...sharedStyles.section, ...sharedStyles.contentSpacing }}>
-        <h3 style={{ ...sharedStyles.subheading, ...sharedStyles.centerText }}>
-          What you'll get access to:
-        </h3>
-        <div style={sharedStyles.card}>
-          <ul style={{ margin: 0, paddingLeft: "20px" }}>
-            <li style={sharedStyles.body}>
-              Collaborate on software architecture projects
-            </li>
-            <li style={sharedStyles.body}>
-              Access to shared workspaces and resources
-            </li>
-            <li style={sharedStyles.body}>
-              Use powerful development tools and CLI
-            </li>
-            <li style={sharedStyles.body}>
-              Team documentation and knowledge sharing
-            </li>
-          </ul>
-        </div>
-      </div>
-
-      {/* Security Notice */}
-      <div
-        style={{ ...sharedStyles.warningBox, ...sharedStyles.contentSpacing }}
-      >
-        <h3
-          style={{
-            ...sharedStyles.subheading,
-            fontSize: "16px",
-            margin: "0 0 8px 0",
-            color: "#92400e",
-          }}
-        >
-          Secure Invitation
-        </h3>
-        <p style={{ ...sharedStyles.small, color: "#92400e", margin: 0 }}>
-          This invitation link is unique to you and will expire after a period
-          for security reasons. If you have any questions, please contact your
-          team administrator.
-        </p>
-      </div>
-
-      {/* Footer */}
-      <div style={{ ...sharedStyles.divider, ...sharedStyles.centerText }}>
-        <p style={{ ...sharedStyles.body, margin: "0 0 8px 0" }}>
-          We look forward to collaborating with you! 🚀
-        </p>
-        <p style={sharedStyles.small}>
-          Best regards,<br />
-          The NanoAPI Team
-        </p>
-      </div>
-    </>,
+  const content = (
+    <table cellPadding={0} cellSpacing={0} border={0} style={{ width: "100%" }}>
+      <tr>
+        <td>
+          <h2
+            style={{
+              margin: "0 0 20px 0",
+              fontSize: "20px",
+              fontWeight: "bold",
+              color: "#333333",
+              fontFamily: "Arial, Helvetica, sans-serif",
+            }}
+          >
+            You're Invited!
+          </h2>
+          <p
+            style={{
+              margin: "0 0 15px 0",
+              fontSize: "14px",
+              lineHeight: "1.5",
+              color: "#333333",
+              fontFamily: "Arial, Helvetica, sans-serif",
+            }}
+          >
+            Join <strong>"{props.workspaceName}"</strong> on NanoAPI
+          </p>
+          <p
+            style={{
+              margin: "0 0 20px 0",
+              fontSize: "14px",
+              lineHeight: "1.5",
+              color: "#333333",
+              fontFamily: "Arial, Helvetica, sans-serif",
+            }}
+          >
+            We're excited to have you as part of our team! To get started,
+            simply click the button below to accept your invitation and set up
+            your account.
+          </p>
+          <table
+            cellPadding={0}
+            cellSpacing={0}
+            border={0}
+            style={{ width: "100%", margin: "30px 0" }}
+          >
+            <tr>
+              <td align="center">
+                <table cellPadding={0} cellSpacing={0} border={0}>
+                  <tr>
+                    <td
+                      style={{
+                        backgroundColor: "#0066cc",
+                        padding: "12px 24px",
+                      }}
+                    >
+                      <a
+                        href={props.invitationLink}
+                        style={{
+                          color: "#ffffff",
+                          textDecoration: "none",
+                          fontSize: "16px",
+                          fontFamily: "Arial, Helvetica, sans-serif",
+                          fontWeight: "bold",
+                          display: "block",
+                        }}
+                      >
+                        Accept Invitation
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+          <h3
+            style={{
+              margin: "30px 0 15px 0",
+              fontSize: "16px",
+              fontWeight: "bold",
+              color: "#333333",
+              fontFamily: "Arial, Helvetica, sans-serif",
+            }}
+          >
+            What you'll get access to:
+          </h3>
+          <table
+            cellPadding={0}
+            cellSpacing={0}
+            border={0}
+            style={{ width: "100%" }}
+          >
+            <tr>
+              <td
+                style={{
+                  padding: "0 0 10px 0",
+                  fontSize: "14px",
+                  lineHeight: "1.5",
+                  color: "#333333",
+                  fontFamily: "Arial, Helvetica, sans-serif",
+                }}
+              >
+                • Collaborate on software architecture projects
+              </td>
+            </tr>
+            <tr>
+              <td
+                style={{
+                  padding: "0 0 10px 0",
+                  fontSize: "14px",
+                  lineHeight: "1.5",
+                  color: "#333333",
+                  fontFamily: "Arial, Helvetica, sans-serif",
+                }}
+              >
+                • Access to shared workspaces and resources
+              </td>
+            </tr>
+            <tr>
+              <td
+                style={{
+                  padding: "0 0 10px 0",
+                  fontSize: "14px",
+                  lineHeight: "1.5",
+                  color: "#333333",
+                  fontFamily: "Arial, Helvetica, sans-serif",
+                }}
+              >
+                • Use powerful development tools and CLI
+              </td>
+            </tr>
+            <tr>
+              <td
+                style={{
+                  padding: "0 0 20px 0",
+                  fontSize: "14px",
+                  lineHeight: "1.5",
+                  color: "#333333",
+                  fontFamily: "Arial, Helvetica, sans-serif",
+                }}
+              >
+                • Team documentation and knowledge sharing
+              </td>
+            </tr>
+          </table>
+          <p
+            style={{
+              margin: "20px 0 0 0",
+              fontSize: "14px",
+              lineHeight: "1.5",
+              color: "#666666",
+              fontFamily: "Arial, Helvetica, sans-serif",
+            }}
+          >
+            This invitation link is unique to you and will expire after a period
+            for security reasons. If you have any questions, please contact your
+            team administrator.
+          </p>
+        </td>
+      </tr>
+    </table>
   );
+
+  return baseTemplate(previewText, content);
 };
 
 InvitationEmail.PreviewProps = {

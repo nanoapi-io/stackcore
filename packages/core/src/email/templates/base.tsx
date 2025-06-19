@@ -1,23 +1,6 @@
 import type { ReactNode } from "react";
-import type { CSSProperties } from "react";
 
 export const baseTemplate = (previewText: string, children: ReactNode) => {
-  const socialLinkStyle: CSSProperties = {
-    display: "inline-block",
-    padding: "8px",
-    borderRadius: "6px",
-    backgroundColor: "#ffffff",
-    border: "1px solid #e5e7eb",
-    transition: "all 0.2s ease",
-    textDecoration: "none",
-  };
-
-  const socialIconStyle: CSSProperties = {
-    display: "block",
-    width: "24px",
-    height: "24px",
-  };
-
   return (
     <html>
       <head>
@@ -28,214 +11,215 @@ export const baseTemplate = (previewText: string, children: ReactNode) => {
       </head>
       <body
         style={{
-          fontFamily:
-            "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
-          margin: 0,
-          padding: 0,
-          backgroundColor: "#f9fafb",
-          color: "#374151",
-          lineHeight: 1.6,
+          margin: "0",
+          padding: "0",
+          backgroundColor: "#f5f5f5",
+          fontFamily: "Arial, Helvetica, sans-serif",
+          fontSize: "14px",
+          lineHeight: "1.4",
+          color: "#333333",
+          WebkitTextSizeAdjust: "100%",
+          textSizeAdjust: "100%",
         }}
       >
-        <div
+        <table
+          cellPadding={0}
+          cellSpacing={0}
+          border={0}
           style={{
-            maxWidth: "600px",
-            margin: "0 auto",
-            backgroundColor: "#ffffff",
-            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
-            borderRadius: "8px",
-            overflow: "hidden",
+            backgroundColor: "#f5f5f5",
+            width: "100%",
           }}
         >
-          {/* Header */}
-          <div
-            style={{
-              padding: "32px 24px",
-              textAlign: "center",
-              borderBottom: "1px solid #e5e7eb",
-              backgroundColor: "#ffffff",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "12px",
-                marginBottom: "16px",
-              }}
-            >
-              <img
-                alt="NanoAPI logo"
-                height="32"
-                src="https://raw.githubusercontent.com/nanoapi-io/napi/refs/heads/main/media/android-chrome-192x192.png"
-                width="32"
-                style={{ borderRadius: "6px" }}
-              />
-              <h1
+          <tr>
+            <td align="center" style={{ padding: "10px" }}>
+              <table
+                cellPadding={0}
+                cellSpacing={0}
+                border={0}
                 style={{
-                  margin: 0,
-                  fontSize: "20px",
-                  fontWeight: "700",
-                  color: "#111827",
-                  letterSpacing: "-0.025em",
+                  backgroundColor: "#ffffff",
+                  border: "1px solid #cccccc",
+                  width: "100%",
+                  maxWidth: "600px",
                 }}
               >
-                NanoAPI
-              </h1>
-            </div>
-            <p
-              style={{
-                margin: 0,
-                fontSize: "14px",
-                color: "#6b7280",
-                fontWeight: "500",
-              }}
-            >
-              Software Architecture for the AI Age
-            </p>
-          </div>
-
-          {/* Content */}
-          <div
-            style={{
-              padding: "32px 24px",
-              backgroundColor: "#ffffff",
-            }}
-          >
-            {children}
-          </div>
-
-          {/* Footer */}
-          <div
-            style={{
-              padding: "24px",
-              backgroundColor: "#f9fafb",
-              borderTop: "1px solid #e5e7eb",
-              textAlign: "center",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: "16px",
-              }}
-            >
-              {/* Social Links */}
-              <div
-                style={{
-                  display: "flex",
-                  gap: "12px",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: "8px",
-                }}
-              >
-                <a
-                  href="https://discord.gg/dFWTtRvJdk"
-                  style={socialLinkStyle}
-                  title="Join our Discord Server"
-                >
-                  <img
-                    alt="Discord Server"
-                    src="https://cdn-icons-png.flaticon.com/512/5968/5968898.png"
-                    style={socialIconStyle}
-                  />
-                </a>
-                <a
-                  href="https://www.youtube.com/@Nano-API"
-                  style={socialLinkStyle}
-                  title="Subscribe to our YouTube Channel"
-                >
-                  <img
-                    alt="YouTube"
-                    src="https://cdn-icons-png.flaticon.com/512/5968/5968975.png"
-                    style={socialIconStyle}
-                  />
-                </a>
-                <a
-                  href="https://www.linkedin.com/company/nanoapi/"
-                  style={socialLinkStyle}
-                  title="Follow us on LinkedIn"
-                >
-                  <img
-                    alt="LinkedIn"
-                    src="https://cdn-icons-png.flaticon.com/512/5968/5968924.png"
-                    style={socialIconStyle}
-                  />
-                </a>
-                <a
-                  href="https://github.com/nanoapi-io"
-                  style={socialLinkStyle}
-                  title="Follow us on GitHub"
-                >
-                  <img
-                    alt="GitHub"
-                    src="https://cdn-icons-png.flaticon.com/512/5968/5968866.png"
-                    style={socialIconStyle}
-                  />
-                </a>
-              </div>
-
-              {/* Footer Text */}
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: "4px",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    color: "#374151",
-                  }}
-                >
-                  NanoAPI
-                </div>
-                <div
-                  style={{
-                    fontSize: "12px",
-                    color: "#9ca3af",
-                    textAlign: "center",
-                  }}
-                >
-                  <a
-                    href="https://nanoapi.io"
+                {/* Header */}
+                <tr>
+                  <td
+                    align="center"
                     style={{
-                      color: "#6b7280",
-                      textDecoration: "underline",
+                      padding: "20px",
+                      borderBottom: "1px solid #cccccc",
                     }}
                   >
-                    https://nanoapi.io
-                  </a>
-                </div>
-                <div
-                  style={{
-                    fontSize: "12px",
-                    color: "#9ca3af",
-                    textAlign: "center",
-                  }}
-                >
-                  Need help? Contact us at{" "}
-                  <a
-                    href="mailto:support@nanoapi.io"
+                    <img
+                      alt="NanoAPI logo"
+                      src="https://raw.githubusercontent.com/nanoapi-io/napi/refs/heads/main/media/android-chrome-192x192.png"
+                      width={32}
+                      height={32}
+                      style={{ border: "0", display: "inline-block" }}
+                    />
+                    <h1
+                      style={{
+                        margin: "10px 0 5px 0",
+                        fontSize: "24px",
+                        fontWeight: "bold",
+                        color: "#333333",
+                        fontFamily: "Arial, Helvetica, sans-serif",
+                      }}
+                    >
+                      NanoAPI
+                    </h1>
+                    <p
+                      style={{
+                        margin: "0",
+                        fontSize: "14px",
+                        color: "#666666",
+                        fontFamily: "Arial, Helvetica, sans-serif",
+                      }}
+                    >
+                      Software Architecture for the AI Age
+                    </p>
+                  </td>
+                </tr>
+
+                {/* Content */}
+                <tr>
+                  <td style={{ padding: "20px" }}>
+                    {children}
+                  </td>
+                </tr>
+
+                {/* Footer */}
+                <tr>
+                  <td
+                    align="center"
                     style={{
-                      color: "#6b7280",
-                      textDecoration: "underline",
+                      padding: "20px",
+                      backgroundColor: "#f9f9f9",
+                      borderTop: "1px solid #cccccc",
                     }}
                   >
-                    support@nanoapi.io
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+                    <table
+                      cellPadding={0}
+                      cellSpacing={0}
+                      border={0}
+                      style={{ width: "100%" }}
+                    >
+                      <tr>
+                        <td align="center" style={{ paddingBottom: "15px" }}>
+                          <table cellPadding={0} cellSpacing={0} border={0}>
+                            <tr>
+                              <td style={{ padding: "0 5px" }}>
+                                <a href="https://discord.gg/dFWTtRvJdk">
+                                  <img
+                                    alt="Join us on Discord"
+                                    src="https://cdn-icons-png.flaticon.com/512/5968/5968898.png"
+                                    width={24}
+                                    height={24}
+                                    style={{ border: "0" }}
+                                  />
+                                </a>
+                              </td>
+                              <td style={{ padding: "0 5px" }}>
+                                <a href="https://www.youtube.com/@Nano-API">
+                                  <img
+                                    alt="Watch us on YouTube"
+                                    src="https://cdn-icons-png.flaticon.com/512/5968/5968975.png"
+                                    width={24}
+                                    height={24}
+                                    style={{ border: "0" }}
+                                  />
+                                </a>
+                              </td>
+                              <td style={{ padding: "0 5px" }}>
+                                <a href="https://www.linkedin.com/company/nanoapi/">
+                                  <img
+                                    alt="Connect with us on LinkedIn"
+                                    src="https://cdn-icons-png.flaticon.com/512/5968/5968924.png"
+                                    width={24}
+                                    height={24}
+                                    style={{ border: "0" }}
+                                  />
+                                </a>
+                              </td>
+                              <td style={{ padding: "0 5px" }}>
+                                <a href="https://github.com/nanoapi-io">
+                                  <img
+                                    alt="View our code on GitHub"
+                                    src="https://cdn-icons-png.flaticon.com/512/5968/5968866.png"
+                                    width={24}
+                                    height={24}
+                                    style={{ border: "0" }}
+                                  />
+                                </a>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td align="center">
+                          <p
+                            style={{
+                              margin: "0 0 5px 0",
+                              fontSize: "14px",
+                              fontWeight: "bold",
+                              color: "#333333",
+                              fontFamily: "Arial, Helvetica, sans-serif",
+                            }}
+                          >
+                            NanoAPI
+                          </p>
+                          <p
+                            style={{
+                              margin: "0 0 5px 0",
+                              fontSize: "12px",
+                              color: "#666666",
+                              fontFamily: "Arial, Helvetica, sans-serif",
+                            }}
+                          >
+                            <a
+                              href="https://nanoapi.io"
+                              style={{
+                                color: "#666666",
+                                textDecoration: "underline",
+                                fontFamily: "Arial, Helvetica, sans-serif",
+                              }}
+                            >
+                              https://nanoapi.io
+                            </a>
+                          </p>
+                          <p
+                            style={{
+                              margin: "0",
+                              fontSize: "12px",
+                              color: "#666666",
+                              fontFamily: "Arial, Helvetica, sans-serif",
+                            }}
+                          >
+                            Need help? Contact us at{" "}
+                            <a
+                              href="mailto:support@nanoapi.io"
+                              style={{
+                                color: "#666666",
+                                textDecoration: "underline",
+                                fontFamily: "Arial, Helvetica, sans-serif",
+                              }}
+                            >
+                              support@nanoapi.io
+                            </a>
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
       </body>
     </html>
   );

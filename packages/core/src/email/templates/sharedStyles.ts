@@ -1,125 +1,69 @@
-// Shared styles for email templates
+// Email-compatible shared styles for transactional emails
 export const sharedStyles = {
-  // Typography
+  // Basic typography
   heading: {
-    fontSize: "24px",
-    fontWeight: "700",
-    color: "#111827",
-    margin: "0 0 16px 0",
-    letterSpacing: "-0.025em",
+    fontSize: "20px",
+    fontWeight: "bold",
+    color: "#333333",
+    margin: "0 0 15px 0",
+    fontFamily: "Arial, Helvetica, sans-serif",
   },
 
   subheading: {
-    fontSize: "18px",
-    fontWeight: "600",
-    color: "#111827",
-    margin: "0 0 16px 0",
+    fontSize: "16px",
+    fontWeight: "bold",
+    color: "#333333",
+    margin: "0 0 10px 0",
+    fontFamily: "Arial, Helvetica, sans-serif",
   },
 
   body: {
-    fontSize: "16px",
-    color: "#374151",
-    margin: "0 0 16px 0",
-    lineHeight: "1.6",
+    fontSize: "14px",
+    color: "#333333",
+    margin: "0 0 10px 0",
+    lineHeight: "1.4",
+    fontFamily: "Arial, Helvetica, sans-serif",
   },
 
   small: {
-    fontSize: "14px",
-    color: "#6b7280",
-    margin: "0 0 12px 0",
-    lineHeight: "1.5",
+    fontSize: "12px",
+    color: "#666666",
+    margin: "0 0 8px 0",
+    lineHeight: "1.3",
+    fontFamily: "Arial, Helvetica, sans-serif",
   },
 
-  // Layout
-  section: {
-    marginBottom: "32px",
-  },
-
-  centerText: {
-    textAlign: "center" as const,
-  },
-
-  // Buttons
-  primaryButton: {
+  // Email-compatible button (table-based)
+  button: {
     display: "inline-block",
-    padding: "12px 24px",
-    borderRadius: "6px",
+    padding: "10px 20px",
     textDecoration: "none",
-    fontWeight: "600",
-    fontSize: "16px",
+    fontWeight: "bold",
+    fontSize: "14px",
     textAlign: "center" as const,
     backgroundColor: "#4f46e5",
     color: "#ffffff",
-    border: "none",
+    border: "1px solid #4f46e5",
+    fontFamily: "Arial, Helvetica, sans-serif",
   },
 
-  secondaryButton: {
-    display: "inline-block",
-    padding: "12px 24px",
-    borderRadius: "6px",
-    textDecoration: "none",
-    fontWeight: "600",
-    fontSize: "16px",
-    textAlign: "center" as const,
-    backgroundColor: "#ffffff",
-    color: "#374151",
-    border: "2px solid #e5e7eb",
+  // Mobile-responsive button container
+  buttonContainer: {
+    width: "100%",
+    maxWidth: "200px",
   },
 
-  // Cards and containers
-  card: {
-    backgroundColor: "#f8fafc",
-    borderRadius: "8px",
-    padding: "24px",
-    border: "1px solid #e2e8f0",
-    marginBottom: "24px",
-  },
-
-  infoBox: {
-    backgroundColor: "#dbeafe",
-    borderRadius: "6px",
-    padding: "16px",
-    border: "1px solid #3b82f6",
-    marginBottom: "24px",
-  },
-
-  warningBox: {
-    backgroundColor: "#fef3c7",
-    borderRadius: "6px",
-    padding: "16px",
-    border: "1px solid #f59e0b",
-    marginBottom: "24px",
-  },
-
-  // Icons
-  iconCircle: {
-    width: "48px",
-    height: "48px",
-    borderRadius: "50%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    margin: "0 auto 16px auto",
-    fontSize: "24px",
-    color: "#ffffff",
-  },
-
-  // Links
+  // Simple link
   link: {
     color: "#4f46e5",
     textDecoration: "underline",
-    fontWeight: "500",
+    fontFamily: "Arial, Helvetica, sans-serif",
   },
 
-  // Divider
+  // Simple divider
   divider: {
-    borderTop: "1px solid #e5e7eb",
-    marginTop: "32px",
-    paddingTop: "24px",
-  },
-
-  // Content spacing
-  contentSpacing: {
-    marginBottom: "24px",
+    borderTop: "1px solid #cccccc",
+    marginTop: "15px",
+    paddingTop: "15px",
   },
 };
