@@ -1,55 +1,105 @@
-import { Heading, Section, Text } from "@react-email/components";
 import { baseTemplate } from "./base.tsx";
-import { headingStyle } from "./styles.tsx";
+import { sharedStyles } from "./sharedStyles.ts";
 
 const OtpEmail = ({ otp }: {
   otp: string;
 }) => {
   const previewText = `Your one-time password (OTP) code is ${otp}`;
+
   return baseTemplate(
     previewText,
-    <Section>
-      <Heading as="h2" style={headingStyle}>
-        One-Time Password (OTP) Code
-      </Heading>
-      <Text>Hi there,</Text>
+    <>
+      {/* Header */}
+      <div style={{ ...sharedStyles.centerText, ...sharedStyles.section }}>
+        <div style={{ ...sharedStyles.iconCircle, backgroundColor: "#4f46e5" }}>
+          🔐
+        </div>
+        <h1 style={sharedStyles.heading}>One-Time Password</h1>
+        <p style={sharedStyles.body}>
+          Use the code below to complete your authentication
+        </p>
+      </div>
 
-      <Text>
-        You've requested a one-time password to access your account. Please use
-        the code below to complete your authentication:
-      </Text>
-
-      <code
+      {/* OTP Code */}
+      <div
         style={{
-          display: "inline-block",
-          padding: "16px 4.5%",
-          width: "90.5%",
-          backgroundColor: "#f4f4f4",
-          borderRadius: "5px",
-          border: "1px solid #eee",
-          color: "#222",
-          fontFamily: "roboto mono, monospace",
-          fontSize: "28px",
-          // deno-lint-ignore no-explicit-any
-          textAlign: "center" as any,
-          letterSpacing: "5px",
+          ...sharedStyles.card,
+          ...sharedStyles.centerText,
+          ...sharedStyles.contentSpacing,
         }}
       >
-        {otp}
-      </code>
+        <div
+          style={{
+            ...sharedStyles.small,
+            textTransform: "uppercase",
+            letterSpacing: "1px",
+          }}
+        >
+          Your One-Time Password
+        </div>
+        <div
+          style={{
+            fontSize: "36px",
+            fontWeight: "700",
+            color: "#111827",
+            letterSpacing: "4px",
+            fontFamily: "'Courier New', monospace",
+            backgroundColor: "#ffffff",
+            borderRadius: "6px",
+            padding: "16px",
+            border: "1px solid #e5e7eb",
+            margin: "16px 0",
+          }}
+        >
+          {otp}
+        </div>
+      </div>
 
-      <Text>
-        This code is valid for a limited time and can only be used once. For
-        your security, please do not share this code with anyone.
-      </Text>
+      {/* Security Notice */}
+      <div
+        style={{ ...sharedStyles.warningBox, ...sharedStyles.contentSpacing }}
+      >
+        <h3
+          style={{
+            ...sharedStyles.subheading,
+            fontSize: "16px",
+            margin: "0 0 8px 0",
+            color: "#92400e",
+          }}
+        >
+          Security Notice
+        </h3>
+        <p style={{ ...sharedStyles.small, color: "#92400e", margin: 0 }}>
+          This code is valid for a limited time and can only be used once. For
+          your security, please do not share this code with anyone.
+        </p>
+      </div>
 
-      <Text>
-        If you didn't request this code, please ignore this email or contact our
-        support team if you have concerns about your account security.
-      </Text>
+      {/* Support */}
+      <div
+        style={{
+          ...sharedStyles.card,
+          ...sharedStyles.centerText,
+          ...sharedStyles.contentSpacing,
+        }}
+      >
+        <p style={{ ...sharedStyles.small, margin: 0 }}>
+          Didn't request this code? Please ignore this email or contact our{" "}
+          <a href="mailto:support@nanoapi.io" style={sharedStyles.link}>
+            support team
+          </a>{" "}
+          if you have concerns about your account security.
+        </p>
+      </div>
 
-      <Text style={{}}>Best regards - Team Nano</Text>
-    </Section>,
+      {/* Footer */}
+      <div style={{ ...sharedStyles.divider, ...sharedStyles.centerText }}>
+        <p style={sharedStyles.small}>
+          Stay secure,<br />
+          The NanoAPI Team
+        </p>
+      </div>
+    </>,
   );
 };
 
