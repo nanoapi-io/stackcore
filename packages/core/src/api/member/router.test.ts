@@ -15,7 +15,7 @@ import {
   notAdminOfWorkspaceError,
   notMemberOfWorkspaceError,
 } from "./service.ts";
-import { MemberApiTypes } from "../responseType.ts";
+import { MemberApiTypes } from "@stackcore/coreApiTypes";
 
 // GET /:workspaceId/members (list members)
 Deno.test("get workspace members", async () => {

@@ -6,10 +6,7 @@ import { useNavigate, useSearchParams } from "react-router";
 import type { VisualizerContext } from "../DependencyVisualizer.tsx";
 import SymbolDetailsPane from "../components/detailsPanes/SymbolDetailsPane.tsx";
 import { useTheme } from "../../../contexts/ThemeProvider.tsx";
-import type {
-  AuditManifest,
-  DependencyManifest,
-} from "@stackcore/core/manifest";
+import type { AuditManifest, DependencyManifest } from "@stackcore/manifests";
 import { SymbolDependencyVisualizer } from "../cytoscape/symbolDependencyVisualizer/index.ts";
 
 export default function SymbolVisualizer(

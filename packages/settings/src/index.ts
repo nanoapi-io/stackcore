@@ -35,17 +35,13 @@ const settings: {
       CREDIT_USAGE_MANIFEST_CREATE: number;
     };
     BILLING_THRESHOLD_BASIC: number;
-    MONTHLY_BILLING_CYCLE: "MONTHLY";
-    YEARLY_BILLING_CYCLE: "YEARLY";
     PRODUCTS: {
       BASIC: {
-        NAME: "BASIC";
         MONTHLY: {
           PRICE_ID: string;
         };
       };
       PRO: {
-        NAME: "PRO";
         MONTHLY: {
           PRICE_ID: string;
         };
@@ -54,16 +50,12 @@ const settings: {
         };
       };
       PREMIUM: {
-        NAME: "PREMIUM";
         MONTHLY: {
           PRICE_ID: string;
         };
         YEARLY: {
           PRICE_ID: string;
         };
-      };
-      CUSTOM: {
-        NAME: "CUSTOM";
       };
     };
   };
@@ -128,11 +120,8 @@ const settings: {
     },
     // This is to make sure that BASIC user that exceed their included credits have a card on file
     BILLING_THRESHOLD_BASIC: 6,
-    MONTHLY_BILLING_CYCLE: "MONTHLY" as const,
-    YEARLY_BILLING_CYCLE: "YEARLY" as const,
     PRODUCTS: {
       BASIC: {
-        NAME: "BASIC" as const,
         MONTHLY: {
           PRICE_ID: getEnv(
             "STRIPE_PRODUCT_BASIC_MONTHLY_PRICE_ID",
@@ -141,7 +130,6 @@ const settings: {
         },
       },
       PRO: {
-        NAME: "PRO" as const,
         MONTHLY: {
           PRICE_ID: getEnv(
             "STRIPE_PRODUCT_PRO_MONTHLY_PRICE_ID",
@@ -156,7 +144,6 @@ const settings: {
         },
       },
       PREMIUM: {
-        NAME: "PREMIUM" as const,
         MONTHLY: {
           PRICE_ID: getEnv(
             "STRIPE_PRODUCT_PREMIUM_MONTHLY_PRICE_ID",
@@ -169,9 +156,6 @@ const settings: {
             "price_premium_yearly",
           ),
         },
-      },
-      CUSTOM: {
-        NAME: "CUSTOM" as const,
       },
     },
   },

@@ -9,11 +9,7 @@ import {
   CardTitle,
 } from "../../../components/shadcn/Card.tsx";
 import { Button } from "../../../components/shadcn/Button.tsx";
-import {
-  BillingApiTypes,
-  MemberApiTypes,
-  WorkspaceApiTypes,
-} from "@stackcore/core/responses";
+import { BillingApiTypes, MemberApiTypes } from "@stackcore/coreApiTypes";
 import { Check, CreditCard, Loader } from "lucide-react";
 import {
   Dialog,
@@ -52,9 +48,9 @@ export default function WorkspaceSubscription() {
     BillingApiTypes.SubscriptionDetails | undefined
   >(undefined);
   const [billingCycle, setBillingCycle] = useState<
-    WorkspaceApiTypes.StripeBillingCycle
+    BillingApiTypes.StripeBillingCycle
   >(
-    WorkspaceApiTypes.YEARLY_BILLING_CYCLE,
+    BillingApiTypes.STRIPE_YEARLY_BILLING_CYCLE,
   );
 
   useEffect(() => {
@@ -145,14 +141,14 @@ export default function WorkspaceSubscription() {
   }
 
   function getChangeType(
-    currentProduct: WorkspaceApiTypes.StripeProduct,
-    currentBillingCycle: WorkspaceApiTypes.StripeBillingCycle | null,
-    newProduct: WorkspaceApiTypes.StripeProduct,
-    newBillingCycle: WorkspaceApiTypes.StripeBillingCycle,
+    currentProduct: BillingApiTypes.StripeProduct,
+    currentBillingCycle: BillingApiTypes.StripeBillingCycle | null,
+    newProduct: BillingApiTypes.StripeProduct,
+    newBillingCycle: BillingApiTypes.StripeBillingCycle,
   ): "upgrade" | "downgrade" | "same" | "custom" {
     if (
-      currentProduct === WorkspaceApiTypes.CUSTOM_PRODUCT ||
-      newProduct === WorkspaceApiTypes.CUSTOM_PRODUCT ||
+      currentProduct === BillingApiTypes.STRIPE_CUSTOM_PRODUCT ||
+      newProduct === BillingApiTypes.STRIPE_CUSTOM_PRODUCT ||
       currentBillingCycle === null
     ) {
       return "custom";
@@ -160,14 +156,14 @@ export default function WorkspaceSubscription() {
 
     // Check if changing to a higher tier product
     const isUpgradingProduct =
-      (currentProduct === WorkspaceApiTypes.BASIC_PRODUCT &&
+      (currentProduct === BillingApiTypes.STRIPE_BASIC_PRODUCT &&
         [
-          WorkspaceApiTypes.PRO_PRODUCT as string,
-          WorkspaceApiTypes.PREMIUM_PRODUCT as string,
+          BillingApiTypes.STRIPE_PRO_PRODUCT as string,
+          BillingApiTypes.STRIPE_PREMIUM_PRODUCT as string,
         ]
           .includes(newProduct)) ||
-      (currentProduct === WorkspaceApiTypes.PRO_PRODUCT &&
-        newProduct === WorkspaceApiTypes.PREMIUM_PRODUCT);
+      (currentProduct === BillingApiTypes.STRIPE_PRO_PRODUCT &&
+        newProduct === BillingApiTypes.STRIPE_PREMIUM_PRODUCT);
 
     // If products are different, determine if upgrade or downgrade
     if (currentProduct !== newProduct) {
@@ -177,8 +173,8 @@ export default function WorkspaceSubscription() {
     // If only billing cycle changed, yearly is an upgrade from monthly
     if (currentBillingCycle !== newBillingCycle) {
       const isUpgradingBilling =
-        currentBillingCycle === WorkspaceApiTypes.MONTHLY_BILLING_CYCLE &&
-        newBillingCycle === WorkspaceApiTypes.YEARLY_BILLING_CYCLE;
+        currentBillingCycle === BillingApiTypes.STRIPE_MONTHLY_BILLING_CYCLE &&
+        newBillingCycle === BillingApiTypes.STRIPE_YEARLY_BILLING_CYCLE;
 
       return isUpgradingBilling ? "upgrade" : "downgrade";
     }
@@ -316,7 +312,7 @@ export default function WorkspaceSubscription() {
 
       {/* Subscription Plans */}
       {subscription.product ===
-          WorkspaceApiTypes.CUSTOM_PRODUCT
+          BillingApiTypes.STRIPE_CUSTOM_PRODUCT
         ? (
           <Card>
             <CardHeader className="text-center">
@@ -350,16 +346,18 @@ export default function WorkspaceSubscription() {
                   value={billingCycle}
                   onValueChange={(value) =>
                     setBillingCycle(
-                      value as WorkspaceApiTypes.StripeBillingCycle,
+                      value as BillingApiTypes.StripeBillingCycle,
                     )}
                 >
                   <TabsList>
                     <TabsTrigger
-                      value={WorkspaceApiTypes.MONTHLY_BILLING_CYCLE}
+                      value={BillingApiTypes.STRIPE_MONTHLY_BILLING_CYCLE}
                     >
                       Monthly
                     </TabsTrigger>
-                    <TabsTrigger value={WorkspaceApiTypes.YEARLY_BILLING_CYCLE}>
+                    <TabsTrigger
+                      value={BillingApiTypes.STRIPE_YEARLY_BILLING_CYCLE}
+                    >
                       Yearly
                     </TabsTrigger>
                   </TabsList>
@@ -367,13 +365,13 @@ export default function WorkspaceSubscription() {
               </div>
 
               {billingCycle ===
-                  WorkspaceApiTypes.MONTHLY_BILLING_CYCLE
+                  BillingApiTypes.STRIPE_MONTHLY_BILLING_CYCLE
                 ? (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <SubscriptionCard
                       workspaceId={context.workspace.id}
                       currentSubscription={subscription}
-                      product={WorkspaceApiTypes.BASIC_PRODUCT}
+                      product={BillingApiTypes.STRIPE_BASIC_PRODUCT}
                       title="Basic"
                       description="Perfect for trying out the platform"
                       features={[
@@ -381,20 +379,20 @@ export default function WorkspaceSubscription() {
                         "2.00 USD per additional credit",
                       ]}
                       subscriptionPrice="Free"
-                      billingCycle={WorkspaceApiTypes
-                        .MONTHLY_BILLING_CYCLE}
+                      billingCycle={BillingApiTypes
+                        .STRIPE_MONTHLY_BILLING_CYCLE}
                       changeType={getChangeType(
                         subscription.product,
                         subscription.billingCycle,
-                        WorkspaceApiTypes.BASIC_PRODUCT,
-                        WorkspaceApiTypes.MONTHLY_BILLING_CYCLE,
+                        BillingApiTypes.STRIPE_BASIC_PRODUCT,
+                        BillingApiTypes.STRIPE_MONTHLY_BILLING_CYCLE,
                       )}
                       role={context.workspace.role}
                     />
                     <SubscriptionCard
                       workspaceId={context.workspace.id}
                       currentSubscription={subscription}
-                      product={WorkspaceApiTypes.PRO_PRODUCT}
+                      product={BillingApiTypes.STRIPE_PRO_PRODUCT}
                       title="Pro"
                       description="Great for small teams and growing businesses"
                       features={[
@@ -402,20 +400,20 @@ export default function WorkspaceSubscription() {
                         "1.00 USD per additional credit",
                       ]}
                       subscriptionPrice="20 USD/month"
-                      billingCycle={WorkspaceApiTypes
-                        .MONTHLY_BILLING_CYCLE}
+                      billingCycle={BillingApiTypes
+                        .STRIPE_MONTHLY_BILLING_CYCLE}
                       changeType={getChangeType(
                         subscription.product,
                         subscription.billingCycle,
-                        WorkspaceApiTypes.PRO_PRODUCT,
-                        WorkspaceApiTypes.MONTHLY_BILLING_CYCLE,
+                        BillingApiTypes.STRIPE_PRO_PRODUCT,
+                        BillingApiTypes.STRIPE_MONTHLY_BILLING_CYCLE,
                       )}
                       role={context.workspace.role}
                     />
                     <SubscriptionCard
                       workspaceId={context.workspace.id}
                       currentSubscription={subscription}
-                      product={WorkspaceApiTypes.PREMIUM_PRODUCT}
+                      product={BillingApiTypes.STRIPE_PREMIUM_PRODUCT}
                       title="Premium"
                       description="Perfect for medium teams with high volume needs"
                       features={[
@@ -423,33 +421,33 @@ export default function WorkspaceSubscription() {
                         "0.50 USD per additional credit",
                       ]}
                       subscriptionPrice="50 USD/month"
-                      billingCycle={WorkspaceApiTypes
-                        .MONTHLY_BILLING_CYCLE}
+                      billingCycle={BillingApiTypes
+                        .STRIPE_MONTHLY_BILLING_CYCLE}
                       changeType={getChangeType(
                         subscription.product,
                         subscription.billingCycle,
-                        WorkspaceApiTypes.PREMIUM_PRODUCT,
-                        WorkspaceApiTypes.MONTHLY_BILLING_CYCLE,
+                        BillingApiTypes.STRIPE_PREMIUM_PRODUCT,
+                        BillingApiTypes.STRIPE_MONTHLY_BILLING_CYCLE,
                       )}
                       role={context.workspace.role}
                     />
                     <SubscriptionCard
                       workspaceId={context.workspace.id}
                       currentSubscription={subscription}
-                      product={WorkspaceApiTypes.CUSTOM_PRODUCT}
+                      product={BillingApiTypes.STRIPE_CUSTOM_PRODUCT}
                       title="Custom pricing"
                       description="Everything tailored to your needs"
                       features={[
                         "Anything you need",
                       ]}
                       subscriptionPrice="Custom"
-                      billingCycle={WorkspaceApiTypes
-                        .MONTHLY_BILLING_CYCLE}
+                      billingCycle={BillingApiTypes
+                        .STRIPE_MONTHLY_BILLING_CYCLE}
                       changeType={getChangeType(
                         subscription.product,
                         subscription.billingCycle,
-                        WorkspaceApiTypes.CUSTOM_PRODUCT,
-                        WorkspaceApiTypes.MONTHLY_BILLING_CYCLE,
+                        BillingApiTypes.STRIPE_CUSTOM_PRODUCT,
+                        BillingApiTypes.STRIPE_MONTHLY_BILLING_CYCLE,
                       )}
                       role={context.workspace.role}
                     />
@@ -460,7 +458,7 @@ export default function WorkspaceSubscription() {
                     <SubscriptionCard
                       workspaceId={context.workspace.id}
                       currentSubscription={subscription}
-                      product={WorkspaceApiTypes.PRO_PRODUCT}
+                      product={BillingApiTypes.STRIPE_PRO_PRODUCT}
                       title="Pro"
                       description="Great for small teams and growing businesses"
                       features={[
@@ -469,20 +467,20 @@ export default function WorkspaceSubscription() {
                         "2 months free compared to monthly subscription",
                       ]}
                       subscriptionPrice="200 USD/year"
-                      billingCycle={WorkspaceApiTypes
-                        .YEARLY_BILLING_CYCLE}
+                      billingCycle={BillingApiTypes
+                        .STRIPE_YEARLY_BILLING_CYCLE}
                       changeType={getChangeType(
                         subscription.product,
                         subscription.billingCycle,
-                        WorkspaceApiTypes.PRO_PRODUCT,
-                        WorkspaceApiTypes.YEARLY_BILLING_CYCLE,
+                        BillingApiTypes.STRIPE_PRO_PRODUCT,
+                        BillingApiTypes.STRIPE_YEARLY_BILLING_CYCLE,
                       )}
                       role={context.workspace.role}
                     />
                     <SubscriptionCard
                       workspaceId={context.workspace.id}
                       currentSubscription={subscription}
-                      product={WorkspaceApiTypes.PREMIUM_PRODUCT}
+                      product={BillingApiTypes.STRIPE_PREMIUM_PRODUCT}
                       title="Premium"
                       description="Perfect for medium teams with high volume needs"
                       features={[
@@ -491,33 +489,33 @@ export default function WorkspaceSubscription() {
                         "2 months free compared to monthly subscription",
                       ]}
                       subscriptionPrice="500 USD/year"
-                      billingCycle={WorkspaceApiTypes
-                        .YEARLY_BILLING_CYCLE}
+                      billingCycle={BillingApiTypes
+                        .STRIPE_YEARLY_BILLING_CYCLE}
                       changeType={getChangeType(
                         subscription.product,
                         subscription.billingCycle,
-                        WorkspaceApiTypes.PREMIUM_PRODUCT,
-                        WorkspaceApiTypes.YEARLY_BILLING_CYCLE,
+                        BillingApiTypes.STRIPE_PREMIUM_PRODUCT,
+                        BillingApiTypes.STRIPE_YEARLY_BILLING_CYCLE,
                       )}
                       role={context.workspace.role}
                     />
                     <SubscriptionCard
                       workspaceId={context.workspace.id}
                       currentSubscription={subscription}
-                      product={WorkspaceApiTypes.CUSTOM_PRODUCT}
+                      product={BillingApiTypes.STRIPE_CUSTOM_PRODUCT}
                       title="Custom pricing"
                       description="Everything tailored to your needs"
                       features={[
                         "Anything you need",
                       ]}
                       subscriptionPrice="Custom"
-                      billingCycle={WorkspaceApiTypes
-                        .YEARLY_BILLING_CYCLE}
+                      billingCycle={BillingApiTypes
+                        .STRIPE_YEARLY_BILLING_CYCLE}
                       changeType={getChangeType(
                         subscription.product,
                         subscription.billingCycle,
-                        WorkspaceApiTypes.CUSTOM_PRODUCT,
-                        WorkspaceApiTypes.YEARLY_BILLING_CYCLE,
+                        BillingApiTypes.STRIPE_CUSTOM_PRODUCT,
+                        BillingApiTypes.STRIPE_YEARLY_BILLING_CYCLE,
                       )}
                       role={context.workspace.role}
                     />
@@ -533,12 +531,12 @@ export default function WorkspaceSubscription() {
 function SubscriptionCard(props: {
   workspaceId: number;
   currentSubscription: BillingApiTypes.SubscriptionDetails;
-  product: WorkspaceApiTypes.StripeProduct;
+  product: BillingApiTypes.StripeProduct;
   title: string;
   description: string;
   features: string[];
   subscriptionPrice: string;
-  billingCycle: WorkspaceApiTypes.StripeBillingCycle;
+  billingCycle: BillingApiTypes.StripeBillingCycle;
   changeType: "upgrade" | "downgrade" | "same" | "custom";
   role: MemberApiTypes.MemberRole | null;
 }) {
@@ -603,8 +601,8 @@ function SubscriptionCard(props: {
 function ChangeSubscriptionDialog(props: {
   workspaceId: number;
   changeType: "upgrade" | "downgrade";
-  newProduct: WorkspaceApiTypes.StripeProduct;
-  newBillingCycle: WorkspaceApiTypes.StripeBillingCycle;
+  newProduct: BillingApiTypes.StripeProduct;
+  newBillingCycle: BillingApiTypes.StripeBillingCycle;
 }) {
   const coreApi = useCoreApi();
   const navigate = useNavigate();
@@ -643,7 +641,7 @@ function ChangeSubscriptionDialog(props: {
     setBusy(true);
 
     try {
-      if (props.newProduct === WorkspaceApiTypes.CUSTOM_PRODUCT) {
+      if (props.newProduct === BillingApiTypes.STRIPE_CUSTOM_PRODUCT) {
         throw new Error("Custom product is not supported");
       }
 

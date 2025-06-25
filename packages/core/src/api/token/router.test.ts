@@ -4,7 +4,7 @@ import { db, destroyKyselyDb, initKyselyDb } from "@stackcore/db";
 import { resetTables } from "../../testHelpers/db.ts";
 import { createTestUserAndToken } from "../../testHelpers/auth.ts";
 import { tokenNotFoundError } from "./service.ts";
-import { TokenApiTypes } from "../responseType.ts";
+import { TokenApiTypes } from "@stackcore/coreApiTypes";
 
 // POST /tokens (create token)
 Deno.test("create token", async () => {

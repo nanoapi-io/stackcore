@@ -8,7 +8,7 @@ import {
   metricDependencyCount,
   metricDependentCount,
   metricLinesCount,
-} from "@stackcore/core/manifest";
+} from "@stackcore/manifests";
 import { Alert, AlertDescription } from "../../../shadcn/Alert.tsx";
 
 export default function Metrics(props: {

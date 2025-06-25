@@ -9,7 +9,7 @@ import type {
   AuditManifest,
   DependencyManifest,
   Metric,
-} from "@stackcore/core/manifest";
+} from "@stackcore/manifests";
 import type { NapiNodeData } from "../elements/types.ts";
 import { mainLayout } from "../layout/index.ts";
 import { getCytoscapeStylesheet } from "../styles/index.ts";

@@ -10,6 +10,8 @@
     "@stackcore/db": "../db/src/index.ts",
     "@stackcore/settings": "../settings/src/index.ts",
     "@stackcore/storage": "../storage/src/index.ts",
+    "@stackcore/manifests": "../manifests/src/index.ts",
+    "@stackcore/coreApiTypes": "../coreApiTypes/src/index.ts",
     "@oak/oak": "jsr:@oak/oak@^17.1.4",
     "@sentry/deno": "npm:@sentry/deno@^9.28.1",
     "@std/assert": "jsr:@std/assert@1",

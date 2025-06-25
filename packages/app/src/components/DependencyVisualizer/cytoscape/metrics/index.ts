@@ -8,7 +8,7 @@ import {
   metricDependencyCount,
   metricDependentCount,
   metricLinesCount,
-} from "@stackcore/core/manifest";
+} from "@stackcore/manifests";
 
 /**
  * Extracts metric severity levels from an audit manifest for visualization.

@@ -3,10 +3,7 @@ import type {
   ElementDefinition,
   NodeDefinition,
 } from "cytoscape";
-import type {
-  AuditManifest,
-  DependencyManifest,
-} from "@stackcore/core/manifest";
+import type { AuditManifest, DependencyManifest } from "@stackcore/manifests";
 import {
   getCollapsedFileNodeLabel,
   getExpandedFileNodeLabel,

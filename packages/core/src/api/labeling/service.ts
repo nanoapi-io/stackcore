@@ -1,6 +1,6 @@
 import { db } from "@stackcore/db";
 import { uploadTemporaryFileToBucket } from "@stackcore/storage";
-import type { UploadTemporaryContentResponse } from "./types.ts";
+import type { LabelingApiTypes } from "@stackcore/coreApiTypes";
 import settings from "@stackcore/settings";
 
 export const manifestNotFoundError = "manifest_not_found";
@@ -9,7 +9,7 @@ export class LabelingService {
   public async uploadTemporaryContent(
     path: string,
     content: string,
-  ): Promise<UploadTemporaryContentResponse> {
+  ): Promise<LabelingApiTypes.UploadTemporaryContentResponse> {
     const fileName = `${Date.now()}|${path}`;
 
     await uploadTemporaryFileToBucket(fileName, content);

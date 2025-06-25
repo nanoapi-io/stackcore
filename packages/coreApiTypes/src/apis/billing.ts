@@ -1,6 +1,20 @@
-import { z } from "zod";
-import settings from "@stackcore/settings";
-import type { StripeBillingCycle, StripeProduct } from "../../stripe/index.ts";
+export const STRIPE_MONTHLY_BILLING_CYCLE = "MONTHLY";
+export const STRIPE_YEARLY_BILLING_CYCLE = "YEARLY";
+
+export type StripeBillingCycle =
+  | typeof STRIPE_MONTHLY_BILLING_CYCLE
+  | typeof STRIPE_YEARLY_BILLING_CYCLE;
+
+export const STRIPE_BASIC_PRODUCT = "BASIC";
+export const STRIPE_PRO_PRODUCT = "PRO";
+export const STRIPE_PREMIUM_PRODUCT = "PREMIUM";
+export const STRIPE_CUSTOM_PRODUCT = "CUSTOM";
+
+export type StripeProduct =
+  | typeof STRIPE_BASIC_PRODUCT
+  | typeof STRIPE_PRO_PRODUCT
+  | typeof STRIPE_PREMIUM_PRODUCT
+  | typeof STRIPE_CUSTOM_PRODUCT;
 
 export type SubscriptionDetails = {
   currentUsage: number;
@@ -14,36 +28,34 @@ export type SubscriptionDetails = {
 
 export function prepareGetSubscription(
   workspaceId: number,
-) {
+): {
+  url: string;
+  method: "GET";
+  body: undefined;
+} {
   const searchParams = new URLSearchParams();
   searchParams.set("workspaceId", workspaceId.toString());
 
   return {
     url: `/billing/subscription?${searchParams.toString()}`,
     method: "GET",
+    body: undefined,
   };
 }
 
-export const upgradeSubscriptionRequestSchema = z.object({
-  workspaceId: z.number(),
-  product: z.enum([
-    settings.STRIPE.PRODUCTS.BASIC.NAME,
-    settings.STRIPE.PRODUCTS.PRO.NAME,
-    settings.STRIPE.PRODUCTS.PREMIUM.NAME,
-  ]),
-  billingCycle: z.enum([
-    settings.STRIPE.MONTHLY_BILLING_CYCLE,
-    settings.STRIPE.YEARLY_BILLING_CYCLE,
-  ]),
-});
-
-export type UpgradeSubscriptionRequest = z.infer<
-  typeof upgradeSubscriptionRequestSchema
->;
+export type UpgradeSubscriptionRequest = {
+  workspaceId: number;
+  product: StripeProduct;
+  billingCycle: StripeBillingCycle;
+};
 
 export function prepareUpgradeSubscription(
   payload: UpgradeSubscriptionRequest,
-) {
+): {
+  url: string;
+  method: "POST";
+  body: UpgradeSubscriptionRequest;
+} {
   return {
     url: "/billing/subscription/upgrade",
     method: "POST",
@@ -51,26 +63,19 @@ export function prepareUpgradeSubscription(
   };
 }
 
-export const downgradeSubscriptionRequestSchema = z.object({
-  workspaceId: z.number(),
-  product: z.enum([
-    settings.STRIPE.PRODUCTS.BASIC.NAME,
-    settings.STRIPE.PRODUCTS.PRO.NAME,
-    settings.STRIPE.PRODUCTS.PREMIUM.NAME,
-  ]),
-  billingCycle: z.enum([
-    settings.STRIPE.MONTHLY_BILLING_CYCLE,
-    settings.STRIPE.YEARLY_BILLING_CYCLE,
-  ]),
-});
-
-export type DowngradeSubscriptionRequest = z.infer<
-  typeof downgradeSubscriptionRequestSchema
->;
+export type DowngradeSubscriptionRequest = {
+  workspaceId: number;
+  product: StripeProduct;
+  billingCycle: StripeBillingCycle;
+};
 
 export function prepareDowngradeSubscription(
   payload: DowngradeSubscriptionRequest,
-) {
+): {
+  url: string;
+  method: "POST";
+  body: DowngradeSubscriptionRequest;
+} {
   return {
     url: "/billing/subscription/downgrade",
     method: "POST",
@@ -78,14 +83,10 @@ export function prepareDowngradeSubscription(
   };
 }
 
-export const createPortalSessionRequestSchema = z.object({
-  workspaceId: z.number(),
-  returnUrl: z.string(),
-});
-
-export type CreatePortalSessionRequest = z.infer<
-  typeof createPortalSessionRequestSchema
->;
+export type CreatePortalSessionRequest = {
+  workspaceId: number;
+  returnUrl: string;
+};
 
 export type CreatePortalSessionResponse = {
   url: string;
@@ -93,7 +94,11 @@ export type CreatePortalSessionResponse = {
 
 export function prepareCreatePortalSession(
   payload: CreatePortalSessionRequest,
-) {
+): {
+  url: string;
+  method: "POST";
+  body: CreatePortalSessionRequest;
+} {
   return {
     url: "/billing/portal",
     method: "POST",
@@ -103,7 +108,11 @@ export function prepareCreatePortalSession(
 
 export function prepareCreatePortalSessionPaymentMethod(
   payload: CreatePortalSessionRequest,
-) {
+): {
+  url: string;
+  method: "POST";
+  body: CreatePortalSessionRequest;
+} {
   return {
     url: "/billing/portal/paymentMethod",
     method: "POST",

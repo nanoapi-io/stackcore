@@ -10,7 +10,7 @@ import type {
   AuditManifest,
   DependencyManifest,
   Metric,
-} from "@stackcore/core/manifest";
+} from "@stackcore/manifests";
 import { useTheme } from "../../../contexts/ThemeProvider.tsx";
 
 export default function ProjectVisualizer(props: VisualizerContext) {

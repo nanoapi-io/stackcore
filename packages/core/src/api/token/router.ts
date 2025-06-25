@@ -1,7 +1,6 @@
 import { Router, Status } from "@oak/oak";
 import { TokenService } from "./service.ts";
 import { authMiddleware } from "../auth/middleware.ts";
-import { createTokenSchema } from "./types.ts";
 import z from "zod";
 import settings from "@stackcore/settings";
 
@@ -12,7 +11,11 @@ const router = new Router();
 router.post("/", authMiddleware, async (ctx) => {
   const body = await ctx.request.body.json();
 
-  const parsedBody = createTokenSchema.safeParse(body);
+  const createTokenPayloadSchema = z.object({
+    name: z.string().nonempty(),
+  });
+
+  const parsedBody = createTokenPayloadSchema.safeParse(body);
 
   if (!parsedBody.success) {
     ctx.response.status = Status.BadRequest;

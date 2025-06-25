@@ -6,7 +6,7 @@ import type {
   metricDependencyCount,
   metricDependentCount,
   metricLinesCount,
-} from "@stackcore/core/manifest";
+} from "@stackcore/manifests";
 
 export interface NapiNodeData {
   id: string;

@@ -1,13 +1,7 @@
 import { Router, Status } from "@oak/oak";
 import { ProjectService } from "./service.ts";
 import { authMiddleware, getSession } from "../auth/middleware.ts";
-import {
-  createProjectPayloadSchema,
-  type CreateProjectResponse,
-  type GetProjectDetailsResponse,
-  type GetProjectsResponse,
-  updateProjectSchema,
-} from "./types.ts";
+import type { ProjectApiTypes } from "@stackcore/coreApiTypes";
 import z from "zod";
 import settings from "@stackcore/settings";
 
@@ -19,6 +13,26 @@ router.post("/", authMiddleware, async (ctx) => {
   const session = getSession(ctx);
 
   const body = await ctx.request.body.json();
+
+  const createProjectPayloadSchema = z.object({
+    name: z.string(),
+    repoUrl: z.string(),
+    workspaceId: z.number(),
+    maxCodeCharPerSymbol: z.number().int().min(1),
+    maxCodeCharPerFile: z.number().int().min(1),
+    maxCharPerSymbol: z.number().int().min(1),
+    maxCharPerFile: z.number().int().min(1),
+    maxCodeLinePerSymbol: z.number().int().min(1),
+    maxCodeLinePerFile: z.number().int().min(1),
+    maxLinePerSymbol: z.number().int().min(1),
+    maxLinePerFile: z.number().int().min(1),
+    maxDependencyPerSymbol: z.number().int().min(1),
+    maxDependencyPerFile: z.number().int().min(1),
+    maxDependentPerSymbol: z.number().int().min(1),
+    maxDependentPerFile: z.number().int().min(1),
+    maxCyclomaticComplexityPerSymbol: z.number().int().min(1),
+    maxCyclomaticComplexityPerFile: z.number().int().min(1),
+  });
 
   const parsedBody = createProjectPayloadSchema.safeParse(body);
 
@@ -60,7 +74,7 @@ router.post("/", authMiddleware, async (ctx) => {
   }
 
   ctx.response.status = Status.Created;
-  ctx.response.body = response as CreateProjectResponse;
+  ctx.response.body = response as ProjectApiTypes.CreateProjectResponse;
 });
 
 // Get all projects for an workspace
@@ -106,7 +120,7 @@ router.get("/", authMiddleware, async (ctx) => {
   }
 
   ctx.response.status = Status.OK;
-  ctx.response.body = response as GetProjectsResponse;
+  ctx.response.body = response as ProjectApiTypes.GetProjectsResponse;
 });
 
 // Get project details
@@ -139,7 +153,7 @@ router.get("/:projectId", authMiddleware, async (ctx) => {
   }
 
   ctx.response.status = Status.OK;
-  ctx.response.body = response as GetProjectDetailsResponse;
+  ctx.response.body = response as ProjectApiTypes.GetProjectDetailsResponse;
 });
 
 // Update a project
@@ -162,7 +176,26 @@ router.patch("/:projectId", authMiddleware, async (ctx) => {
 
   const body = await ctx.request.body.json();
 
-  const parsedBody = updateProjectSchema.safeParse(body);
+  const updateProjectPayloadSchema = z.object({
+    name: z.string(),
+    repoUrl: z.string(),
+    maxCodeCharPerSymbol: z.number().int().min(1),
+    maxCodeCharPerFile: z.number().int().min(1),
+    maxCharPerSymbol: z.number().int().min(1),
+    maxCharPerFile: z.number().int().min(1),
+    maxCodeLinePerSymbol: z.number().int().min(1),
+    maxCodeLinePerFile: z.number().int().min(1),
+    maxLinePerSymbol: z.number().int().min(1),
+    maxLinePerFile: z.number().int().min(1),
+    maxDependencyPerSymbol: z.number().int().min(1),
+    maxDependencyPerFile: z.number().int().min(1),
+    maxDependentPerSymbol: z.number().int().min(1),
+    maxDependentPerFile: z.number().int().min(1),
+    maxCyclomaticComplexityPerSymbol: z.number().int().min(1),
+    maxCyclomaticComplexityPerFile: z.number().int().min(1),
+  });
+
+  const parsedBody = updateProjectPayloadSchema.safeParse(body);
 
   if (!parsedBody.success) {
     ctx.response.status = Status.BadRequest;

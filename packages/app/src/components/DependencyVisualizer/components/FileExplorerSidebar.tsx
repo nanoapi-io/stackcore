@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import type {
-  AuditManifest,
-  DependencyManifest,
-} from "@stackcore/core/manifest";
+import type { AuditManifest, DependencyManifest } from "@stackcore/manifests";
 import {
   Sidebar,
   SidebarContent,

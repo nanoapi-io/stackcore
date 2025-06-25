@@ -1,7 +1,7 @@
 import { Router, Status } from "@oak/oak";
 import { MemberService } from "./service.ts";
 import { authMiddleware } from "../auth/middleware.ts";
-import { type GetMembersResponse, updateMemberRoleSchema } from "./types.ts";
+import { MemberApiTypes } from "@stackcore/coreApiTypes";
 import z from "zod";
 import settings from "@stackcore/settings";
 
@@ -47,7 +47,7 @@ router.get("/", authMiddleware, async (ctx) => {
   }
 
   ctx.response.status = Status.OK;
-  ctx.response.body = response as GetMembersResponse;
+  ctx.response.body = response as MemberApiTypes.GetMembersResponse;
 });
 
 router.patch(
@@ -70,7 +70,11 @@ router.patch(
 
     const body = await ctx.request.body.json();
 
-    const parsedBody = updateMemberRoleSchema.safeParse(body);
+    const updateMemberRolePayloadSchema = z.object({
+      role: z.enum([MemberApiTypes.ADMIN_ROLE, MemberApiTypes.MEMBER_ROLE]),
+    });
+
+    const parsedBody = updateMemberRolePayloadSchema.safeParse(body);
 
     if (!parsedBody.success) {
       ctx.response.status = Status.BadRequest;

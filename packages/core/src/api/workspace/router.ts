@@ -1,12 +1,7 @@
 import { Router, Status } from "@oak/oak";
 import { WorkspaceService } from "./service.ts";
 import { authMiddleware } from "../auth/middleware.ts";
-import {
-  createWorkspacePayloadSchema,
-  type CreateWorkspaceResponse,
-  type GetWorkspacesResponse,
-  updateWorkspaceSchema,
-} from "./types.ts";
+import type { WorkspaceApiTypes } from "@stackcore/coreApiTypes";
 import z from "zod";
 import settings from "@stackcore/settings";
 
@@ -16,6 +11,10 @@ const router = new Router();
 // Create a new team workspace for the current user
 router.post("/", authMiddleware, async (ctx) => {
   const body = await ctx.request.body.json();
+
+  const createWorkspacePayloadSchema = z.object({
+    name: z.string(),
+  });
 
   const parsedBody = createWorkspacePayloadSchema.safeParse(body);
 
@@ -39,7 +38,7 @@ router.post("/", authMiddleware, async (ctx) => {
   }
 
   ctx.response.status = Status.Created;
-  ctx.response.body = result as CreateWorkspaceResponse;
+  ctx.response.body = result as WorkspaceApiTypes.CreateWorkspaceResponse;
 });
 
 // Get all workspaces for current user
@@ -66,13 +65,14 @@ router.get("/", authMiddleware, async (ctx) => {
     return;
   }
 
-  const response: GetWorkspacesResponse = await workspaceService
-    .getWorkspaces(
-      userId,
-      parsedSearchParams.data.page,
-      parsedSearchParams.data.limit,
-      parsedSearchParams.data.search,
-    );
+  const response: WorkspaceApiTypes.GetWorkspacesResponse =
+    await workspaceService
+      .getWorkspaces(
+        userId,
+        parsedSearchParams.data.page,
+        parsedSearchParams.data.limit,
+        parsedSearchParams.data.search,
+      );
 
   ctx.response.status = Status.OK;
   ctx.response.body = response;
@@ -96,7 +96,11 @@ router.patch("/:workspaceId", authMiddleware, async (ctx) => {
 
   const body = await ctx.request.body.json();
 
-  const parsedBody = updateWorkspaceSchema.safeParse(body);
+  const updateWorkspacePayloadSchema = z.object({
+    name: z.string(),
+  });
+
+  const parsedBody = updateWorkspacePayloadSchema.safeParse(body);
 
   if (!parsedBody.success) {
     ctx.response.status = Status.BadRequest;

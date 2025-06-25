@@ -5,7 +5,9 @@
     "./packages/db",
     "./packages/settings",
     "./packages/storage",
-    "./packages/labeler"
+    "./packages/labeler",
+    "./packages/manifests",
+    "./packages/coreApiTypes"
   ],
   "nodeModulesDir": "auto",
   "lock": false,

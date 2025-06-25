@@ -1,5 +1,5 @@
-import type { AuditManifest } from "./auditManifest/types.ts";
 import {
+  type AuditManifest,
   type DependencyManifest,
   type DependencyManifestV1,
   metricCharacterCount,
@@ -9,7 +9,7 @@ import {
   metricDependencyCount,
   metricDependentCount,
   metricLinesCount,
-} from "./dependencyManifest/types.ts";
+} from "@stackcore/manifests";
 
 function getNumberSeverityLevel(
   value: number,

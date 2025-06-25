@@ -7,7 +7,7 @@ import {
   symbolTypeFunction,
   symbolTypeStruct,
   symbolTypeVariable,
-} from "@stackcore/core/manifest";
+} from "@stackcore/manifests";
 import type {
   Collection,
   Core,

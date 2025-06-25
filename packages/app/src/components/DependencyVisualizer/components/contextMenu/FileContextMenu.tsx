@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from "react-router";
-import type { DependencyManifest } from "@stackcore/core/manifest";
+import type { DependencyManifest } from "@stackcore/manifests";
 import {
   DropdownMenu,
   DropdownMenuContent,

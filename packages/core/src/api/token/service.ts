@@ -1,5 +1,5 @@
 import { db, type NewToken } from "@stackcore/db";
-import type { CreateTokenResponse, GetTokensResponse } from "./types.ts";
+import type { TokenApiTypes } from "@stackcore/coreApiTypes";
 
 export const tokenNotFoundError = "token_not_found";
 export const invalidTokenNameError = "invalid_token_name";
@@ -11,7 +11,7 @@ export class TokenService {
   public async createToken(
     userId: number,
     name: string,
-  ): Promise<CreateTokenResponse> {
+  ): Promise<TokenApiTypes.CreateTokenResponse> {
     const newToken: NewToken = {
       user_id: userId,
       name: name.trim(),
@@ -35,7 +35,7 @@ export class TokenService {
     page: number,
     limit: number,
     search?: string,
-  ): Promise<GetTokensResponse> {
+  ): Promise<TokenApiTypes.GetTokensResponse> {
     // Get total count
     const totalResult = await db
       .selectFrom("token")

@@ -1,4 +1,4 @@
 {
-  "name": "@stackcore/settings",
+  "name": "@stackcore/manifests",
   "exports": "./src/index.ts"
 }

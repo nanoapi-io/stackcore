@@ -7,7 +7,7 @@ import {
   metricDependencyCount,
   metricDependentCount,
   metricLinesCount,
-} from "@stackcore/core/manifest";
+} from "@stackcore/manifests";
 import {
   Tooltip,
   TooltipContent,

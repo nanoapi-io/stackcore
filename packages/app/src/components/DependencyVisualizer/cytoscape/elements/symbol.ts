@@ -9,7 +9,7 @@ import type {
   metricDependentCount,
   metricLinesCount,
   SymbolType,
-} from "@stackcore/core/manifest";
+} from "@stackcore/manifests";
 import {
   getCollapsedSymbolNodeLabel,
   getExpandedSymbolNodeLabel,

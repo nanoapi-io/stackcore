@@ -13,7 +13,7 @@ import {
   notMemberOfWorkspaceError,
   workspaceNotTeamError,
 } from "./service.ts";
-import { prepareClaimInvitation, prepareCreateInvitation } from "./types.ts";
+import { InvitationApiTypes } from "@stackcore/coreApiTypes";
 
 // POST /:workspaceId/invite (create invitation)
 Deno.test("create invitation - with invalid email", async () => {
@@ -37,7 +37,7 @@ Deno.test("create invitation - with invalid email", async () => {
       .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
-    const { url, method, body } = prepareCreateInvitation({
+    const { url, method, body } = InvitationApiTypes.prepareCreateInvitation({
       workspaceId: workspace.id,
       email: "invalid-email",
       returnUrl: "http://localhost:3000/invitations/claim",
@@ -82,7 +82,7 @@ Deno.test("create invitation - with personal workspace", async () => {
 
     const inviteeEmail = `invited-${crypto.randomUUID()}@example.com`;
 
-    const { url, method, body } = prepareCreateInvitation({
+    const { url, method, body } = InvitationApiTypes.prepareCreateInvitation({
       workspaceId: personalWorkspaceId,
       email: inviteeEmail,
       returnUrl: "http://localhost:3000/invitations/claim",
@@ -148,7 +148,7 @@ Deno.test("create invitation - with non-admin user", async () => {
       })
       .execute();
 
-    const { url, method, body } = prepareCreateInvitation({
+    const { url, method, body } = InvitationApiTypes.prepareCreateInvitation({
       workspaceId: workspace.id,
       email: "test@example.com",
       returnUrl: "http://localhost:3000/invitations/claim",
@@ -202,7 +202,7 @@ Deno.test("create invitation - with non-member user", async () => {
     // Create another user who is not a member
     const { token: nonMemberToken } = await createTestUserAndToken();
 
-    const { url, method, body } = prepareCreateInvitation({
+    const { url, method, body } = InvitationApiTypes.prepareCreateInvitation({
       workspaceId: workspace.id,
       email: "test@example.com",
       returnUrl: "http://localhost:3000/invitations/claim",
@@ -240,7 +240,7 @@ Deno.test("create invitation - with non-existent workspace", async () => {
     // Create a test user
     const { token } = await createTestUserAndToken();
 
-    const { url, method, body } = prepareCreateInvitation({
+    const { url, method, body } = InvitationApiTypes.prepareCreateInvitation({
       workspaceId: 999999,
       email: "test@example.com",
       returnUrl: "http://localhost:3000/invitations/claim",
@@ -293,7 +293,7 @@ Deno.test("create invitation - success", async () => {
 
     const inviteeEmail = `invited-${crypto.randomUUID()}@example.com`;
 
-    const { url, method, body } = prepareCreateInvitation({
+    const { url, method, body } = InvitationApiTypes.prepareCreateInvitation({
       workspaceId: workspace.id,
       email: inviteeEmail,
       returnUrl: "http://localhost:3000/invitations/claim",
@@ -371,7 +371,9 @@ Deno.test("claim  invitation - success", async () => {
     const { token: inviteeToken, userId: inviteeUserId } =
       await createTestUserAndToken();
 
-    const { url, method } = prepareClaimInvitation(invitation.uuid);
+    const { url, method } = InvitationApiTypes.prepareClaimInvitation(
+      invitation.uuid,
+    );
 
     const response = await api.handle(
       new Request(
@@ -465,7 +467,9 @@ Deno.test("claim invitation - already a member", async () => {
       .execute();
 
     // Try to claim invitation when already a member
-    const { url, method } = prepareClaimInvitation(invitation.uuid);
+    const { url, method } = InvitationApiTypes.prepareClaimInvitation(
+      invitation.uuid,
+    );
 
     const response = await api.handle(
       new Request(
@@ -496,7 +500,9 @@ Deno.test("claim invitation - with non-existent invitation", async () => {
   try {
     const { token } = await createTestUserAndToken();
 
-    const { url, method } = prepareClaimInvitation(crypto.randomUUID());
+    const { url, method } = InvitationApiTypes.prepareClaimInvitation(
+      crypto.randomUUID(),
+    );
 
     const response = await api.handle(
       new Request(
@@ -551,7 +557,9 @@ Deno.test("claim invitation - with non-team workspace", async () => {
       .returningAll()
       .executeTakeFirstOrThrow();
 
-    const { url, method } = prepareClaimInvitation(invitation.uuid);
+    const { url, method } = InvitationApiTypes.prepareClaimInvitation(
+      invitation.uuid,
+    );
 
     const response = await api.handle(
       new Request(
@@ -608,7 +616,9 @@ Deno.test("claim invitation - with expired invitation", async () => {
 
     const { token } = await createTestUserAndToken();
 
-    const { url, method } = prepareClaimInvitation(invitation.uuid);
+    const { url, method } = InvitationApiTypes.prepareClaimInvitation(
+      invitation.uuid,
+    );
 
     const response = await api.handle(
       new Request(

@@ -1,9 +1,6 @@
 import { ADMIN_ROLE, db } from "@stackcore/db";
 import { StripeService } from "../../stripe/index.ts";
-import type {
-  CreateWorkspaceResponse,
-  GetWorkspacesResponse,
-} from "./types.ts";
+import type { WorkspaceApiTypes } from "@stackcore/coreApiTypes";
 import settings from "@stackcore/settings";
 
 export const workspaceAlreadyExistsErrorCode = "workspace_already_exists";
@@ -30,7 +27,7 @@ export class WorkspaceService {
     name: string,
     userId: number,
   ): Promise<
-    CreateWorkspaceResponse | {
+    WorkspaceApiTypes.CreateWorkspaceResponse | {
       error: typeof workspaceAlreadyExistsErrorCode;
     }
   > {
@@ -122,7 +119,7 @@ export class WorkspaceService {
     page: number,
     limit: number,
     search?: string,
-  ): Promise<GetWorkspacesResponse> {
+  ): Promise<WorkspaceApiTypes.GetWorkspacesResponse> {
     // Get total count of workspaces
     const totalResult = await db
       .selectFrom("member")

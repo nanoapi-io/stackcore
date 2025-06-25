@@ -24,7 +24,7 @@ import {
   FormLabel,
   FormMessage,
 } from "../../components/shadcn/Form.tsx";
-import { WorkspaceApiTypes } from "@stackcore/core/responses";
+import { WorkspaceApiTypes } from "@stackcore/coreApiTypes";
 
 export default function AddWorkspacePage() {
   const navigate = useNavigate();

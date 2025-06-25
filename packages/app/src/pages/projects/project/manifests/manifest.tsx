@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { useCoreApi } from "../../../../contexts/CoreApi.tsx";
-import { ManifestApiTypes } from "@stackcore/core/responses";
-import type {
-  AuditManifest,
-  DependencyManifest,
-} from "@stackcore/core/manifest";
+import { ManifestApiTypes } from "@stackcore/coreApiTypes";
+import type { AuditManifest, DependencyManifest } from "@stackcore/manifests";
 import { Loader } from "lucide-react";
 import DependencyVisualizer from "../../../../components/DependencyVisualizer/DependencyVisualizer.tsx";
 

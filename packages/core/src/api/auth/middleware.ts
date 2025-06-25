@@ -1,7 +1,8 @@
 import { type RouterContext, type RouterMiddleware, Status } from "@oak/oak";
 import { AuthService } from "./service.ts";
 import { TokenService } from "../token/service.ts";
-import { type Session, sessionSchema } from "./types.ts";
+import type { AuthApiTypes } from "@stackcore/coreApiTypes";
+import z from "zod";
 
 export const authMiddleware: RouterMiddleware<string> = async (
   ctx: RouterContext<string>,
@@ -46,7 +47,7 @@ export const authMiddleware: RouterMiddleware<string> = async (
   ctx.state.session = {
     userId: verifiedUser.userId,
     email: verifiedUser.email,
-  } as Session;
+  } as AuthApiTypes.Session;
 
   await next();
 };
@@ -55,7 +56,15 @@ export function getSession(ctx: RouterContext<string>) {
   const userId = ctx.state.session?.userId;
   const email = ctx.state.session?.email;
 
-  const parsedSession = sessionSchema.safeParse({ userId, email });
+  const sessionSchema = z.object({
+    userId: z.number(),
+    email: z.string(),
+  });
+
+  const parsedSession = sessionSchema.safeParse({
+    userId,
+    email,
+  });
 
   if (!parsedSession.success) {
     throw new Error("Invalid session");

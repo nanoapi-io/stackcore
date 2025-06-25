@@ -29,7 +29,7 @@ import {
   FormLabel,
   FormMessage,
 } from "../components/shadcn/Form.tsx";
-import { AuthApiTypes } from "@stackcore/core/responses";
+import { AuthApiTypes } from "@stackcore/coreApiTypes";
 
 export default function LoginPage() {
   const navigate = useNavigate();

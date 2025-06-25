@@ -1,13 +1,7 @@
 import { Router, Status } from "@oak/oak";
 import { ManifestService } from "./service.ts";
 import { authMiddleware, getSession } from "../auth/middleware.ts";
-import {
-  createManifestPayloadSchema,
-  type CreateManifestResponse,
-  type GetManifestAuditResponse,
-  type GetManifestDetailsResponse,
-  type GetManifestsResponse,
-} from "./types.ts";
+import type { ManifestApiTypes } from "@stackcore/coreApiTypes";
 import z from "zod";
 import settings from "@stackcore/settings";
 
@@ -20,7 +14,19 @@ router.post("/", authMiddleware, async (ctx) => {
 
   const body = await ctx.request.body.json();
 
-  const parsedBody = createManifestPayloadSchema.safeParse(body);
+  const createManifestPayloadSchema = z.object({
+    projectId: z.number(),
+    branch: z.string().nullable(),
+    commitSha: z.string().nullable(),
+    commitShaDate: z.string().nullable().transform((val) =>
+      val ? new Date(val) : null
+    ),
+    manifest: z.object({}).passthrough(), // Allow any object structure
+  });
+
+  const parsedBody = createManifestPayloadSchema.safeParse(
+    body,
+  );
 
   if (!parsedBody.success) {
     ctx.response.status = Status.BadRequest;
@@ -44,7 +50,7 @@ router.post("/", authMiddleware, async (ctx) => {
   }
 
   ctx.response.status = Status.Created;
-  ctx.response.body = response as CreateManifestResponse;
+  ctx.response.body = response as ManifestApiTypes.CreateManifestResponse;
 });
 
 // Get manifests with pagination and filtering
@@ -95,7 +101,7 @@ router.get("/", authMiddleware, async (ctx) => {
   }
 
   ctx.response.status = Status.OK;
-  ctx.response.body = response as GetManifestsResponse;
+  ctx.response.body = response as ManifestApiTypes.GetManifestsResponse;
 });
 
 // Get manifest details
@@ -128,7 +134,7 @@ router.get("/:manifestId", authMiddleware, async (ctx) => {
   }
 
   ctx.response.status = Status.OK;
-  ctx.response.body = response as GetManifestDetailsResponse;
+  ctx.response.body = response as ManifestApiTypes.GetManifestDetailsResponse;
 });
 
 // Delete a manifest
@@ -193,7 +199,7 @@ router.get("/:manifestId/audit", authMiddleware, async (ctx) => {
   }
 
   ctx.response.status = Status.OK;
-  ctx.response.body = response as GetManifestAuditResponse;
+  ctx.response.body = response as ManifestApiTypes.GetManifestAuditResponse;
 });
 
 export default router;

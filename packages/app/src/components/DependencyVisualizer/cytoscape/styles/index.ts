@@ -9,7 +9,7 @@ import {
   symbolTypeRecord,
   symbolTypeStruct,
   symbolTypeVariable,
-} from "@stackcore/core/manifest";
+} from "@stackcore/manifests";
 import type { NapiNodeData, SymbolNapiNodeData } from "../elements/types.ts";
 
 interface CytoscapeStyles {

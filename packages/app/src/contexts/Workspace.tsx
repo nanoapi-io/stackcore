@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useCoreApi } from "./CoreApi.tsx";
-import { WorkspaceApiTypes } from "@stackcore/core/responses";
+import { WorkspaceApiTypes } from "@stackcore/coreApiTypes";
 
 export type Workspace =
   WorkspaceApiTypes.GetWorkspacesResponse["results"][number];

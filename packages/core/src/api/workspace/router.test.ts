@@ -9,7 +9,7 @@ import {
   WorkspaceService,
 } from "./service.ts";
 import { createTestUserAndToken } from "../../testHelpers/auth.ts";
-import { WorkspaceApiTypes } from "../responseType.ts";
+import { WorkspaceApiTypes } from "@stackcore/coreApiTypes";
 
 // POST / (create workspace)
 Deno.test("create a team workspace", async () => {

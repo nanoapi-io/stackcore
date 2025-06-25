@@ -1,15 +1,6 @@
 import stripe from "stripe";
 import settings from "@stackcore/settings";
-
-export type StripeBillingCycle =
-  | typeof settings.STRIPE.MONTHLY_BILLING_CYCLE
-  | typeof settings.STRIPE.YEARLY_BILLING_CYCLE;
-
-export type StripeProduct =
-  | typeof settings.STRIPE.PRODUCTS.BASIC.NAME
-  | typeof settings.STRIPE.PRODUCTS.PRO.NAME
-  | typeof settings.STRIPE.PRODUCTS.PREMIUM.NAME
-  | typeof settings.STRIPE.PRODUCTS.CUSTOM.NAME;
+import { BillingApiTypes } from "@stackcore/coreApiTypes";
 
 export function getStripe() {
   if (settings.STRIPE.USE_MOCK) {
@@ -44,29 +35,29 @@ export class StripeService {
   }
 
   private getStandardStripeProductPriceId(
-    product: StripeProduct,
-    billingCycle: StripeBillingCycle,
+    product: BillingApiTypes.StripeProduct,
+    billingCycle: BillingApiTypes.StripeBillingCycle,
   ) {
-    if (product === settings.STRIPE.PRODUCTS.BASIC.NAME) {
-      if (billingCycle === settings.STRIPE.MONTHLY_BILLING_CYCLE) {
+    if (product === BillingApiTypes.STRIPE_BASIC_PRODUCT) {
+      if (billingCycle === BillingApiTypes.STRIPE_MONTHLY_BILLING_CYCLE) {
         return settings.STRIPE.PRODUCTS.BASIC.MONTHLY.PRICE_ID;
       }
     }
 
-    if (product === settings.STRIPE.PRODUCTS.PRO.NAME) {
-      if (billingCycle === settings.STRIPE.MONTHLY_BILLING_CYCLE) {
+    if (product === BillingApiTypes.STRIPE_PRO_PRODUCT) {
+      if (billingCycle === BillingApiTypes.STRIPE_MONTHLY_BILLING_CYCLE) {
         return settings.STRIPE.PRODUCTS.PRO.MONTHLY.PRICE_ID;
       }
-      if (billingCycle === settings.STRIPE.YEARLY_BILLING_CYCLE) {
+      if (billingCycle === BillingApiTypes.STRIPE_YEARLY_BILLING_CYCLE) {
         return settings.STRIPE.PRODUCTS.PRO.YEARLY.PRICE_ID;
       }
     }
 
-    if (product === settings.STRIPE.PRODUCTS.PREMIUM.NAME) {
-      if (billingCycle === settings.STRIPE.MONTHLY_BILLING_CYCLE) {
+    if (product === BillingApiTypes.STRIPE_PREMIUM_PRODUCT) {
+      if (billingCycle === BillingApiTypes.STRIPE_MONTHLY_BILLING_CYCLE) {
         return settings.STRIPE.PRODUCTS.PREMIUM.MONTHLY.PRICE_ID;
       }
-      if (billingCycle === settings.STRIPE.YEARLY_BILLING_CYCLE) {
+      if (billingCycle === BillingApiTypes.STRIPE_YEARLY_BILLING_CYCLE) {
         return settings.STRIPE.PRODUCTS.PREMIUM.YEARLY.PRICE_ID;
       }
     }
@@ -77,8 +68,8 @@ export class StripeService {
 
   public async createSubscription(
     stripeCustomerId: string,
-    product: StripeProduct,
-    licensePeriod: StripeBillingCycle,
+    product: BillingApiTypes.StripeProduct,
+    licensePeriod: BillingApiTypes.StripeBillingCycle,
     billingThreshold: number | null,
   ) {
     const priceId = this.getStandardStripeProductPriceId(
@@ -125,8 +116,8 @@ export class StripeService {
 
   public async switchSubscription(
     stripeCustomerId: string,
-    product: StripeProduct,
-    licensePeriod: StripeBillingCycle,
+    product: BillingApiTypes.StripeProduct,
+    licensePeriod: BillingApiTypes.StripeBillingCycle,
     billingThreshold: number | null,
     switchMethod: "upgrade" | "downgrade",
   ) {

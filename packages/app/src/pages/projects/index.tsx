@@ -29,7 +29,7 @@ import {
 import { DataTablePagination } from "../../components/shadcn/Datatablepagination.tsx";
 import { toast } from "sonner";
 import { PencilRuler, Plus } from "lucide-react";
-import { ProjectApiTypes } from "@stackcore/core/responses";
+import { ProjectApiTypes } from "@stackcore/coreApiTypes";
 import { Separator } from "../../components/shadcn/Separator.tsx";
 
 type Project = {
