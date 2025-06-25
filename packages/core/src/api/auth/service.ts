@@ -1,16 +1,10 @@
 import { create, getNumericDate, verify } from "djwt";
-import { db } from "../../db/database.ts";
-import settings from "../../settings.ts";
+import { ADMIN_ROLE, db, type User } from "@stackcore/db";
+import settings from "@stackcore/settings";
 import { sendOtpEmail, sendWelcomeEmail } from "../../email/index.ts";
 import { StripeService } from "../../stripe/index.ts";
-import {
-  BASIC_PRODUCT,
-  MONTHLY_BILLING_CYCLE,
-  shouldHaveAccess,
-} from "../../db/models/workspace.ts";
-import { ADMIN_ROLE } from "../../db/models/member.ts";
-import type { User } from "../../db/models/user.ts";
-import { type Session, sessionSchema } from "./types.ts";
+import { type AuthApiTypes, BillingApiTypes } from "@stackcore/coreApiTypes";
+import z from "zod";
 
 export const secretCryptoKey = await crypto.subtle.importKey(
   "raw",
@@ -191,12 +185,14 @@ export class AuthService {
         );
         const subscription = await stripeService.createSubscription(
           customer.id,
-          BASIC_PRODUCT,
-          MONTHLY_BILLING_CYCLE,
+          BillingApiTypes.STRIPE_BASIC_PRODUCT,
+          BillingApiTypes.STRIPE_MONTHLY_BILLING_CYCLE,
           settings.STRIPE.BILLING_THRESHOLD_BASIC,
         );
 
-        const accessEnabled = shouldHaveAccess(subscription.status);
+        const accessEnabled = stripeService.shouldHaveAccess(
+          subscription.status,
+        );
 
         await trx
           .updateTable("workspace")
@@ -243,7 +239,7 @@ export class AuthService {
         userId: user.id,
         email: user.email,
         exp: exp,
-      } as Session & { exp: number },
+      } as AuthApiTypes.Session & { exp: number },
       secretCryptoKey,
     );
   }
@@ -256,6 +252,11 @@ export class AuthService {
   ): Promise<{ userId: number; email: string } | false> {
     try {
       const payload = await verify(token, secretCryptoKey);
+
+      const sessionSchema = z.object({
+        userId: z.number(),
+        email: z.string(),
+      });
 
       const parsedPayload = sessionSchema.safeParse({
         userId: payload.userId,

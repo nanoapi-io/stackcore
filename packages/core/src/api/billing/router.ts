@@ -1,11 +1,5 @@
 import { Router, Status } from "@oak/oak";
-import {
-  createPortalSessionRequestSchema,
-  type CreatePortalSessionResponse,
-  downgradeSubscriptionRequestSchema,
-  type SubscriptionDetails,
-  upgradeSubscriptionRequestSchema,
-} from "./types.ts";
+import { BillingApiTypes } from "@stackcore/coreApiTypes";
 import { BillingService } from "./service.ts";
 import { authMiddleware, getSession } from "../auth/middleware.ts";
 import { z } from "zod";
@@ -44,7 +38,8 @@ router.get("/subscription", authMiddleware, async (ctx) => {
   }
 
   ctx.response.status = Status.OK;
-  ctx.response.body = result.subscription as SubscriptionDetails;
+  ctx.response.body = result
+    .subscription as BillingApiTypes.SubscriptionDetails;
 });
 
 router.post("/subscription/upgrade", authMiddleware, async (ctx) => {
@@ -52,7 +47,22 @@ router.post("/subscription/upgrade", authMiddleware, async (ctx) => {
 
   const body = await ctx.request.body.json();
 
-  const parsedBody = upgradeSubscriptionRequestSchema.safeParse(body);
+  const upgradeSubscriptionRequestSchema = z.object({
+    workspaceId: z.number(),
+    product: z.enum([
+      BillingApiTypes.STRIPE_BASIC_PRODUCT,
+      BillingApiTypes.STRIPE_PRO_PRODUCT,
+      BillingApiTypes.STRIPE_PREMIUM_PRODUCT,
+    ]),
+    billingCycle: z.enum([
+      BillingApiTypes.STRIPE_MONTHLY_BILLING_CYCLE,
+      BillingApiTypes.STRIPE_YEARLY_BILLING_CYCLE,
+    ]),
+  });
+
+  const parsedBody = upgradeSubscriptionRequestSchema.safeParse(
+    body,
+  );
 
   if (!parsedBody.success) {
     ctx.response.status = Status.BadRequest;
@@ -83,7 +93,23 @@ router.post("/subscription/downgrade", authMiddleware, async (ctx) => {
 
   const body = await ctx.request.body.json();
 
-  const parsedBody = downgradeSubscriptionRequestSchema.safeParse(body);
+  const downgradeSubscriptionRequestSchema = z.object({
+    workspaceId: z.number(),
+    product: z.enum([
+      BillingApiTypes.STRIPE_BASIC_PRODUCT,
+      BillingApiTypes.STRIPE_PRO_PRODUCT,
+      BillingApiTypes.STRIPE_PREMIUM_PRODUCT,
+    ]),
+    billingCycle: z.enum([
+      BillingApiTypes.STRIPE_MONTHLY_BILLING_CYCLE,
+      BillingApiTypes.STRIPE_YEARLY_BILLING_CYCLE,
+    ]),
+  });
+
+  const parsedBody = downgradeSubscriptionRequestSchema
+    .safeParse(
+      body,
+    );
 
   if (!parsedBody.success) {
     ctx.response.status = Status.BadRequest;
@@ -114,7 +140,14 @@ router.post("/portal", authMiddleware, async (ctx) => {
 
   const body = await ctx.request.body.json();
 
-  const parsedBody = createPortalSessionRequestSchema.safeParse(body);
+  const createPortalSessionRequestSchema = z.object({
+    workspaceId: z.number(),
+    returnUrl: z.string(),
+  });
+
+  const parsedBody = createPortalSessionRequestSchema.safeParse(
+    body,
+  );
 
   if (!parsedBody.success) {
     ctx.response.status = Status.BadRequest;
@@ -140,7 +173,7 @@ router.post("/portal", authMiddleware, async (ctx) => {
   }
 
   ctx.response.status = Status.OK;
-  ctx.response.body = { url } as CreatePortalSessionResponse;
+  ctx.response.body = { url } as BillingApiTypes.CreatePortalSessionResponse;
 });
 
 router.post("/portal/paymentMethod", authMiddleware, async (ctx) => {
@@ -148,7 +181,14 @@ router.post("/portal/paymentMethod", authMiddleware, async (ctx) => {
 
   const body = await ctx.request.body.json();
 
-  const parsedBody = createPortalSessionRequestSchema.safeParse(body);
+  const createPortalSessionRequestSchema = z.object({
+    workspaceId: z.number(),
+    returnUrl: z.string(),
+  });
+
+  const parsedBody = createPortalSessionRequestSchema.safeParse(
+    body,
+  );
 
   if (!parsedBody.success) {
     ctx.response.status = Status.BadRequest;
@@ -174,7 +214,7 @@ router.post("/portal/paymentMethod", authMiddleware, async (ctx) => {
   }
 
   ctx.response.status = Status.OK;
-  ctx.response.body = { url } as CreatePortalSessionResponse;
+  ctx.response.body = { url } as BillingApiTypes.CreatePortalSessionResponse;
 });
 
 router.post("/webhook", async (ctx) => {

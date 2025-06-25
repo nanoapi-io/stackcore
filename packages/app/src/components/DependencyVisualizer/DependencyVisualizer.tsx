@@ -1,9 +1,6 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router";
-import type {
-  AuditManifest,
-  DependencyManifest,
-} from "@stackcore/core/manifest";
+import type { AuditManifest, DependencyManifest } from "@stackcore/manifests";
 import { SidebarProvider, SidebarTrigger } from "../shadcn/Sidebar.tsx";
 import { FileExplorerSidebar } from "./components/FileExplorerSidebar.tsx";
 import BreadcrumbNav from "./components/BreadcrumNav.tsx";

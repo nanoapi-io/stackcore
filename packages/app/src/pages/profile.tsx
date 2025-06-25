@@ -50,7 +50,7 @@ import { Copy, Key, Loader, Plus, Trash, User } from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { TokenApiTypes } from "@stackcore/core/responses";
+import { TokenApiTypes } from "@stackcore/coreApiTypes";
 
 type Token = {
   id: number;

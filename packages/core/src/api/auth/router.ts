@@ -1,13 +1,17 @@
 import { Router, Status } from "@oak/oak";
 import { AuthService } from "./service.ts";
-import { requestOtpSchema, verifyOtpSchema } from "./types.ts";
 import { authMiddleware, getSession } from "./middleware.ts";
+import z from "zod";
 
 const router = new Router();
 
 // Request OTP endpoint
 router.post("/requestOtp", async (ctx) => {
   const body = await ctx.request.body.json();
+
+  const requestOtpSchema = z.object({
+    email: z.string().email(),
+  });
 
   const parsedBody = requestOtpSchema.safeParse(body);
 
@@ -33,6 +37,11 @@ router.post("/requestOtp", async (ctx) => {
 // Verify OTP endpoint
 router.post("/verifyOtp", async (ctx) => {
   const body = await ctx.request.body.json();
+
+  const verifyOtpSchema = z.object({
+    email: z.string().email(),
+    otp: z.string(),
+  });
 
   const parsedBody = verifyOtpSchema.safeParse(body);
 

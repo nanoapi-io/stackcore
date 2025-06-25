@@ -7,7 +7,7 @@ import type {
   AuditManifest,
   DependencyManifest,
   Metric,
-} from "@stackcore/core/manifest";
+} from "@stackcore/manifests";
 import MetricsExtension from "../components/controls/ControlExtensions/MetricsExtension.tsx";
 import { useTheme } from "../../../contexts/ThemeProvider.tsx";
 import FiltersExtension from "../components/controls/ControlExtensions/FiltersExtension.tsx";

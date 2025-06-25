@@ -1,7 +1,7 @@
 import { Outlet, useNavigate, useParams } from "react-router";
 import { useEffect, useState } from "react";
 import { Skeleton } from "../../../components/shadcn/Skeleton.tsx";
-import { ProjectApiTypes } from "@stackcore/core/responses";
+import { ProjectApiTypes } from "@stackcore/coreApiTypes";
 import { toast } from "sonner";
 import { useCoreApi } from "../../../contexts/CoreApi.tsx";
 

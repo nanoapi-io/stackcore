@@ -1,5 +1,5 @@
 import { Router, Status } from "@oak/oak";
-import { db } from "../../db/database.ts";
+import { db } from "@stackcore/db";
 
 const router = new Router();
 

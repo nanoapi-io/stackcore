@@ -25,7 +25,7 @@ import {
   FormLabel,
   FormMessage,
 } from "../../components/shadcn/Form.tsx";
-import { ProjectApiTypes } from "@stackcore/core/responses";
+import { ProjectApiTypes } from "@stackcore/coreApiTypes";
 import {
   Tabs,
   TabsContent,

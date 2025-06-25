@@ -19,7 +19,7 @@ import {
   Settings,
   Users,
 } from "lucide-react";
-import { ProjectApiTypes } from "@stackcore/core/responses";
+import { ProjectApiTypes } from "@stackcore/coreApiTypes";
 
 type Project = ProjectApiTypes.GetProjectsResponse["results"][number];
 

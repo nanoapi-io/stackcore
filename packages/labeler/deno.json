@@ -1,0 +1,17 @@
+{
+  "name": "@stackcore/labeler",
+  "exports": "./src/index.ts",
+  "tasks": {
+    "dev": "deno run --env-file=../../.env -A --watch src/index.ts",
+    "build": "deno compile --allow-all --output ./dist/labeler ./src/index.ts"
+  },
+  "imports": {
+    "@stackcore/db": "../db/src/index.ts",
+    "@stackcore/settings": "../settings/src/index.ts",
+    "@stackcore/storage": "../storage/src/index.ts",
+    "@google-cloud/storage": "npm:@google-cloud/storage@^7.16.0",
+    "@sentry/deno": "npm:@sentry/deno@^9.28.1",
+    "zod": "npm:zod@^3.24.4",
+    "@oak/oak": "jsr:@oak/oak@^17.1.4"
+  }
+}

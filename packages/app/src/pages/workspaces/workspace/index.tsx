@@ -14,7 +14,7 @@ import {
 } from "../../../components/shadcn/Card.tsx";
 import { Badge } from "../../../components/shadcn/Badge.tsx";
 import { Skeleton } from "../../../components/shadcn/Skeleton.tsx";
-import { MemberApiTypes, WorkspaceApiTypes } from "@stackcore/core/responses";
+import { MemberApiTypes, WorkspaceApiTypes } from "@stackcore/coreApiTypes";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader, Trash } from "lucide-react";
 import { Button } from "../../../components/shadcn/Button.tsx";

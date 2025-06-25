@@ -1,11 +1,11 @@
 import { assertEquals, assertNotEquals } from "@std/assert";
 import api from "../index.ts";
-import { db, destroyKyselyDb, initKyselyDb } from "../../db/database.ts";
+import { db, destroyKyselyDb, initKyselyDb } from "@stackcore/db";
 import { resetTables } from "../../testHelpers/db.ts";
 import { createTestUserAndToken } from "../../testHelpers/auth.ts";
 import { WorkspaceService } from "../workspace/service.ts";
 import { ProjectService } from "./service.ts";
-import { ProjectApiTypes } from "../responseType.ts";
+import { ProjectApiTypes } from "@stackcore/coreApiTypes";
 
 // --- CREATE PROJECT TESTS ---
 Deno.test("create a project", async () => {

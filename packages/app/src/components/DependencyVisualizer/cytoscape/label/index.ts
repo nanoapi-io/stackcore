@@ -1,4 +1,4 @@
-import type { AuditManifest } from "@stackcore/core/manifest";
+import type { AuditManifest } from "@stackcore/manifests";
 
 /**
  * Calculates the optimal width and height for a node based on its label text.

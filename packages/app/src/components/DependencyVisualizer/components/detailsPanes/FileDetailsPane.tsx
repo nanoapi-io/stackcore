@@ -1,7 +1,4 @@
-import type {
-  AuditManifest,
-  DependencyManifest,
-} from "@stackcore/core/manifest";
+import type { AuditManifest, DependencyManifest } from "@stackcore/manifests";
 import {
   Sheet,
   SheetContent,

@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from "react-router";
-import { InvitationApiTypes } from "@stackcore/core/responses";
+import { InvitationApiTypes } from "@stackcore/coreApiTypes";
 import { useCoreApi } from "../../contexts/CoreApi.tsx";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";

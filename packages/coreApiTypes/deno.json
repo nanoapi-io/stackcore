@@ -1,0 +1,7 @@
+{
+  "name": "@stackcore/coreApiTypes",
+  "exports": "./src/index.ts",
+  "imports": {
+    "@stackcore/manifests": "../manifests/src/index.ts"
+  }
+}

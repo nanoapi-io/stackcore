@@ -1,12 +1,7 @@
-import { db } from "../../db/database.ts";
-import { shouldHaveAccess } from "../../db/models/workspace.ts";
-import { ADMIN_ROLE } from "../../db/models/member.ts";
+import { ADMIN_ROLE, db } from "@stackcore/db";
 import { StripeService } from "../../stripe/index.ts";
-import type {
-  CreateWorkspaceResponse,
-  GetWorkspacesResponse,
-} from "./types.ts";
-import settings from "../../settings.ts";
+import type { WorkspaceApiTypes } from "@stackcore/coreApiTypes";
+import settings from "@stackcore/settings";
 
 export const workspaceAlreadyExistsErrorCode = "workspace_already_exists";
 export const workspaceNotFoundError = "workspace_not_found";
@@ -32,7 +27,7 @@ export class WorkspaceService {
     name: string,
     userId: number,
   ): Promise<
-    CreateWorkspaceResponse | {
+    WorkspaceApiTypes.CreateWorkspaceResponse | {
       error: typeof workspaceAlreadyExistsErrorCode;
     }
   > {
@@ -94,7 +89,9 @@ export class WorkspaceService {
         settings.STRIPE.BILLING_THRESHOLD_BASIC,
       );
 
-      const accessEnabled = shouldHaveAccess(subscription.status);
+      const accessEnabled = stripeService.shouldHaveAccess(
+        subscription.status,
+      );
 
       // Update workspace with Stripe customer ID
       await trx
@@ -122,7 +119,7 @@ export class WorkspaceService {
     page: number,
     limit: number,
     search?: string,
-  ): Promise<GetWorkspacesResponse> {
+  ): Promise<WorkspaceApiTypes.GetWorkspacesResponse> {
     // Get total count of workspaces
     const totalResult = await db
       .selectFrom("member")

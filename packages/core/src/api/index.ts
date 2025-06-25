@@ -8,6 +8,7 @@ import manifestRouter from "./manifest/router.ts";
 import healthRouter from "./health/router.ts";
 import billingRouter from "./billing/router.ts";
 import tokenRouter from "./token/router.ts";
+import labelingRouter from "./labeling/router.ts";
 
 const api = new Application();
 
@@ -62,5 +63,8 @@ api.use(manifestRouter.allowedMethods());
 
 api.use(billingRouter.prefix("/billing").routes());
 api.use(billingRouter.allowedMethods());
+
+api.use(labelingRouter.prefix("/labeling").routes());
+api.use(labelingRouter.allowedMethods());
 
 export default api;

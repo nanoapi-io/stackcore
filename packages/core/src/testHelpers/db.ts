@@ -1,4 +1,4 @@
-import { db } from "../db/database.ts";
+import { db } from "@stackcore/db";
 
 export async function resetTables() {
   await db.deleteFrom("manifest").execute();

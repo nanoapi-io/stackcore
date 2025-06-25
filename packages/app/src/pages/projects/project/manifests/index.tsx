@@ -27,7 +27,7 @@ import {
 import { DataTablePagination } from "../../../../components/shadcn/Datatablepagination.tsx";
 import { toast } from "sonner";
 import { Eye, Plus, ScrollText } from "lucide-react";
-import { ManifestApiTypes } from "@stackcore/core/responses";
+import { ManifestApiTypes } from "@stackcore/coreApiTypes";
 import { Separator } from "../../../../components/shadcn/Separator.tsx";
 import { useCoreApi } from "../../../../contexts/CoreApi.tsx";
 import type { ProjectPageContext } from "../base.tsx";

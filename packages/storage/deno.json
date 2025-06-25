@@ -1,0 +1,8 @@
+{
+  "name": "@stackcore/storage",
+  "exports": "./src/index.ts",
+  "imports": {
+    "@stackcore/settings": "../settings/src/index.ts",
+    "@google-cloud/storage": "npm:@google-cloud/storage@^7.1.0"
+  }
+}

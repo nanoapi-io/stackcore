@@ -1,6 +1,6 @@
 import { assertEquals, assertNotEquals } from "@std/assert";
 import api from "../index.ts";
-import { db, destroyKyselyDb, initKyselyDb } from "../../db/database.ts";
+import { db, destroyKyselyDb, initKyselyDb } from "@stackcore/db";
 import { resetTables } from "../../testHelpers/db.ts";
 import {
   cannotDeactivatePersonalWorkspaceError,
@@ -9,7 +9,7 @@ import {
   WorkspaceService,
 } from "./service.ts";
 import { createTestUserAndToken } from "../../testHelpers/auth.ts";
-import { WorkspaceApiTypes } from "../responseType.ts";
+import { WorkspaceApiTypes } from "@stackcore/coreApiTypes";
 
 // POST / (create workspace)
 Deno.test("create a team workspace", async () => {

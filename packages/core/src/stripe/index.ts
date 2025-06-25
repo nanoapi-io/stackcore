@@ -1,14 +1,6 @@
 import stripe from "stripe";
-import settings from "../settings.ts";
-import {
-  BASIC_PRODUCT,
-  MONTHLY_BILLING_CYCLE,
-  PREMIUM_PRODUCT,
-  PRO_PRODUCT,
-  type StripeBillingCycle,
-  type StripeProduct,
-  YEARLY_BILLING_CYCLE,
-} from "../db/models/workspace.ts";
+import settings from "@stackcore/settings";
+import { BillingApiTypes } from "@stackcore/coreApiTypes";
 
 export function getStripe() {
   if (settings.STRIPE.USE_MOCK) {
@@ -43,35 +35,30 @@ export class StripeService {
   }
 
   private getStandardStripeProductPriceId(
-    product: StripeProduct,
-    billingCycle: StripeBillingCycle,
+    product: BillingApiTypes.StripeProduct,
+    billingCycle: BillingApiTypes.StripeBillingCycle,
   ) {
-    if (product === BASIC_PRODUCT) {
-      if (billingCycle === MONTHLY_BILLING_CYCLE) {
-        return settings.STRIPE.PRODUCTS[BASIC_PRODUCT][MONTHLY_BILLING_CYCLE]
-          .PRICE_ID;
+    if (product === BillingApiTypes.STRIPE_BASIC_PRODUCT) {
+      if (billingCycle === BillingApiTypes.STRIPE_MONTHLY_BILLING_CYCLE) {
+        return settings.STRIPE.PRODUCTS.BASIC.MONTHLY.PRICE_ID;
       }
     }
 
-    if (product === PRO_PRODUCT) {
-      if (billingCycle === MONTHLY_BILLING_CYCLE) {
-        return settings.STRIPE.PRODUCTS[PRO_PRODUCT][MONTHLY_BILLING_CYCLE]
-          .PRICE_ID;
+    if (product === BillingApiTypes.STRIPE_PRO_PRODUCT) {
+      if (billingCycle === BillingApiTypes.STRIPE_MONTHLY_BILLING_CYCLE) {
+        return settings.STRIPE.PRODUCTS.PRO.MONTHLY.PRICE_ID;
       }
-      if (billingCycle === YEARLY_BILLING_CYCLE) {
-        return settings.STRIPE.PRODUCTS[PRO_PRODUCT][YEARLY_BILLING_CYCLE]
-          .PRICE_ID;
+      if (billingCycle === BillingApiTypes.STRIPE_YEARLY_BILLING_CYCLE) {
+        return settings.STRIPE.PRODUCTS.PRO.YEARLY.PRICE_ID;
       }
     }
 
-    if (product === PREMIUM_PRODUCT) {
-      if (billingCycle === MONTHLY_BILLING_CYCLE) {
-        return settings.STRIPE.PRODUCTS[PREMIUM_PRODUCT][MONTHLY_BILLING_CYCLE]
-          .PRICE_ID;
+    if (product === BillingApiTypes.STRIPE_PREMIUM_PRODUCT) {
+      if (billingCycle === BillingApiTypes.STRIPE_MONTHLY_BILLING_CYCLE) {
+        return settings.STRIPE.PRODUCTS.PREMIUM.MONTHLY.PRICE_ID;
       }
-      if (billingCycle === YEARLY_BILLING_CYCLE) {
-        return settings.STRIPE.PRODUCTS[PREMIUM_PRODUCT][YEARLY_BILLING_CYCLE]
-          .PRICE_ID;
+      if (billingCycle === BillingApiTypes.STRIPE_YEARLY_BILLING_CYCLE) {
+        return settings.STRIPE.PRODUCTS.PREMIUM.YEARLY.PRICE_ID;
       }
     }
 
@@ -81,8 +68,8 @@ export class StripeService {
 
   public async createSubscription(
     stripeCustomerId: string,
-    product: StripeProduct,
-    licensePeriod: StripeBillingCycle,
+    product: BillingApiTypes.StripeProduct,
+    licensePeriod: BillingApiTypes.StripeBillingCycle,
     billingThreshold: number | null,
   ) {
     const priceId = this.getStandardStripeProductPriceId(
@@ -129,8 +116,8 @@ export class StripeService {
 
   public async switchSubscription(
     stripeCustomerId: string,
-    product: StripeProduct,
-    licensePeriod: StripeBillingCycle,
+    product: BillingApiTypes.StripeProduct,
+    licensePeriod: BillingApiTypes.StripeBillingCycle,
     billingThreshold: number | null,
     switchMethod: "upgrade" | "downgrade",
   ) {
@@ -319,5 +306,42 @@ export class StripeService {
     }
 
     return totalUsage;
+  }
+
+  /*
+  subscriptionStatus: The status of the subscription in Stripe
+  Returns true if the workspace should have access, false otherwise
+  */
+  public shouldHaveAccess(
+    subscriptionStatus: stripe.Subscription.Status,
+  ) {
+    switch (subscriptionStatus) {
+      // All good
+      case "active":
+      // trial period, all good
+      case "trialing":
+      // invoice cannot be paid,
+      // after 23h will move to incomplete_expired, where we will block access
+      case "incomplete":
+        return true;
+      // this will move to unpaid eventually,
+      // once stripe has exhausted all retry (can be configured)
+      case "past_due":
+      // most likely user changed their subscription.
+      // We block access, when new subscription is created,
+      // another event is triggered and access is restored
+      case "canceled":
+      // Subscription paused from dashboard, we block access
+      case "paused":
+      // Stripe cannot pay the invoice, we block access
+      case "unpaid":
+      // Invoice expired, we block access
+      case "incomplete_expired":
+        return false;
+
+      // Should not happen
+      default:
+        throw new Error(`Unknown subscription status: ${subscriptionStatus}`);
+    }
   }
 }

@@ -1,18 +1,14 @@
-import { db } from "../../db/database.ts";
-import type { DependencyManifest } from "../../manifest/dependencyManifest/types.ts";
+import { db } from "@stackcore/db";
 import { generateAuditManifest } from "../../manifest/service.ts";
-import settings from "../../settings.ts";
+import settings from "@stackcore/settings";
 import { StripeService } from "../../stripe/index.ts";
-import type {
-  GetManifestAuditResponse,
-  GetManifestDetailsResponse,
-  GetManifestsResponse,
-} from "./types.ts";
+import type { ManifestApiTypes } from "@stackcore/coreApiTypes";
 import {
-  downloadJsonFromBucket,
-  getPublicLink,
-  uploadJsonToBucket,
-} from "../../bucketStorage/index.ts";
+  downloadManifestFromBucket,
+  getManifestPublicLink,
+  uploadManifestToBucket,
+} from "@stackcore/storage";
+import type { DependencyManifest } from "@stackcore/manifests";
 
 export const manifestNotFoundError = "manifest_not_found";
 export const projectNotFoundError = "project_not_found";
@@ -72,7 +68,7 @@ export class ManifestService {
     }
 
     const manifestFileName = `${projectId}-${Date.now()}.json`;
-    await uploadJsonToBucket(manifest, manifestFileName);
+    await uploadManifestToBucket(manifest, manifestFileName);
 
     // Create the manifest
     const newManifest = await db
@@ -110,7 +106,7 @@ export class ManifestService {
     projectId?: number,
     workspaceId?: number,
   ): Promise<
-    GetManifestsResponse | {
+    ManifestApiTypes.GetManifestsResponse | {
       error?: string;
     }
   > {
@@ -207,7 +203,7 @@ export class ManifestService {
   public async getManifestDetails(
     userId: number,
     manifestId: number,
-  ): Promise<GetManifestDetailsResponse | { error?: string }> {
+  ): Promise<ManifestApiTypes.GetManifestDetailsResponse | { error?: string }> {
     // Get manifest with access check
     const manifest = await db
       .selectFrom("manifest")
@@ -224,7 +220,7 @@ export class ManifestService {
       return { error: manifestNotFoundError };
     }
 
-    const publicLink = await getPublicLink(manifest.manifest);
+    const publicLink = await getManifestPublicLink(manifest.manifest);
 
     return {
       ...manifest,
@@ -269,7 +265,7 @@ export class ManifestService {
   public async getManifestAudit(
     userId: number,
     manifestId: number,
-  ): Promise<GetManifestAuditResponse | { error?: string }> {
+  ): Promise<ManifestApiTypes.GetManifestAuditResponse | { error?: string }> {
     // Get manifest with access check
     const manifest = await db
       .selectFrom("manifest")
@@ -297,14 +293,14 @@ export class ManifestService {
       return { error: projectNotFoundError };
     }
 
-    const manifestJson = await downloadJsonFromBucket(
+    const manifestJson = await downloadManifestFromBucket(
       manifest.manifest,
-    ) as DependencyManifest;
+    );
 
     try {
       const auditManifest = generateAuditManifest(
         manifest.version,
-        manifestJson,
+        manifestJson as DependencyManifest,
         {
           file: {
             maxCodeChar: project.max_char_per_file,

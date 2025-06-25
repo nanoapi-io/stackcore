@@ -1,7 +1,6 @@
-import { db } from "../../db/database.ts";
-import { ADMIN_ROLE, MEMBER_ROLE } from "../../db/models/member.ts";
+import { ADMIN_ROLE, db, MEMBER_ROLE } from "@stackcore/db";
 import { sendInvitationEmail } from "../../email/index.ts";
-import settings from "../../settings.ts";
+import settings from "@stackcore/settings";
 
 export const notMemberOfWorkspaceError = "not_member_of_workspace";
 export const notAnAdminOfWorkspaceError = "not_an_admin_of_workspace";

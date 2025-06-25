@@ -1,5 +1,5 @@
 import { AuthService } from "../api/auth/service.ts";
-import { db } from "../db/database.ts";
+import { db } from "@stackcore/db";
 
 export async function createTestUserAndToken() {
   const email = `test-${crypto.randomUUID()}@example.com`;

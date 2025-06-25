@@ -1,0 +1,4 @@
+{
+  "name": "@stackcore/settings",
+  "exports": "./src/index.ts"
+}
