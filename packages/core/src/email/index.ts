@@ -1,9 +1,6 @@
-import type {
-  StripeBillingCycle,
-  StripeProduct,
-} from "../db/models/workspace.ts";
+import type { StripeBillingCycle, StripeProduct } from "../stripe/index.ts";
 import { Resend } from "resend";
-import settings from "../settings.ts";
+import settings from "@stackcore/settings";
 
 import OtpEmail from "./templates/OtpEmail.tsx";
 import WelcomeEmail from "./templates/WelcomeEmail.tsx";

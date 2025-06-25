@@ -1,8 +1,9 @@
-import { initKyselyDb } from "./db/database.ts";
+import { initKyselyDb } from "@stackcore/db";
+import { migrateToLatest } from "@stackcore/db";
+
 import api from "./api/index.ts";
-import { migrateToLatest } from "./db/migrator.ts";
 import * as Sentry from "@sentry/deno";
-import settings from "./settings.ts";
+import settings from "@stackcore/settings";
 
 if (settings.SENTRY.DSN) {
   console.info("Initializing Sentry...");
@@ -21,7 +22,9 @@ if (settings.SENTRY.DSN) {
   console.error("Skipping Sentry initialization, no DSN provided");
 }
 
+console.info("Initializing database...");
 initKyselyDb();
+console.info("Database initialized");
 
 console.info("Migrating database to latest version...");
 await migrateToLatest();

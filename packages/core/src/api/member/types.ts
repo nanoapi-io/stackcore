@@ -1,11 +1,7 @@
 import { z } from "zod";
-import type { MemberRole } from "../../db/models/member.ts";
+import type { MemberRole } from "@stackcore/db";
 
-export {
-  ADMIN_ROLE,
-  MEMBER_ROLE,
-  type MemberRole,
-} from "../../db/models/member.ts";
+export { ADMIN_ROLE, MEMBER_ROLE, type MemberRole } from "@stackcore/db";
 
 export function prepareGetMembers(payload: {
   workspaceId: number;

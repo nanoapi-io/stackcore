@@ -1,4 +1,4 @@
-import { destroyKyselyDb, initKyselyDb } from "../database.ts";
+import { destroyKyselyDb, initKyselyDb } from "../index.ts";
 import { migrateToLatest } from "../migrator.ts";
 
 initKyselyDb();

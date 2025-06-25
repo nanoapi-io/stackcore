@@ -9,7 +9,7 @@ import {
   updateProjectSchema,
 } from "./types.ts";
 import z from "zod";
-import settings from "../../settings.ts";
+import settings from "@stackcore/settings";
 
 const projectService = new ProjectService();
 const router = new Router();

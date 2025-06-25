@@ -161,7 +161,10 @@ export default function WorkspaceSubscription() {
     // Check if changing to a higher tier product
     const isUpgradingProduct =
       (currentProduct === WorkspaceApiTypes.BASIC_PRODUCT &&
-        [WorkspaceApiTypes.PRO_PRODUCT, WorkspaceApiTypes.PREMIUM_PRODUCT]
+        [
+          WorkspaceApiTypes.PRO_PRODUCT as string,
+          WorkspaceApiTypes.PREMIUM_PRODUCT as string,
+        ]
           .includes(newProduct)) ||
       (currentProduct === WorkspaceApiTypes.PRO_PRODUCT &&
         newProduct === WorkspaceApiTypes.PREMIUM_PRODUCT);

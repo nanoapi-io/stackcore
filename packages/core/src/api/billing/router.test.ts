@@ -1,18 +1,18 @@
 import { assertEquals } from "@std/assert";
 import api from "../index.ts";
-import { db, destroyKyselyDb, initKyselyDb } from "../../db/database.ts";
+import {
+  type ADMIN_ROLE,
+  db,
+  destroyKyselyDb,
+  initKyselyDb,
+  MEMBER_ROLE,
+} from "@stackcore/db";
 import { resetTables } from "../../testHelpers/db.ts";
 import { createTestUserAndToken } from "../../testHelpers/auth.ts";
 import { WorkspaceService } from "../workspace/service.ts";
 import { BillingApiTypes } from "../responseType.ts";
-import { type ADMIN_ROLE, MEMBER_ROLE } from "../../db/models/member.ts";
-import {
-  BASIC_PRODUCT,
-  MONTHLY_BILLING_CYCLE,
-  PRO_PRODUCT,
-  YEARLY_BILLING_CYCLE,
-} from "../../db/models/workspace.ts";
 import { StripeService } from "../../stripe/index.ts";
+import settings from "@stackcore/settings";
 
 // Helper function to create a team workspace and add user as admin
 async function createTestTeamWorkspace(userId: number, workspaceName: string) {
@@ -61,8 +61,8 @@ async function setupBasicSubscription(workspaceId: number) {
   const stripeService = new StripeService();
   const subscription = await stripeService.createSubscription(
     workspace.stripe_customer_id,
-    BASIC_PRODUCT,
-    MONTHLY_BILLING_CYCLE,
+    settings.STRIPE.PRODUCTS.BASIC.NAME,
+    settings.STRIPE.MONTHLY_BILLING_CYCLE,
     null,
   );
 
@@ -424,8 +424,8 @@ Deno.test("upgrade subscription from basic to pro", async () => {
 
     const { url, method, body } = BillingApiTypes.prepareUpgradeSubscription({
       workspaceId: workspace.id,
-      product: PRO_PRODUCT,
-      billingCycle: MONTHLY_BILLING_CYCLE,
+      product: settings.STRIPE.PRODUCTS.PRO.NAME,
+      billingCycle: settings.STRIPE.MONTHLY_BILLING_CYCLE,
     });
 
     const response = await api.handle(
@@ -475,8 +475,8 @@ Deno.test("upgrade subscription from basic to pro - with matching price ID and p
 
     const { url, method, body } = BillingApiTypes.prepareUpgradeSubscription({
       workspaceId: workspace.id,
-      product: PRO_PRODUCT,
-      billingCycle: MONTHLY_BILLING_CYCLE,
+      product: settings.STRIPE.PRODUCTS.PRO.NAME,
+      billingCycle: settings.STRIPE.MONTHLY_BILLING_CYCLE,
     });
 
     const response = await api.handle(
@@ -520,8 +520,8 @@ Deno.test("upgrade subscription - not a member", async () => {
 
     const { url, method, body } = BillingApiTypes.prepareUpgradeSubscription({
       workspaceId: workspace.id,
-      product: PRO_PRODUCT,
-      billingCycle: MONTHLY_BILLING_CYCLE,
+      product: settings.STRIPE.PRODUCTS.PRO.NAME,
+      billingCycle: settings.STRIPE.MONTHLY_BILLING_CYCLE,
     });
 
     const response = await api.handle(
@@ -563,8 +563,8 @@ Deno.test("upgrade subscription - not an admin", async () => {
 
     const { url, method, body } = BillingApiTypes.prepareUpgradeSubscription({
       workspaceId: workspace.id,
-      product: PRO_PRODUCT,
-      billingCycle: MONTHLY_BILLING_CYCLE,
+      product: settings.STRIPE.PRODUCTS.PRO.NAME,
+      billingCycle: settings.STRIPE.MONTHLY_BILLING_CYCLE,
     });
 
     const response = await api.handle(
@@ -604,7 +604,7 @@ Deno.test("upgrade subscription - invalid product", async () => {
         body: JSON.stringify({
           workspaceId: workspace.id,
           product: "invalid_product",
-          billingCycle: MONTHLY_BILLING_CYCLE,
+          billingCycle: settings.STRIPE.MONTHLY_BILLING_CYCLE,
         }),
         headers: {
           "Content-Type": "application/json",
@@ -638,8 +638,8 @@ Deno.test("upgrade subscription to same product and billing cycle", async () => 
 
     const { url, method, body } = BillingApiTypes.prepareUpgradeSubscription({
       workspaceId: workspace.id,
-      product: BASIC_PRODUCT, // Same product
-      billingCycle: MONTHLY_BILLING_CYCLE, // Same billing cycle
+      product: settings.STRIPE.PRODUCTS.BASIC.NAME, // Same product
+      billingCycle: settings.STRIPE.MONTHLY_BILLING_CYCLE, // Same billing cycle
     });
 
     const response = await api.handle(
@@ -687,8 +687,8 @@ Deno.test("upgrade subscription - cannot upgrade from pro to basic (inferior pro
     }
     await stripeService.createSubscription(
       workspace.stripe_customer_id,
-      PRO_PRODUCT,
-      MONTHLY_BILLING_CYCLE,
+      settings.STRIPE.PRODUCTS.PRO.NAME,
+      settings.STRIPE.MONTHLY_BILLING_CYCLE,
       null,
     );
 
@@ -701,8 +701,8 @@ Deno.test("upgrade subscription - cannot upgrade from pro to basic (inferior pro
 
     const { url, method, body } = BillingApiTypes.prepareUpgradeSubscription({
       workspaceId: workspace.id,
-      product: BASIC_PRODUCT, // Trying to "upgrade" to inferior product
-      billingCycle: MONTHLY_BILLING_CYCLE,
+      product: settings.STRIPE.PRODUCTS.BASIC.NAME, // Trying to "upgrade" to inferior product
+      billingCycle: settings.STRIPE.MONTHLY_BILLING_CYCLE,
     });
 
     const response = await api.handle(
@@ -747,15 +747,15 @@ Deno.test("downgrade subscription from pro to basic", async () => {
     }
     await stripeService.createSubscription(
       workspace.stripe_customer_id,
-      PRO_PRODUCT,
-      MONTHLY_BILLING_CYCLE,
+      settings.STRIPE.PRODUCTS.PRO.NAME,
+      settings.STRIPE.MONTHLY_BILLING_CYCLE,
       null,
     );
 
     const { url, method, body } = BillingApiTypes.prepareDowngradeSubscription({
       workspaceId: workspace.id,
-      product: BASIC_PRODUCT,
-      billingCycle: MONTHLY_BILLING_CYCLE,
+      product: settings.STRIPE.PRODUCTS.BASIC.NAME,
+      billingCycle: settings.STRIPE.MONTHLY_BILLING_CYCLE,
     });
 
     const response = await api.handle(
@@ -795,8 +795,8 @@ Deno.test("downgrade subscription - cannot downgrade to superior product", async
 
     const { url, method, body } = BillingApiTypes.prepareDowngradeSubscription({
       workspaceId: workspace.id,
-      product: PRO_PRODUCT, // Superior product
-      billingCycle: MONTHLY_BILLING_CYCLE,
+      product: settings.STRIPE.PRODUCTS.PRO.NAME, // Superior product
+      billingCycle: settings.STRIPE.MONTHLY_BILLING_CYCLE,
     });
 
     const response = await api.handle(
@@ -841,8 +841,8 @@ Deno.test("downgrade subscription from pro to basic - with matching price ID", a
     }
     await stripeService.createSubscription(
       workspace.stripe_customer_id,
-      PRO_PRODUCT,
-      MONTHLY_BILLING_CYCLE,
+      settings.STRIPE.PRODUCTS.PRO.NAME,
+      settings.STRIPE.MONTHLY_BILLING_CYCLE,
       null,
     );
 
@@ -854,8 +854,8 @@ Deno.test("downgrade subscription from pro to basic - with matching price ID", a
 
     const { url, method, body } = BillingApiTypes.prepareDowngradeSubscription({
       workspaceId: workspace.id,
-      product: BASIC_PRODUCT,
-      billingCycle: MONTHLY_BILLING_CYCLE,
+      product: settings.STRIPE.PRODUCTS.BASIC.NAME,
+      billingCycle: settings.STRIPE.MONTHLY_BILLING_CYCLE,
     });
 
     const response = await api.handle(
@@ -1127,8 +1127,8 @@ Deno.test("all endpoints require authentication", async () => {
         method: "POST",
         body: {
           workspaceId: workspace.id,
-          product: PRO_PRODUCT,
-          billingCycle: MONTHLY_BILLING_CYCLE,
+          product: settings.STRIPE.PRODUCTS.PRO.NAME,
+          billingCycle: settings.STRIPE.MONTHLY_BILLING_CYCLE,
         },
       },
       {
@@ -1136,8 +1136,8 @@ Deno.test("all endpoints require authentication", async () => {
         method: "POST",
         body: {
           workspaceId: workspace.id,
-          product: BASIC_PRODUCT,
-          billingCycle: MONTHLY_BILLING_CYCLE,
+          product: settings.STRIPE.PRODUCTS.BASIC.NAME,
+          billingCycle: settings.STRIPE.MONTHLY_BILLING_CYCLE,
         },
       },
       {
@@ -1206,16 +1206,16 @@ Deno.test("upgrade subscription - yearly to monthly billing cycle change", async
     }
     await stripeService.createSubscription(
       workspace.stripe_customer_id,
-      PRO_PRODUCT,
-      YEARLY_BILLING_CYCLE,
+      settings.STRIPE.PRODUCTS.PRO.NAME,
+      settings.STRIPE.YEARLY_BILLING_CYCLE,
       null,
     );
 
     // Try to "upgrade" to monthly (which is actually inferior)
     const { url, method, body } = BillingApiTypes.prepareUpgradeSubscription({
       workspaceId: workspace.id,
-      product: PRO_PRODUCT,
-      billingCycle: MONTHLY_BILLING_CYCLE,
+      product: settings.STRIPE.PRODUCTS.PRO.NAME,
+      billingCycle: settings.STRIPE.MONTHLY_BILLING_CYCLE,
     });
 
     const response = await api.handle(
@@ -1257,16 +1257,16 @@ Deno.test("downgrade subscription - monthly to yearly billing cycle change", asy
     }
     await stripeService.createSubscription(
       workspace.stripe_customer_id,
-      PRO_PRODUCT,
-      MONTHLY_BILLING_CYCLE,
+      settings.STRIPE.PRODUCTS.PRO.NAME,
+      settings.STRIPE.MONTHLY_BILLING_CYCLE,
       null,
     );
 
     // Try to "downgrade" to yearly (which is actually superior)
     const { url, method, body } = BillingApiTypes.prepareDowngradeSubscription({
       workspaceId: workspace.id,
-      product: PRO_PRODUCT,
-      billingCycle: YEARLY_BILLING_CYCLE,
+      product: settings.STRIPE.PRODUCTS.PRO.NAME,
+      billingCycle: settings.STRIPE.YEARLY_BILLING_CYCLE,
     });
 
     const response = await api.handle(
@@ -1311,8 +1311,8 @@ Deno.test("upgrade subscription - pro monthly to pro yearly (billing cycle upgra
     }
     await stripeService.createSubscription(
       workspace.stripe_customer_id,
-      PRO_PRODUCT,
-      MONTHLY_BILLING_CYCLE,
+      settings.STRIPE.PRODUCTS.PRO.NAME,
+      settings.STRIPE.MONTHLY_BILLING_CYCLE,
       null,
     );
 
@@ -1325,8 +1325,8 @@ Deno.test("upgrade subscription - pro monthly to pro yearly (billing cycle upgra
 
     const { url, method, body } = BillingApiTypes.prepareUpgradeSubscription({
       workspaceId: workspace.id,
-      product: PRO_PRODUCT, // Same product
-      billingCycle: YEARLY_BILLING_CYCLE, // Upgrade to yearly
+      product: settings.STRIPE.PRODUCTS.PRO.NAME, // Same product
+      billingCycle: settings.STRIPE.YEARLY_BILLING_CYCLE, // Upgrade to yearly
     });
 
     const response = await api.handle(
@@ -1380,8 +1380,8 @@ Deno.test(
 
       const { url, method, body } = BillingApiTypes.prepareUpgradeSubscription({
         workspaceId: workspace.id,
-        product: BASIC_PRODUCT, // Same product
-        billingCycle: MONTHLY_BILLING_CYCLE, // Same billing cycle
+        product: settings.STRIPE.PRODUCTS.BASIC.NAME, // Same product
+        billingCycle: settings.STRIPE.MONTHLY_BILLING_CYCLE, // Same billing cycle
       });
 
       const response = await api.handle(

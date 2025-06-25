@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Manifest } from "../../db/models/manifest.ts";
+import type { Manifest } from "@stackcore/db";
 import type { AuditManifest } from "../../manifest/auditManifest/types.ts";
 
 export const createManifestPayloadSchema = z.object({

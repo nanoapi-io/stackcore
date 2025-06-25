@@ -1,7 +1,6 @@
-import { db } from "../../db/database.ts";
-import type { DependencyManifest } from "../../manifest/dependencyManifest/types.ts";
+import { db } from "@stackcore/db";
 import { generateAuditManifest } from "../../manifest/service.ts";
-import settings from "../../settings.ts";
+import settings from "@stackcore/settings";
 import { StripeService } from "../../stripe/index.ts";
 import type {
   GetManifestAuditResponse,
@@ -9,10 +8,11 @@ import type {
   GetManifestsResponse,
 } from "./types.ts";
 import {
-  downloadJsonFromBucket,
-  getPublicLink,
-  uploadJsonToBucket,
-} from "../../bucketStorage/index.ts";
+  downloadManifestFromBucket,
+  getManifestPublicLink,
+  uploadManifestToBucket,
+} from "@stackcore/storage";
+import type { DependencyManifest } from "../../manifest/types.ts";
 
 export const manifestNotFoundError = "manifest_not_found";
 export const projectNotFoundError = "project_not_found";
@@ -72,7 +72,7 @@ export class ManifestService {
     }
 
     const manifestFileName = `${projectId}-${Date.now()}.json`;
-    await uploadJsonToBucket(manifest, manifestFileName);
+    await uploadManifestToBucket(manifest, manifestFileName);
 
     // Create the manifest
     const newManifest = await db
@@ -224,7 +224,7 @@ export class ManifestService {
       return { error: manifestNotFoundError };
     }
 
-    const publicLink = await getPublicLink(manifest.manifest);
+    const publicLink = await getManifestPublicLink(manifest.manifest);
 
     return {
       ...manifest,
@@ -297,14 +297,14 @@ export class ManifestService {
       return { error: projectNotFoundError };
     }
 
-    const manifestJson = await downloadJsonFromBucket(
+    const manifestJson = await downloadManifestFromBucket(
       manifest.manifest,
-    ) as DependencyManifest;
+    );
 
     try {
       const auditManifest = generateAuditManifest(
         manifest.version,
-        manifestJson,
+        manifestJson as DependencyManifest,
         {
           file: {
             maxCodeChar: project.max_char_per_file,

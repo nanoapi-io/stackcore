@@ -1,13 +1,17 @@
 import { assertEquals, assertGreater, assertNotEquals } from "@std/assert";
 import api from "../index.ts";
-import { db, destroyKyselyDb, initKyselyDb } from "../../db/database.ts";
+import {
+  ADMIN_ROLE,
+  db,
+  destroyKyselyDb,
+  initKyselyDb,
+  type User,
+} from "@stackcore/db";
 import { AuthService, secretCryptoKey } from "./service.ts";
 import { resetTables } from "../../testHelpers/db.ts";
 import { getNumericDate, verify } from "djwt";
-import settings from "../../settings.ts";
-import type { User } from "../../db/models/user.ts";
+import settings from "@stackcore/settings";
 import { createTestUserAndToken } from "../../testHelpers/auth.ts";
-import { ADMIN_ROLE } from "../../db/models/member.ts";
 import { prepareMe, prepareRequestOtp, prepareVerifyOtp } from "./types.ts";
 
 Deno.test("request otp, invalid email", async () => {

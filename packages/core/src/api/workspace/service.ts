@@ -1,12 +1,10 @@
-import { db } from "../../db/database.ts";
-import { shouldHaveAccess } from "../../db/models/workspace.ts";
-import { ADMIN_ROLE } from "../../db/models/member.ts";
+import { ADMIN_ROLE, db } from "@stackcore/db";
 import { StripeService } from "../../stripe/index.ts";
 import type {
   CreateWorkspaceResponse,
   GetWorkspacesResponse,
 } from "./types.ts";
-import settings from "../../settings.ts";
+import settings from "@stackcore/settings";
 
 export const workspaceAlreadyExistsErrorCode = "workspace_already_exists";
 export const workspaceNotFoundError = "workspace_not_found";
@@ -94,7 +92,9 @@ export class WorkspaceService {
         settings.STRIPE.BILLING_THRESHOLD_BASIC,
       );
 
-      const accessEnabled = shouldHaveAccess(subscription.status);
+      const accessEnabled = stripeService.shouldHaveAccess(
+        subscription.status,
+      );
 
       // Update workspace with Stripe customer ID
       await trx

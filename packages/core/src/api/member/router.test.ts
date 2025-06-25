@@ -1,6 +1,11 @@
 import { assertEquals, assertNotEquals } from "@std/assert";
 import api from "../index.ts";
-import { db, destroyKyselyDb, initKyselyDb } from "../../db/database.ts";
+import {
+  db,
+  destroyKyselyDb,
+  initKyselyDb,
+  type MemberRole,
+} from "@stackcore/db";
 import { resetTables } from "../../testHelpers/db.ts";
 import { WorkspaceService } from "../workspace/service.ts";
 import { createTestUserAndToken } from "../../testHelpers/auth.ts";
@@ -11,7 +16,6 @@ import {
   notMemberOfWorkspaceError,
 } from "./service.ts";
 import { MemberApiTypes } from "../responseType.ts";
-import type { MemberRole } from "../../db/models/member.ts";
 
 // GET /:workspaceId/members (list members)
 Deno.test("get workspace members", async () => {

@@ -3,17 +3,17 @@
   "exports": "./src/index.ts",
   "tasks": {
     "dev": "deno run --env-file=../../.env -A --watch src/index.ts",
-    "migrate": "deno run -A src/db/scripts/migrate.ts",
-    "build": "deno compile --allow-all --include src/db/migrations --output ./dist/core ./src/index.ts",
+    "build": "deno compile --allow-all --include ../db/src/migrations --output ./dist/core ./src/index.ts",
     "email": "email dev -d src/email/templates"
   },
   "imports": {
-    "@google-cloud/storage": "npm:@google-cloud/storage@^7.16.0",
+    "@stackcore/db": "../db/src/index.ts",
+    "@stackcore/settings": "../settings/src/index.ts",
+    "@stackcore/storage": "../storage/src/index.ts",
     "@oak/oak": "jsr:@oak/oak@^17.1.4",
     "@sentry/deno": "npm:@sentry/deno@^9.28.1",
     "@std/assert": "jsr:@std/assert@1",
     "@std/expect": "jsr:@std/expect@^1.0.16",
-    "@std/path": "jsr:@std/path@^1.0.9",
     "@types/html-to-text": "npm:@types/html-to-text@^9.0.4",
     "@types/pg": "npm:@types/pg@^8.15.2",
     "@types/pg-pool": "npm:@types/pg-pool@^2.0.6",

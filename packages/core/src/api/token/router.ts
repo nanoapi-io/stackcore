@@ -3,7 +3,7 @@ import { TokenService } from "./service.ts";
 import { authMiddleware } from "../auth/middleware.ts";
 import { createTokenSchema } from "./types.ts";
 import z from "zod";
-import settings from "../../settings.ts";
+import settings from "@stackcore/settings";
 
 const tokenService = new TokenService();
 const router = new Router();

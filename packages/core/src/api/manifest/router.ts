@@ -9,7 +9,7 @@ import {
   type GetManifestsResponse,
 } from "./types.ts";
 import z from "zod";
-import settings from "../../settings.ts";
+import settings from "@stackcore/settings";
 
 const manifestService = new ManifestService();
 const router = new Router();

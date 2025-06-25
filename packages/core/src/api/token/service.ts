@@ -1,5 +1,4 @@
-import { db } from "../../db/database.ts";
-import type { NewToken } from "../../db/models/token.ts";
+import { db, type NewToken } from "@stackcore/db";
 import type { CreateTokenResponse, GetTokensResponse } from "./types.ts";
 
 export const tokenNotFoundError = "token_not_found";

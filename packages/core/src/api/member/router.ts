@@ -3,7 +3,7 @@ import { MemberService } from "./service.ts";
 import { authMiddleware } from "../auth/middleware.ts";
 import { type GetMembersResponse, updateMemberRoleSchema } from "./types.ts";
 import z from "zod";
-import settings from "../../settings.ts";
+import settings from "@stackcore/settings";
 
 const memberService = new MemberService();
 const router = new Router();

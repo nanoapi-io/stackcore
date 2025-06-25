@@ -1,16 +1,19 @@
 import { z } from "zod";
-import type { MemberRole } from "../../db/models/member.ts";
+import type { MemberRole } from "@stackcore/db";
+import settings from "@stackcore/settings";
 
 export {
-  BASIC_PRODUCT,
-  CUSTOM_PRODUCT,
-  MONTHLY_BILLING_CYCLE,
-  PREMIUM_PRODUCT,
-  PRO_PRODUCT,
   type StripeBillingCycle,
   type StripeProduct,
-  YEARLY_BILLING_CYCLE,
-} from "../../db/models/workspace.ts";
+} from "../../stripe/index.ts";
+
+export const BASIC_PRODUCT = settings.STRIPE.PRODUCTS.BASIC.NAME;
+export const PRO_PRODUCT = settings.STRIPE.PRODUCTS.PRO.NAME;
+export const PREMIUM_PRODUCT = settings.STRIPE.PRODUCTS.PREMIUM.NAME;
+export const CUSTOM_PRODUCT = settings.STRIPE.PRODUCTS.CUSTOM.NAME;
+
+export const MONTHLY_BILLING_CYCLE = settings.STRIPE.MONTHLY_BILLING_CYCLE;
+export const YEARLY_BILLING_CYCLE = settings.STRIPE.YEARLY_BILLING_CYCLE;
 
 export const createWorkspacePayloadSchema = z.object({
   name: z.string(),

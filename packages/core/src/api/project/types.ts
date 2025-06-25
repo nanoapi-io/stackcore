@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Project } from "../../db/models/project.ts";
+import type { Project } from "@stackcore/db";
 
 export const createProjectPayloadSchema = z.object({
   name: z.string(),

@@ -8,7 +8,7 @@ import {
   updateWorkspaceSchema,
 } from "./types.ts";
 import z from "zod";
-import settings from "../../settings.ts";
+import settings from "@stackcore/settings";
 
 const workspaceService = new WorkspaceService();
 const router = new Router();

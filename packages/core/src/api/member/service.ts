@@ -1,5 +1,4 @@
-import { db } from "../../db/database.ts";
-import { ADMIN_ROLE, type MemberRole } from "../../db/models/member.ts";
+import { ADMIN_ROLE, db, type MemberRole } from "@stackcore/db";
 import type { GetMembersResponse } from "./types.ts";
 
 export const notMemberOfWorkspaceError = "not_member_of_workspace";

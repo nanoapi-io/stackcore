@@ -1,8 +1,5 @@
 import { baseTemplate } from "./base.tsx";
-import type {
-  StripeBillingCycle,
-  StripeProduct,
-} from "../../db/models/workspace.ts";
+import type { StripeBillingCycle, StripeProduct } from "../../stripe/index.ts";
 
 const DowngradeEmail = (props: {
   emails: string[];

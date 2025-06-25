@@ -1,6 +1,6 @@
 import { assertEquals, assertNotEquals } from "@std/assert";
 import api from "../index.ts";
-import { destroyKyselyDb, initKyselyDb } from "../../db/database.ts";
+import { destroyKyselyDb, initKyselyDb } from "@stackcore/db";
 import { resetTables } from "../../testHelpers/db.ts";
 
 // GET /health/liveness

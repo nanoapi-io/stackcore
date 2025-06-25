@@ -1,13 +1,6 @@
 import { z } from "zod";
-import {
-  BASIC_PRODUCT,
-  MONTHLY_BILLING_CYCLE,
-  PREMIUM_PRODUCT,
-  PRO_PRODUCT,
-  type StripeBillingCycle,
-  type StripeProduct,
-  YEARLY_BILLING_CYCLE,
-} from "../../db/models/workspace.ts";
+import settings from "@stackcore/settings";
+import type { StripeBillingCycle, StripeProduct } from "../../stripe/index.ts";
 
 export type SubscriptionDetails = {
   currentUsage: number;
@@ -33,8 +26,15 @@ export function prepareGetSubscription(
 
 export const upgradeSubscriptionRequestSchema = z.object({
   workspaceId: z.number(),
-  product: z.enum([BASIC_PRODUCT, PRO_PRODUCT, PREMIUM_PRODUCT]),
-  billingCycle: z.enum([MONTHLY_BILLING_CYCLE, YEARLY_BILLING_CYCLE]),
+  product: z.enum([
+    settings.STRIPE.PRODUCTS.BASIC.NAME,
+    settings.STRIPE.PRODUCTS.PRO.NAME,
+    settings.STRIPE.PRODUCTS.PREMIUM.NAME,
+  ]),
+  billingCycle: z.enum([
+    settings.STRIPE.MONTHLY_BILLING_CYCLE,
+    settings.STRIPE.YEARLY_BILLING_CYCLE,
+  ]),
 });
 
 export type UpgradeSubscriptionRequest = z.infer<
@@ -53,8 +53,15 @@ export function prepareUpgradeSubscription(
 
 export const downgradeSubscriptionRequestSchema = z.object({
   workspaceId: z.number(),
-  product: z.enum([BASIC_PRODUCT, PRO_PRODUCT, PREMIUM_PRODUCT]),
-  billingCycle: z.enum([MONTHLY_BILLING_CYCLE, YEARLY_BILLING_CYCLE]),
+  product: z.enum([
+    settings.STRIPE.PRODUCTS.BASIC.NAME,
+    settings.STRIPE.PRODUCTS.PRO.NAME,
+    settings.STRIPE.PRODUCTS.PREMIUM.NAME,
+  ]),
+  billingCycle: z.enum([
+    settings.STRIPE.MONTHLY_BILLING_CYCLE,
+    settings.STRIPE.YEARLY_BILLING_CYCLE,
+  ]),
 });
 
 export type DowngradeSubscriptionRequest = z.infer<
