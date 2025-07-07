@@ -3,6 +3,7 @@ import api from "./api/index.ts";
 import { migrateToLatest } from "./db/migrator.ts";
 import * as Sentry from "@sentry/deno";
 import settings from "./settings.ts";
+import { initializeVectorStore } from "./db/vectorStore.ts";
 
 if (settings.SENTRY.DSN) {
   console.info("Initializing Sentry...");
@@ -22,6 +23,7 @@ if (settings.SENTRY.DSN) {
 }
 
 initKyselyDb();
+await initializeVectorStore();
 
 console.info("Migrating database to latest version...");
 await migrateToLatest();

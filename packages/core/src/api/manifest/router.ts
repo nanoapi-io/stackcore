@@ -1,13 +1,10 @@
 import { Router, Status } from "@oak/oak";
 import { ManifestService } from "./service.ts";
 import { authMiddleware, getSession } from "../auth/middleware.ts";
-import {
-  createManifestPayloadSchema,
-  type CreateManifestResponse,
-  type GetManifestAuditResponse,
-  type GetManifestDetailsResponse,
-  type GetManifestsResponse,
-} from "./types.ts";
+import type {
+  dependencyManifestTypes,
+  manifestApiTypes,
+} from "@stackcore/shared";
 import z from "zod";
 import settings from "../../settings.ts";
 
@@ -20,7 +17,19 @@ router.post("/", authMiddleware, async (ctx) => {
 
   const body = await ctx.request.body.json();
 
-  const parsedBody = createManifestPayloadSchema.safeParse(body);
+  const createManifestPayloadSchema = z.object({
+    projectId: z.number(),
+    branch: z.string().nullable(),
+    commitSha: z.string().nullable(),
+    commitShaDate: z.string().nullable().transform((val) =>
+      val ? new Date(val) : null
+    ),
+    manifest: z.object({}).passthrough(), // Allow any object structure
+  });
+
+  const parsedBody = createManifestPayloadSchema.safeParse(
+    body,
+  );
 
   if (!parsedBody.success) {
     ctx.response.status = Status.BadRequest;
@@ -34,7 +43,7 @@ router.post("/", authMiddleware, async (ctx) => {
     parsedBody.data.branch,
     parsedBody.data.commitSha,
     parsedBody.data.commitShaDate,
-    parsedBody.data.manifest,
+    parsedBody.data.manifest as dependencyManifestTypes.DependencyManifest,
   );
 
   if ("error" in response) {
@@ -44,7 +53,7 @@ router.post("/", authMiddleware, async (ctx) => {
   }
 
   ctx.response.status = Status.Created;
-  ctx.response.body = response as CreateManifestResponse;
+  ctx.response.body = response as manifestApiTypes.CreateManifestResponse;
 });
 
 // Get manifests with pagination and filtering
@@ -95,7 +104,7 @@ router.get("/", authMiddleware, async (ctx) => {
   }
 
   ctx.response.status = Status.OK;
-  ctx.response.body = response as GetManifestsResponse;
+  ctx.response.body = response as manifestApiTypes.GetManifestsResponse;
 });
 
 // Get manifest details
@@ -128,7 +137,7 @@ router.get("/:manifestId", authMiddleware, async (ctx) => {
   }
 
   ctx.response.status = Status.OK;
-  ctx.response.body = response as GetManifestDetailsResponse;
+  ctx.response.body = response as manifestApiTypes.GetManifestDetailsResponse;
 });
 
 // Delete a manifest
@@ -193,7 +202,55 @@ router.get("/:manifestId/audit", authMiddleware, async (ctx) => {
   }
 
   ctx.response.status = Status.OK;
-  ctx.response.body = response as GetManifestAuditResponse;
+  ctx.response.body = response as manifestApiTypes.GetManifestAuditResponse;
+});
+
+// Smart filtering for a manifest
+router.post("/:manifestId/smart-filter", authMiddleware, async (ctx) => {
+  const session = getSession(ctx);
+
+  const body = await ctx.request.body.json();
+
+  const smartFilterPayloadSchema = z.object({
+    prompt: z.string(),
+  });
+
+  const parsedBody = smartFilterPayloadSchema.safeParse(body);
+
+  if (!parsedBody.success) {
+    ctx.response.status = Status.BadRequest;
+    ctx.response.body = { error: parsedBody.error };
+    return;
+  }
+
+  const paramSchema = z.object({
+    manifestId: z.number().int(),
+  });
+
+  const parsedParams = paramSchema.safeParse({
+    manifestId: Number(ctx.params.manifestId),
+  });
+
+  if (!parsedParams.success) {
+    ctx.response.status = Status.BadRequest;
+    ctx.response.body = { error: parsedParams.error };
+    return;
+  }
+
+  const response = await manifestService.smartFilter(
+    session.userId,
+    parsedParams.data.manifestId,
+    parsedBody.data,
+  );
+
+  if ("error" in response) {
+    ctx.response.status = Status.BadRequest;
+    ctx.response.body = { error: response.error };
+    return;
+  }
+
+  ctx.response.status = Status.OK;
+  ctx.response.body = response;
 });
 
 export default router;

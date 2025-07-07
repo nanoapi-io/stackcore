@@ -1,4 +1,13 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import { Loader, RefreshCw } from "lucide-react";
+import { Button } from "../components/shadcn/Button.tsx";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../components/shadcn/Card.tsx";
 
 type CoreApiContextType = {
   isAuthenticated: boolean;
@@ -96,6 +105,73 @@ export function CoreApiProvider(
     }
 
     return response;
+  }
+
+  const [ready, setReady] = useState(false);
+  const [readyError, setReadyError] = useState<string | null>(null);
+
+  async function checkAPIReady() {
+    try {
+      const response = await handleRequest("/health/liveness", "GET");
+      if (response.status !== 200) {
+        throw new Error("API is not ready");
+      }
+      setReady(true);
+    } catch (error) {
+      console.error("Error checking API readiness:", error);
+      setReadyError(error instanceof Error ? error.message : "Unknown error");
+    }
+  }
+
+  useEffect(() => {
+    checkAPIReady();
+  }, []);
+
+  if (readyError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle className="text-destructive">
+              Something went wrong
+            </CardTitle>
+            <CardDescription>
+              An unexpected error occurred while connecting to the server.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center">
+            <Button
+              onClick={() => globalThis.location.reload()}
+              className="w-full"
+            >
+              <RefreshCw className="size-4" />
+              Reload Page
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (ready === false) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle>Connecting to server</CardTitle>
+            <CardDescription>
+              Please wait while we establish a connection...
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center">
+            <Loader className="size-8 animate-spin mx-auto mb-4" />
+            <p className="text-sm text-muted-foreground">
+              This may take a few moments
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (

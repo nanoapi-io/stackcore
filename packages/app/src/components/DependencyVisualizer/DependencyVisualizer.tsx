@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router";
 import type {
-  AuditManifest,
-  DependencyManifest,
-} from "@stackcore/core/manifest";
+  auditManifestTypes,
+  dependencyManifestTypes,
+} from "@stackcore/shared";
 import { SidebarProvider, SidebarTrigger } from "../shadcn/Sidebar.tsx";
 import { FileExplorerSidebar } from "./components/FileExplorerSidebar.tsx";
 import BreadcrumbNav from "./components/BreadcrumNav.tsx";
@@ -13,8 +13,8 @@ import SymbolVisualizer from "./visualizers/SymbolVisualizer.tsx";
 
 export interface VisualizerContext {
   manifestId: number;
-  dependencyManifest: DependencyManifest;
-  auditManifest: AuditManifest;
+  dependencyManifest: dependencyManifestTypes.DependencyManifest;
+  auditManifest: auditManifestTypes.AuditManifest;
   highlightedCytoscapeRef: {
     filePath: string;
     symbolId: string | undefined;
@@ -23,11 +23,10 @@ export interface VisualizerContext {
 
 export default function DependencyVisualizer(props: {
   manifestId: number;
-  dependencyManifest: DependencyManifest;
-  auditManifest: AuditManifest;
+  dependencyManifest: dependencyManifestTypes.DependencyManifest;
+  auditManifest: auditManifestTypes.AuditManifest;
 }) {
   const [searchParams] = useSearchParams();
-
   const [highlightedCytoscapeRef, setHighlightedCytoscapeRef] = useState<
     {
       filePath: string;
@@ -45,6 +44,7 @@ export default function DependencyVisualizer(props: {
       className="grow flex min-h-0"
     >
       <FileExplorerSidebar
+        dependencyManifestId={props.manifestId}
         dependencyManifest={props.dependencyManifest}
         auditManifest={props.auditManifest}
         onHighlightInCytoscape={(node) => {

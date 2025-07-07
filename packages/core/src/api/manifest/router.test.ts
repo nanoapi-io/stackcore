@@ -6,7 +6,11 @@ import { createTestUserAndToken } from "../../testHelpers/auth.ts";
 import { WorkspaceService } from "../workspace/service.ts";
 import { ProjectService } from "../project/service.ts";
 import { ManifestService } from "./service.ts";
-import { ManifestApiTypes } from "../responseType.ts";
+import {
+  type dependencyManifestTypes,
+  manifestApiTypes,
+} from "@stackcore/shared";
+import { downloadJsonFromBucket } from "../../bucketStorage/index.ts";
 
 // Helper function to provide default project configuration values
 function getDefaultProjectConfig() {
@@ -77,13 +81,62 @@ Deno.test("create a manifest", async () => {
       .where("name", "=", "Test Project")
       .executeTakeFirstOrThrow();
 
+    const sampleManifest: dependencyManifestTypes.DependencyManifest = {
+      "src/index.py": {
+        id: "src/index.py",
+        filePath: "src/index.py",
+        language: "python",
+        metrics: {
+          linesCount: 12,
+          codeLineCount: 8,
+          characterCount: 200,
+          codeCharacterCount: 150,
+          dependencyCount: 1,
+          dependentCount: 0,
+          cyclomaticComplexity: 3,
+        },
+        dependencies: {
+          "./utils": {
+            id: "./utils",
+            isExternal: false,
+            symbols: {},
+          },
+        },
+        dependents: {},
+        symbols: {
+          "MyClass": {
+            id: "MyClass",
+            type: "class" as const,
+            metrics: {
+              linesCount: 12,
+              codeLineCount: 8,
+              characterCount: 200,
+              codeCharacterCount: 150,
+              dependencyCount: 1,
+              dependentCount: 0,
+              cyclomaticComplexity: 3,
+            },
+            description: "",
+            dependencies: {
+              "./utils.py": {
+                id: "./utils.py",
+                isExternal: false,
+                symbols: {},
+              },
+            },
+            dependents: {},
+          },
+        },
+      },
+    };
+
     // Create a manifest via API
-    const { url, method, body } = ManifestApiTypes.prepareCreateManifest({
+    const { url, method, body } = manifestApiTypes.prepareCreateManifest({
       projectId: project.id,
       branch: "main",
       commitSha: "abc123",
       commitShaDate: new Date(),
-      manifest: { test: "data" },
+      manifest: sampleManifest,
     });
 
     const createResponse = await api.handle(
@@ -113,6 +166,10 @@ Deno.test("create a manifest", async () => {
     assertEquals(manifest.branch, "main");
     assertEquals(manifest.commitSha, "abc123");
     assertEquals(manifest.version, 1);
+
+    // Verify manifest was created in bucket
+    const manifestContent = await downloadJsonFromBucket(manifest.manifest);
+    assertEquals(manifestContent, sampleManifest);
   } finally {
     await resetTables();
     await destroyKyselyDb();
@@ -172,7 +229,7 @@ Deno.test("create a manifest - non-member of workspace", async () => {
     const { token: nonMemberToken } = await createTestUserAndToken();
 
     // Try to create a manifest in a project the user doesn't have access to
-    const { url, method, body } = ManifestApiTypes.prepareCreateManifest({
+    const { url, method, body } = manifestApiTypes.prepareCreateManifest({
       projectId: project.id,
       branch: "main",
       commitSha: "abc123",
@@ -208,7 +265,7 @@ Deno.test("create manifest - invalid input validation", async () => {
     const { token } = await createTestUserAndToken();
 
     // Test with invalid JSON
-    const { url, method } = ManifestApiTypes.prepareCreateManifest({
+    const { url, method } = manifestApiTypes.prepareCreateManifest({
       projectId: 999,
       branch: "main",
       commitSha: "abc123",
@@ -289,7 +346,7 @@ Deno.test("create manifest - workspace access disabled", async () => {
       .executeTakeFirstOrThrow();
 
     // Try to create a manifest with disabled workspace access
-    const { url, method, body } = ManifestApiTypes.prepareCreateManifest({
+    const { url, method, body } = manifestApiTypes.prepareCreateManifest({
       projectId: project.id,
       branch: "main",
       commitSha: "abc123",
@@ -376,11 +433,11 @@ Deno.test("get manifests", async () => {
         `branch-${i}`,
         `commit-${i}`,
         new Date(),
-        { version: i + 1 },
+        {},
       );
     }
 
-    const { url, method } = ManifestApiTypes.prepareGetManifests({
+    const { url, method } = manifestApiTypes.prepareGetManifests({
       page: 1,
       limit: 5,
       projectId: project.id,
@@ -467,10 +524,10 @@ Deno.test("get manifests with workspace filter", async () => {
       "main",
       "abc123",
       new Date(),
-      { test: "data" },
+      {},
     );
 
-    const { url, method } = ManifestApiTypes.prepareGetManifests({
+    const { url, method } = manifestApiTypes.prepareGetManifests({
       page: 1,
       limit: 10,
       workspaceId: workspace.id,
@@ -552,7 +609,7 @@ Deno.test("get manifests with search", async () => {
       "main",
       "abc123",
       new Date(),
-      { test: "data" },
+      {},
     );
     await manifestService.createManifest(
       userId,
@@ -560,10 +617,10 @@ Deno.test("get manifests with search", async () => {
       "feature-xyz",
       "def456",
       new Date(),
-      { test: "data2" },
+      {},
     );
 
-    const { url, method } = ManifestApiTypes.prepareGetManifests({
+    const { url, method } = manifestApiTypes.prepareGetManifests({
       page: 1,
       limit: 10,
       search: "feature",
@@ -649,12 +706,12 @@ Deno.test("get manifests - pagination", async () => {
         `branch-${i}`,
         `commit-${i}`,
         new Date(),
-        { version: i + 1 },
+        {},
       );
     }
 
     // Test second page
-    const { url, method } = ManifestApiTypes.prepareGetManifests({
+    const { url, method } = manifestApiTypes.prepareGetManifests({
       page: 2,
       limit: 5,
       projectId: project.id,
@@ -771,13 +828,61 @@ Deno.test("get manifest details", async () => {
 
     // Create manifest
     const manifestService = new ManifestService();
+    const sampleManifest: dependencyManifestTypes.DependencyManifest = {
+      "src/index.py": {
+        id: "src/index.py",
+        filePath: "src/index.py",
+        language: "python",
+        metrics: {
+          linesCount: 12,
+          codeLineCount: 8,
+          characterCount: 200,
+          codeCharacterCount: 150,
+          dependencyCount: 1,
+          dependentCount: 0,
+          cyclomaticComplexity: 3,
+        },
+        dependencies: {
+          "./utils": {
+            id: "./utils",
+            isExternal: false,
+            symbols: {},
+          },
+        },
+        dependents: {},
+        symbols: {
+          "MyClass": {
+            id: "MyClass",
+            type: "class" as const,
+            metrics: {
+              linesCount: 12,
+              codeLineCount: 8,
+              characterCount: 200,
+              codeCharacterCount: 150,
+              dependencyCount: 1,
+              dependentCount: 0,
+              cyclomaticComplexity: 3,
+            },
+            description: "",
+            dependencies: {
+              "./utils.py": {
+                id: "./utils.py",
+                isExternal: false,
+                symbols: {},
+              },
+            },
+            dependents: {},
+          },
+        },
+      },
+    };
     const createResponse = await manifestService.createManifest(
       userId,
       project.id,
       "main",
       "abc123",
       new Date(),
-      { test: "data", complex: { nested: "value" } },
+      sampleManifest,
     );
 
     if ("error" in createResponse) {
@@ -790,7 +895,7 @@ Deno.test("get manifest details", async () => {
       .where("id", "=", createResponse.id)
       .executeTakeFirstOrThrow();
 
-    const { url, method } = ManifestApiTypes.prepareGetManifestDetails(
+    const { url, method } = manifestApiTypes.prepareGetManifestDetails(
       createResponse.id,
     );
 
@@ -811,14 +916,6 @@ Deno.test("get manifest details", async () => {
     assertEquals(manifest.commitSha, "abc123");
     assertEquals(manifest.version, 1);
     assertEquals(manifest.manifest.length > 0, true);
-
-    // get the content of the manifest from the bucket
-    const manifestContentResponse = await fetch(
-      manifest.manifest,
-    );
-    const manifestContent = await manifestContentResponse.json();
-    assertEquals(manifestContent.test, "data");
-    assertEquals(manifestContent.complex.nested, "value");
   } finally {
     await resetTables();
     await destroyKyselyDb();
@@ -881,7 +978,7 @@ Deno.test("get manifest details - non-member", async () => {
       "main",
       "abc123",
       new Date(),
-      { test: "data" },
+      {},
     );
 
     if ("error" in createResponse) {
@@ -891,7 +988,7 @@ Deno.test("get manifest details - non-member", async () => {
     // Create second user (not a member of the workspace)
     const { token: nonMemberToken } = await createTestUserAndToken();
 
-    const { url, method } = ManifestApiTypes.prepareGetManifestDetails(
+    const { url, method } = manifestApiTypes.prepareGetManifestDetails(
       createResponse.id,
     );
 
@@ -971,14 +1068,14 @@ Deno.test("delete a manifest", async () => {
       "main",
       "abc123",
       new Date(),
-      { test: "data" },
+      {},
     );
 
     if ("error" in createResponse) {
       throw new Error(createResponse.error);
     }
 
-    const { url, method } = ManifestApiTypes.prepareDeleteManifest(
+    const { url, method } = manifestApiTypes.prepareDeleteManifest(
       createResponse.id,
     );
 
@@ -1063,7 +1160,7 @@ Deno.test("delete a manifest - non-member", async () => {
       "main",
       "abc123",
       new Date(),
-      { test: "data" },
+      {},
     );
 
     // Create second user (not a member of the workspace)
@@ -1073,7 +1170,7 @@ Deno.test("delete a manifest - non-member", async () => {
       throw new Error(createResponse.error);
     }
 
-    const { url, method } = ManifestApiTypes.prepareDeleteManifest(
+    const { url, method } = manifestApiTypes.prepareDeleteManifest(
       createResponse.id,
     );
 
@@ -1156,11 +1253,11 @@ Deno.test("get manifest audit", async () => {
 
     // Create manifest with sample dependency manifest structure
     const manifestService = new ManifestService();
-    const sampleManifest = {
-      "src/index.ts": {
-        id: "src/index.ts",
-        filePath: "src/index.ts",
-        language: "typescript",
+    const sampleManifest: dependencyManifestTypes.DependencyManifest = {
+      "src/index.py": {
+        id: "src/index.py",
+        filePath: "src/index.py",
+        language: "python",
         metrics: {
           linesCount: 12,
           codeLineCount: 8,
@@ -1181,7 +1278,7 @@ Deno.test("get manifest audit", async () => {
         symbols: {
           "MyClass": {
             id: "MyClass",
-            type: "class",
+            type: "class" as const,
             metrics: {
               linesCount: 12,
               codeLineCount: 8,
@@ -1191,9 +1288,10 @@ Deno.test("get manifest audit", async () => {
               dependentCount: 0,
               cyclomaticComplexity: 3,
             },
+            description: "",
             dependencies: {
-              "./utils": {
-                id: "./utils",
+              "./utils.py": {
+                id: "./utils.py",
                 isExternal: false,
                 symbols: {},
               },
@@ -1217,7 +1315,7 @@ Deno.test("get manifest audit", async () => {
       throw new Error(createResponse.error);
     }
 
-    const { url, method } = ManifestApiTypes.prepareGetManifestAudit(
+    const { url, method } = manifestApiTypes.prepareGetManifestAudit(
       createResponse.id,
     );
 
@@ -1237,18 +1335,18 @@ Deno.test("get manifest audit", async () => {
     assertEquals(typeof auditManifest, "object");
 
     // Check that it has the expected file entry
-    assertEquals(typeof auditManifest["src/index.ts"], "object");
-    assertEquals(auditManifest["src/index.ts"].id, "src/index.ts");
-    assertEquals(typeof auditManifest["src/index.ts"].alerts, "object");
-    assertEquals(typeof auditManifest["src/index.ts"].symbols, "object");
+    assertEquals(typeof auditManifest["src/index.py"], "object");
+    assertEquals(auditManifest["src/index.py"].id, "src/index.py");
+    assertEquals(typeof auditManifest["src/index.py"].alerts, "object");
+    assertEquals(typeof auditManifest["src/index.py"].symbols, "object");
 
     // Check that the symbol is present
     assertEquals(
-      typeof auditManifest["src/index.ts"].symbols["MyClass"],
+      typeof auditManifest["src/index.py"].symbols["MyClass"],
       "object",
     );
     assertEquals(
-      auditManifest["src/index.ts"].symbols["MyClass"].id,
+      auditManifest["src/index.py"].symbols["MyClass"].id,
       "MyClass",
     );
   } finally {
@@ -1313,7 +1411,7 @@ Deno.test("get manifest audit - non-member", async () => {
       "main",
       "abc123",
       new Date(),
-      { test: "data" },
+      {},
     );
 
     if ("error" in createResponse) {
@@ -1323,7 +1421,7 @@ Deno.test("get manifest audit - non-member", async () => {
     // Create second user (not a member of the workspace)
     const { token: nonMemberToken } = await createTestUserAndToken();
 
-    const { url, method } = ManifestApiTypes.prepareGetManifestAudit(
+    const { url, method } = manifestApiTypes.prepareGetManifestAudit(
       createResponse.id,
     );
 
@@ -1352,7 +1450,7 @@ Deno.test("get manifest audit - invalid manifest id", async () => {
   try {
     const { token } = await createTestUserAndToken();
 
-    const { url, method } = ManifestApiTypes.prepareGetManifestAudit(999999);
+    const { url, method } = manifestApiTypes.prepareGetManifestAudit(999999);
 
     const response = await api.handle(
       new Request(`http://localhost:3000${url}`, {

@@ -1,11 +1,11 @@
 import { db } from "../../db/database.ts";
 import { shouldHaveAccess } from "../../db/models/workspace.ts";
-import { ADMIN_ROLE } from "../../db/models/member.ts";
 import { StripeService } from "../../stripe/index.ts";
-import type {
-  CreateWorkspaceResponse,
-  GetWorkspacesResponse,
-} from "./types.ts";
+import {
+  memberTypes,
+  stripeTypes,
+  type workspaceApiTypes,
+} from "@stackcore/shared";
 import settings from "../../settings.ts";
 
 export const workspaceAlreadyExistsErrorCode = "workspace_already_exists";
@@ -32,7 +32,7 @@ export class WorkspaceService {
     name: string,
     userId: number,
   ): Promise<
-    CreateWorkspaceResponse | {
+    workspaceApiTypes.CreateWorkspaceResponse | {
       error: typeof workspaceAlreadyExistsErrorCode;
     }
   > {
@@ -74,7 +74,7 @@ export class WorkspaceService {
       await trx
         .insertInto("member")
         .values({
-          role: ADMIN_ROLE,
+          role: memberTypes.ADMIN_ROLE,
           workspace_id: workspace.id,
           user_id: userId,
           created_at: new Date(),
@@ -89,8 +89,8 @@ export class WorkspaceService {
       );
       const subscription = await stripeService.createSubscription(
         customer.id,
-        "BASIC",
-        "MONTHLY",
+        stripeTypes.BASIC_PRODUCT,
+        stripeTypes.MONTHLY_BILLING_CYCLE,
         settings.STRIPE.BILLING_THRESHOLD_BASIC,
       );
 
@@ -122,7 +122,7 @@ export class WorkspaceService {
     page: number,
     limit: number,
     search?: string,
-  ): Promise<GetWorkspacesResponse> {
+  ): Promise<workspaceApiTypes.GetWorkspacesResponse> {
     // Get total count of workspaces
     const totalResult = await db
       .selectFrom("member")
@@ -208,7 +208,7 @@ export class WorkspaceService {
       return { error: workspaceNotFoundError };
     }
 
-    if (memberCheck.role !== ADMIN_ROLE) {
+    if (memberCheck.role !== memberTypes.ADMIN_ROLE) {
       return { error: notAnAdminOfWorkspaceError };
     }
 
@@ -247,7 +247,7 @@ export class WorkspaceService {
       return { error: workspaceNotFoundError };
     }
 
-    if (memberCheck.role !== ADMIN_ROLE) {
+    if (memberCheck.role !== memberTypes.ADMIN_ROLE) {
       return { error: notAnAdminOfWorkspaceError };
     }
 

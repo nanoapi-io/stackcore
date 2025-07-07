@@ -6,10 +6,9 @@ import cytoscape, {
 import type { Core } from "cytoscape";
 import fcose from "cytoscape-fcose";
 import type {
-  AuditManifest,
-  DependencyManifest,
-  Metric,
-} from "@stackcore/core/manifest";
+  auditManifestTypes,
+  dependencyManifestTypes,
+} from "@stackcore/shared";
 import type { NapiNodeData } from "../elements/types.ts";
 import { mainLayout } from "../layout/index.ts";
 import { getCytoscapeStylesheet } from "../styles/index.ts";
@@ -41,7 +40,7 @@ export class ProjectDependencyVisualizer {
   /** Layout configuration for organizing the dependency graph */
   private layout = mainLayout;
   /** Current metric used for node coloring */
-  private targetMetric: Metric | undefined;
+  private targetMetric: dependencyManifestTypes.Metric | undefined;
   /** Currently selected node in the graph */
   private selectedNodeId: string | undefined;
   /** Callback functions triggered by graph interactions */
@@ -64,11 +63,11 @@ export class ProjectDependencyVisualizer {
    */
   constructor(
     container: HTMLElement,
-    dependencyManifest: DependencyManifest,
-    auditManifest: AuditManifest,
+    dependencyManifest: dependencyManifestTypes.DependencyManifest,
+    auditManifest: auditManifestTypes.AuditManifest,
     options?: {
       theme?: "light" | "dark";
-      defaultMetric?: Metric | undefined;
+      defaultMetric?: dependencyManifestTypes.Metric | undefined;
       onAfterNodeClick?: () => void;
       onAfterNodeRightClick?: (data: {
         position: { x: number; y: number };
@@ -260,7 +259,7 @@ export class ProjectDependencyVisualizer {
    *
    * @param metric - The new metric to use for node coloring (e.g., LOC, characters, dependencies)
    */
-  public setTargetMetric(metric: Metric | undefined) {
+  public setTargetMetric(metric: dependencyManifestTypes.Metric | undefined) {
     this.targetMetric = metric;
 
     const stylesheet = getCytoscapeStylesheet(

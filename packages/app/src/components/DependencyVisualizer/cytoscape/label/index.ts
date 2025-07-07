@@ -1,4 +1,4 @@
-import type { AuditManifest } from "@stackcore/core/manifest";
+import type { auditManifestTypes } from "@stackcore/shared";
 
 /**
  * Calculates the optimal width and height for a node based on its label text.
@@ -55,7 +55,7 @@ const errorChar = "⚠️";
  */
 export function getCollapsedFileNodeLabel(data: {
   fileName: string;
-  fileAuditManifest: AuditManifest[string];
+  fileAuditManifest: auditManifestTypes.AuditManifest[string];
 }) {
   const fileNameMaxLength = 25;
   const fileName = data.fileName.length > fileNameMaxLength
@@ -88,7 +88,7 @@ export function getCollapsedFileNodeLabel(data: {
  */
 export function getExpandedFileNodeLabel(data: {
   fileName: string;
-  fileAuditManifest: AuditManifest[string];
+  fileAuditManifest: auditManifestTypes.AuditManifest[string];
 }) {
   let label = data.fileName;
 
@@ -139,7 +139,9 @@ export function getExpandedSymbolNodeLabel(data: {
   fileName: string;
   symbolName: string;
   symbolType: string;
-  symbolAuditManifest: AuditManifest[string]["symbols"][string] | undefined;
+  symbolAuditManifest:
+    | auditManifestTypes.AuditManifest[string]["symbols"][string]
+    | undefined;
 }) {
   // Create the basic label with symbol name and type
   let label = `${data.symbolName} (${data.symbolType})`;

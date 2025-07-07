@@ -29,7 +29,7 @@ import {
 import { DataTablePagination } from "../../components/shadcn/Datatablepagination.tsx";
 import { toast } from "sonner";
 import { PencilRuler, Plus } from "lucide-react";
-import { ProjectApiTypes } from "@stackcore/core/responses";
+import { projectApiTypes } from "@stackcore/shared";
 import { Separator } from "../../components/shadcn/Separator.tsx";
 
 type Project = {
@@ -79,7 +79,7 @@ export default function WorkspaceProjectsPage() {
     const pageSize = pagination.pageSize;
 
     try {
-      const { url, method } = ProjectApiTypes.prepareGetProjects({
+      const { url, method } = projectApiTypes.prepareGetProjects({
         page,
         limit: pageSize,
         workspaceId: selectedWorkspaceId,
@@ -91,7 +91,7 @@ export default function WorkspaceProjectsPage() {
         throw new Error("Failed to get projects");
       }
 
-      const data = await response.json() as ProjectApiTypes.GetProjectsResponse;
+      const data = await response.json() as projectApiTypes.GetProjectsResponse;
 
       setProjects(data.results);
       setTotal(data.total);

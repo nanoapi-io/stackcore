@@ -1,5 +1,5 @@
 import { db } from "../../db/database.ts";
-import { ADMIN_ROLE, MEMBER_ROLE } from "../../db/models/member.ts";
+import { memberTypes } from "@stackcore/shared";
 import { sendInvitationEmail } from "../../email/index.ts";
 import settings from "../../settings.ts";
 
@@ -32,7 +32,7 @@ export class InvitationService {
       return { error: notMemberOfWorkspaceError };
     }
 
-    if (userMember.role !== ADMIN_ROLE) {
+    if (userMember.role !== memberTypes.ADMIN_ROLE) {
       return { error: notAnAdminOfWorkspaceError };
     }
 
@@ -150,7 +150,7 @@ export class InvitationService {
         .values({
           user_id: userId,
           workspace_id: invitation.workspace_id,
-          role: MEMBER_ROLE,
+          role: memberTypes.MEMBER_ROLE,
           created_at: new Date(),
         })
         .execute();

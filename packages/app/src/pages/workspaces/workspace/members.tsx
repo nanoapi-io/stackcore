@@ -49,7 +49,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../../components/shadcn/Select.tsx";
-import { InvitationApiTypes, MemberApiTypes } from "@stackcore/core/responses";
+import {
+  invitationApiTypes,
+  memberApiTypes,
+  memberTypes,
+} from "@stackcore/shared";
 import { useOutletContext } from "react-router";
 import type { WorkspacePageContext } from "./index.tsx";
 import { Separator } from "../../../components/shadcn/Separator.tsx";
@@ -65,7 +69,7 @@ import { Input } from "../../../components/shadcn/Input.tsx";
 type Member = {
   id: number;
   email: string;
-  role: MemberApiTypes.MemberRole;
+  role: memberTypes.MemberRole;
 };
 
 export default function WorkspaceMembers() {
@@ -89,7 +93,7 @@ export default function WorkspaceMembers() {
     const pageSize = pagination.pageSize;
 
     try {
-      const { url, method } = MemberApiTypes.prepareGetMembers({
+      const { url, method } = memberApiTypes.prepareGetMembers({
         workspaceId: context.workspace.id,
         page,
         limit: pageSize,
@@ -111,7 +115,7 @@ export default function WorkspaceMembers() {
         members.push({
           id: i,
           email: `test${i}@test.com`,
-          role: MemberApiTypes.MEMBER_ROLE,
+          role: memberTypes.MEMBER_ROLE,
         });
       }
 
@@ -141,13 +145,13 @@ export default function WorkspaceMembers() {
         return (
           <div className="flex items-center space-x-2">
             <Badge
-              variant={row.original.role === MemberApiTypes.ADMIN_ROLE
+              variant={row.original.role === memberTypes.ADMIN_ROLE
                 ? "default"
                 : "secondary"}
             >
               {row.original.role}
             </Badge>
-            {(context.workspace.role === MemberApiTypes.ADMIN_ROLE &&
+            {(context.workspace.role === memberTypes.ADMIN_ROLE &&
               row.original.email !== coreApi.getUserFromToken()?.email) && (
               <EditMemberDialog
                 workspace={context.workspace}
@@ -194,7 +198,7 @@ export default function WorkspaceMembers() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {context.workspace.role === MemberApiTypes.ADMIN_ROLE && (
+        {context.workspace.role === memberTypes.ADMIN_ROLE && (
           <InviteMemberDialog
             workspace={context.workspace}
             disable={isBusy}
@@ -295,7 +299,7 @@ function InviteMemberDialog(
   async function onSubmit() {
     setIsBusy(true);
     try {
-      const { url, method, body } = InvitationApiTypes.prepareCreateInvitation(
+      const { url, method, body } = invitationApiTypes.prepareCreateInvitation(
         {
           workspaceId: props.workspace.id,
           email: form.getValues("email"),
@@ -386,8 +390,8 @@ function EditMemberDialog(
 
   const formSchema = z.object({
     role: z.enum([
-      MemberApiTypes.ADMIN_ROLE,
-      MemberApiTypes.MEMBER_ROLE,
+      memberTypes.ADMIN_ROLE,
+      memberTypes.MEMBER_ROLE,
     ]),
   });
 
@@ -402,7 +406,7 @@ function EditMemberDialog(
   async function onSubmit() {
     setIsBusy(true);
     try {
-      const { url, method, body } = MemberApiTypes.prepareUpdateMemberRole(
+      const { url, method, body } = memberApiTypes.prepareUpdateMemberRole(
         props.member.id,
         {
           role: form.getValues("role"),
@@ -463,10 +467,10 @@ function EditMemberDialog(
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value={MemberApiTypes.ADMIN_ROLE}>
+                      <SelectItem value={memberTypes.ADMIN_ROLE}>
                         admin
                       </SelectItem>
-                      <SelectItem value={MemberApiTypes.MEMBER_ROLE}>
+                      <SelectItem value={memberTypes.MEMBER_ROLE}>
                         member
                       </SelectItem>
                     </SelectContent>

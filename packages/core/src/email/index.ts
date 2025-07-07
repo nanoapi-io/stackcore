@@ -1,7 +1,4 @@
-import type {
-  StripeBillingCycle,
-  StripeProduct,
-} from "../db/models/workspace.ts";
+import type { stripeTypes } from "@stackcore/shared";
 import { Resend } from "resend";
 import settings from "../settings.ts";
 
@@ -129,12 +126,12 @@ export async function sendSubscriptionUpgradedEmail(
     emails: string[];
     workspaceName: string;
     oldSubscription: {
-      product: StripeProduct;
-      billingCycle: StripeBillingCycle | null;
+      product: stripeTypes.StripeProduct;
+      billingCycle: stripeTypes.StripeBillingCycle | null;
     };
     newSubscription: {
-      product: StripeProduct;
-      billingCycle: StripeBillingCycle | null;
+      product: stripeTypes.StripeProduct;
+      billingCycle: stripeTypes.StripeBillingCycle | null;
     };
   },
 ) {
@@ -151,12 +148,12 @@ export async function sendSubscriptionDowngradedEmail(
     emails: string[];
     workspaceName: string;
     oldSubscription: {
-      product: StripeProduct;
-      billingCycle: StripeBillingCycle | null;
+      product: stripeTypes.StripeProduct;
+      billingCycle: stripeTypes.StripeBillingCycle | null;
     };
     newSubscription: {
-      product: StripeProduct;
-      billingCycle: StripeBillingCycle | null;
+      product: stripeTypes.StripeProduct;
+      billingCycle: stripeTypes.StripeBillingCycle | null;
     };
     newSubscriptionDate: string;
   },

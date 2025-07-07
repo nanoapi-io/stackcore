@@ -4,9 +4,9 @@ import type {
   NodeDefinition,
 } from "cytoscape";
 import type {
-  AuditManifest,
-  DependencyManifest,
-} from "@stackcore/core/manifest";
+  auditManifestTypes,
+  dependencyManifestTypes,
+} from "@stackcore/shared";
 import {
   getCollapsedFileNodeLabel,
   getExpandedFileNodeLabel,
@@ -16,8 +16,8 @@ import { getMetricsSeverityForNode } from "../metrics/index.ts";
 import type { FileNapiNodeData } from "./types.ts";
 
 export function getFileElementsInProject(
-  dependencyManifest: DependencyManifest,
-  auditManifest: AuditManifest,
+  dependencyManifest: dependencyManifestTypes.DependencyManifest,
+  auditManifest: auditManifestTypes.AuditManifest,
 ): ElementDefinition[] {
   interface CustomNodeDefinition extends NodeDefinition {
     data: FileNapiNodeData & object;

@@ -1,19 +1,16 @@
 import { baseTemplate } from "./base.tsx";
-import type {
-  StripeBillingCycle,
-  StripeProduct,
-} from "../../db/models/workspace.ts";
+import type { stripeTypes } from "@stackcore/shared";
 
 const DowngradeEmail = (props: {
   emails: string[];
   workspaceName: string;
   oldSubscription: {
-    product: StripeProduct;
-    billingCycle: StripeBillingCycle | null;
+    product: stripeTypes.StripeProduct;
+    billingCycle: stripeTypes.StripeBillingCycle | null;
   };
   newSubscription: {
-    product: StripeProduct;
-    billingCycle: StripeBillingCycle | null;
+    product: stripeTypes.StripeProduct;
+    billingCycle: stripeTypes.StripeBillingCycle | null;
   };
   newSubscriptionDate: string;
 }) => {

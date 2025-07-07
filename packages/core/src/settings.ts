@@ -1,11 +1,3 @@
-import {
-  BASIC_PRODUCT,
-  MONTHLY_BILLING_CYCLE,
-  PREMIUM_PRODUCT,
-  PRO_PRODUCT,
-  YEARLY_BILLING_CYCLE,
-} from "./db/models/workspace.ts";
-
 function getEnv(key: string, defaultValue: string) {
   const value = Deno.env.get(key);
 
@@ -48,36 +40,36 @@ export default {
     // This is to make sure that BASIC user that exceed their included credits have a card on file
     BILLING_THRESHOLD_BASIC: 6,
     PRODUCTS: {
-      [BASIC_PRODUCT]: {
-        [MONTHLY_BILLING_CYCLE]: {
+      BASIC: {
+        MONTHLY: {
           PRICE_ID: getEnv(
             "STRIPE_PRODUCT_BASIC_MONTHLY_PRICE_ID",
             "price_basic_monthly",
           ),
         },
       },
-      [PRO_PRODUCT]: {
-        [MONTHLY_BILLING_CYCLE]: {
+      PRO: {
+        MONTHLY: {
           PRICE_ID: getEnv(
             "STRIPE_PRODUCT_PRO_MONTHLY_PRICE_ID",
             "price_pro_monthly",
           ),
         },
-        [YEARLY_BILLING_CYCLE]: {
+        YEARLY: {
           PRICE_ID: getEnv(
             "STRIPE_PRODUCT_PRO_YEARLY_PRICE_ID",
             "price_pro_yearly",
           ),
         },
       },
-      [PREMIUM_PRODUCT]: {
-        [MONTHLY_BILLING_CYCLE]: {
+      PREMIUM: {
+        MONTHLY: {
           PRICE_ID: getEnv(
             "STRIPE_PRODUCT_PREMIUM_MONTHLY_PRICE_ID",
             "price_premium_monthly",
           ),
         },
-        [YEARLY_BILLING_CYCLE]: {
+        YEARLY: {
           PRICE_ID: getEnv(
             "STRIPE_PRODUCT_PREMIUM_YEARLY_PRICE_ID",
             "price_premium_yearly",
@@ -109,5 +101,10 @@ export default {
     PROJECT_ID: getEnv("GCP_PROJECT_ID", "your-project-id"),
     BUCKET_NAME: getEnv("GCP_BUCKET_NAME", "your-bucket-name"),
     SIGNED_URL_EXPIRY_SECONDS: 60 * 60,
+  },
+  AI: {
+    GOOGLE: {
+      API_KEY: getEnv("GOOGLE_AI_API_KEY", "google_api_key"),
+    },
   },
 };

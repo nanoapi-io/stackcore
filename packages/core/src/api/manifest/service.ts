@@ -1,18 +1,19 @@
 import { db } from "../../db/database.ts";
-import type { DependencyManifest } from "../../manifest/dependencyManifest/types.ts";
 import { generateAuditManifest } from "../../manifest/service.ts";
 import settings from "../../settings.ts";
 import { StripeService } from "../../stripe/index.ts";
 import type {
-  GetManifestAuditResponse,
-  GetManifestDetailsResponse,
-  GetManifestsResponse,
-} from "./types.ts";
+  dependencyManifestTypes,
+  manifestApiTypes,
+} from "@stackcore/shared";
 import {
   downloadJsonFromBucket,
   getPublicLink,
   uploadJsonToBucket,
 } from "../../bucketStorage/index.ts";
+import { embedManifest } from "../../db/vectorStore.ts";
+import { createSmartFilterWorkflow } from "../../manifest/smartFilter/graph.ts";
+import { HumanMessage } from "@langchain/core/messages";
 
 export const manifestNotFoundError = "manifest_not_found";
 export const projectNotFoundError = "project_not_found";
@@ -20,6 +21,8 @@ export const notAMemberOfWorkspaceError = "not_a_member_of_workspace";
 export const failedToGenerateAuditManifestError =
   "failed_to_generate_audit_manifest";
 export const accessDisabledError = "access_disabled";
+export const noEmbeddingsFoundForManifestError =
+  "no_embeddings_found_for_manifest";
 
 export class ManifestService {
   /**
@@ -31,7 +34,7 @@ export class ManifestService {
     branch: string | null,
     commitSha: string | null,
     commitShaDate: Date | null,
-    manifest: object,
+    manifest: dependencyManifestTypes.DependencyManifest,
   ): Promise<
     {
       id: number;
@@ -74,9 +77,8 @@ export class ManifestService {
     const manifestFileName = `${projectId}-${Date.now()}.json`;
     await uploadJsonToBucket(manifest, manifestFileName);
 
-    // Create the manifest
-    const newManifest = await db
-      .insertInto("manifest")
+    // Create the manifest and embeddings atomically
+    const newManifest = await db.insertInto("manifest")
       .values({
         project_id: projectId,
         branch,
@@ -88,6 +90,13 @@ export class ManifestService {
       })
       .returningAll()
       .executeTakeFirstOrThrow();
+
+    await embedManifest(
+      workspace.id,
+      projectId,
+      newManifest.id,
+      manifest,
+    );
 
     const stripeService = new StripeService();
 
@@ -110,7 +119,7 @@ export class ManifestService {
     projectId?: number,
     workspaceId?: number,
   ): Promise<
-    GetManifestsResponse | {
+    manifestApiTypes.GetManifestsResponse | {
       error?: string;
     }
   > {
@@ -207,7 +216,7 @@ export class ManifestService {
   public async getManifestDetails(
     userId: number,
     manifestId: number,
-  ): Promise<GetManifestDetailsResponse | { error?: string }> {
+  ): Promise<manifestApiTypes.GetManifestDetailsResponse | { error?: string }> {
     // Get manifest with access check
     const manifest = await db
       .selectFrom("manifest")
@@ -269,7 +278,7 @@ export class ManifestService {
   public async getManifestAudit(
     userId: number,
     manifestId: number,
-  ): Promise<GetManifestAuditResponse | { error?: string }> {
+  ): Promise<manifestApiTypes.GetManifestAuditResponse | { error?: string }> {
     // Get manifest with access check
     const manifest = await db
       .selectFrom("manifest")
@@ -299,7 +308,7 @@ export class ManifestService {
 
     const manifestJson = await downloadJsonFromBucket(
       manifest.manifest,
-    ) as DependencyManifest;
+    ) as dependencyManifestTypes.DependencyManifest;
 
     try {
       const auditManifest = generateAuditManifest(
@@ -333,5 +342,57 @@ export class ManifestService {
       console.error(error);
       return { error: failedToGenerateAuditManifestError };
     }
+  }
+
+  /**
+   * Smart filtering for a manifest
+   */
+  public async smartFilter(
+    userId: number,
+    manifestId: number,
+    payload: manifestApiTypes.SmartFilterPayload,
+  ): Promise<manifestApiTypes.SmartFilterResponse | { error: string }> {
+    // Get manifest with access check
+    const manifest = await db
+      .selectFrom("manifest")
+      .selectAll("manifest")
+      .innerJoin("project", "project.id", "manifest.project_id")
+      .innerJoin("workspace", "workspace.id", "project.workspace_id")
+      .innerJoin("member", "member.workspace_id", "project.workspace_id")
+      .where("manifest.id", "=", manifestId)
+      .where("member.user_id", "=", userId)
+      .where("workspace.deactivated", "=", false)
+      .executeTakeFirst();
+
+    if (!manifest) {
+      return { error: manifestNotFoundError };
+    }
+
+    const manifestJson = await downloadJsonFromBucket(
+      manifest.manifest,
+    ) as dependencyManifestTypes.DependencyManifest;
+
+    const workflow = createSmartFilterWorkflow(
+      manifest.id,
+      manifestJson,
+    );
+
+    const result = await workflow.invoke({
+      userPrompt: payload.prompt,
+      messages: [new HumanMessage(payload.prompt)],
+    });
+
+    const success = result.results.data.length > 0;
+
+    const response: manifestApiTypes.SmartFilterResponse = {
+      success,
+      message: result.messages[result.messages.length - 1].content.toString(),
+      results: result.results.data.map((result) => ({
+        fileId: result.fileId,
+        symbolId: result.symbolId,
+      })),
+    };
+
+    return response;
   }
 }

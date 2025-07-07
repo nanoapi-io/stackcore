@@ -4,14 +4,7 @@ import { db, destroyKyselyDb, initKyselyDb } from "../../db/database.ts";
 import { resetTables } from "../../testHelpers/db.ts";
 import { createTestUserAndToken } from "../../testHelpers/auth.ts";
 import { WorkspaceService } from "../workspace/service.ts";
-import { BillingApiTypes } from "../responseType.ts";
-import { type ADMIN_ROLE, MEMBER_ROLE } from "../../db/models/member.ts";
-import {
-  BASIC_PRODUCT,
-  MONTHLY_BILLING_CYCLE,
-  PRO_PRODUCT,
-  YEARLY_BILLING_CYCLE,
-} from "../../db/models/workspace.ts";
+import { billingApiTypes, memberTypes, stripeTypes } from "@stackcore/shared";
 import { StripeService } from "../../stripe/index.ts";
 
 // Helper function to create a team workspace and add user as admin
@@ -33,7 +26,8 @@ async function createTestTeamWorkspace(userId: number, workspaceName: string) {
 async function addMemberToWorkspace(
   workspaceId: number,
   userId: number,
-  role: typeof ADMIN_ROLE | typeof MEMBER_ROLE = MEMBER_ROLE,
+  role: typeof memberTypes.ADMIN_ROLE | typeof memberTypes.MEMBER_ROLE =
+    memberTypes.MEMBER_ROLE,
 ) {
   await db
     .insertInto("member")
@@ -61,8 +55,8 @@ async function setupBasicSubscription(workspaceId: number) {
   const stripeService = new StripeService();
   const subscription = await stripeService.createSubscription(
     workspace.stripe_customer_id,
-    BASIC_PRODUCT,
-    MONTHLY_BILLING_CYCLE,
+    stripeTypes.BASIC_PRODUCT,
+    stripeTypes.MONTHLY_BILLING_CYCLE,
     null,
   );
 
@@ -151,7 +145,7 @@ Deno.test("get subscription for team workspace", async () => {
     // Set up a basic subscription
     await setupBasicSubscription(workspace.id);
 
-    const { url, method } = BillingApiTypes.prepareGetSubscription(
+    const { url, method } = billingApiTypes.prepareGetSubscription(
       workspace.id,
     );
 
@@ -205,7 +199,7 @@ Deno.test("get subscription for team workspace - with matching price ID for basi
       "price_basic_monthly",
     );
 
-    const { url, method } = BillingApiTypes.prepareGetSubscription(
+    const { url, method } = billingApiTypes.prepareGetSubscription(
       workspace.id,
     );
 
@@ -259,7 +253,7 @@ Deno.test("get subscription for team workspace - with matching price ID for pro 
       "price_pro_yearly",
     );
 
-    const { url, method } = BillingApiTypes.prepareGetSubscription(
+    const { url, method } = billingApiTypes.prepareGetSubscription(
       workspace.id,
     );
 
@@ -312,7 +306,7 @@ Deno.test("get subscription for team workspace - with matching price ID for prem
       "price_premium_monthly",
     );
 
-    const { url, method } = BillingApiTypes.prepareGetSubscription(
+    const { url, method } = billingApiTypes.prepareGetSubscription(
       workspace.id,
     );
 
@@ -357,7 +351,7 @@ Deno.test("get subscription - not a member of workspace", async () => {
     // Create second user (not a member)
     const { token: nonMemberToken } = await createTestUserAndToken();
 
-    const { url, method } = BillingApiTypes.prepareGetSubscription(
+    const { url, method } = billingApiTypes.prepareGetSubscription(
       workspace.id,
     );
 
@@ -422,10 +416,10 @@ Deno.test("upgrade subscription from basic to pro", async () => {
     // Set up basic subscription first
     await setupBasicSubscription(workspace.id);
 
-    const { url, method, body } = BillingApiTypes.prepareUpgradeSubscription({
+    const { url, method, body } = billingApiTypes.prepareUpgradeSubscription({
       workspaceId: workspace.id,
-      product: PRO_PRODUCT,
-      billingCycle: MONTHLY_BILLING_CYCLE,
+      product: stripeTypes.PRO_PRODUCT,
+      billingCycle: stripeTypes.MONTHLY_BILLING_CYCLE,
     });
 
     const response = await api.handle(
@@ -473,10 +467,10 @@ Deno.test("upgrade subscription from basic to pro - with matching price ID and p
       true,
     );
 
-    const { url, method, body } = BillingApiTypes.prepareUpgradeSubscription({
+    const { url, method, body } = billingApiTypes.prepareUpgradeSubscription({
       workspaceId: workspace.id,
-      product: PRO_PRODUCT,
-      billingCycle: MONTHLY_BILLING_CYCLE,
+      product: stripeTypes.PRO_PRODUCT,
+      billingCycle: stripeTypes.MONTHLY_BILLING_CYCLE,
     });
 
     const response = await api.handle(
@@ -518,10 +512,10 @@ Deno.test("upgrade subscription - not a member", async () => {
     // Create second user (not a member)
     const { token: nonMemberToken } = await createTestUserAndToken();
 
-    const { url, method, body } = BillingApiTypes.prepareUpgradeSubscription({
+    const { url, method, body } = billingApiTypes.prepareUpgradeSubscription({
       workspaceId: workspace.id,
-      product: PRO_PRODUCT,
-      billingCycle: MONTHLY_BILLING_CYCLE,
+      product: stripeTypes.PRO_PRODUCT,
+      billingCycle: stripeTypes.MONTHLY_BILLING_CYCLE,
     });
 
     const response = await api.handle(
@@ -559,12 +553,16 @@ Deno.test("upgrade subscription - not an admin", async () => {
     // Create member user (not admin)
     const { userId: memberUserId, token: memberToken } =
       await createTestUserAndToken();
-    await addMemberToWorkspace(workspace.id, memberUserId, MEMBER_ROLE);
+    await addMemberToWorkspace(
+      workspace.id,
+      memberUserId,
+      memberTypes.MEMBER_ROLE,
+    );
 
-    const { url, method, body } = BillingApiTypes.prepareUpgradeSubscription({
+    const { url, method, body } = billingApiTypes.prepareUpgradeSubscription({
       workspaceId: workspace.id,
-      product: PRO_PRODUCT,
-      billingCycle: MONTHLY_BILLING_CYCLE,
+      product: stripeTypes.PRO_PRODUCT,
+      billingCycle: stripeTypes.MONTHLY_BILLING_CYCLE,
     });
 
     const response = await api.handle(
@@ -604,7 +602,7 @@ Deno.test("upgrade subscription - invalid product", async () => {
         body: JSON.stringify({
           workspaceId: workspace.id,
           product: "invalid_product",
-          billingCycle: MONTHLY_BILLING_CYCLE,
+          billingCycle: stripeTypes.MONTHLY_BILLING_CYCLE,
         }),
         headers: {
           "Content-Type": "application/json",
@@ -636,10 +634,10 @@ Deno.test("upgrade subscription to same product and billing cycle", async () => 
     // Set up basic subscription first
     await setupBasicSubscription(workspace.id);
 
-    const { url, method, body } = BillingApiTypes.prepareUpgradeSubscription({
+    const { url, method, body } = billingApiTypes.prepareUpgradeSubscription({
       workspaceId: workspace.id,
-      product: BASIC_PRODUCT, // Same product
-      billingCycle: MONTHLY_BILLING_CYCLE, // Same billing cycle
+      product: stripeTypes.BASIC_PRODUCT, // Same product
+      billingCycle: stripeTypes.MONTHLY_BILLING_CYCLE, // Same billing cycle
     });
 
     const response = await api.handle(
@@ -687,8 +685,8 @@ Deno.test("upgrade subscription - cannot upgrade from pro to basic (inferior pro
     }
     await stripeService.createSubscription(
       workspace.stripe_customer_id,
-      PRO_PRODUCT,
-      MONTHLY_BILLING_CYCLE,
+      stripeTypes.PRO_PRODUCT,
+      stripeTypes.MONTHLY_BILLING_CYCLE,
       null,
     );
 
@@ -699,10 +697,10 @@ Deno.test("upgrade subscription - cannot upgrade from pro to basic (inferior pro
       true,
     );
 
-    const { url, method, body } = BillingApiTypes.prepareUpgradeSubscription({
+    const { url, method, body } = billingApiTypes.prepareUpgradeSubscription({
       workspaceId: workspace.id,
-      product: BASIC_PRODUCT, // Trying to "upgrade" to inferior product
-      billingCycle: MONTHLY_BILLING_CYCLE,
+      product: stripeTypes.BASIC_PRODUCT, // Trying to "upgrade" to inferior product
+      billingCycle: stripeTypes.MONTHLY_BILLING_CYCLE,
     });
 
     const response = await api.handle(
@@ -747,15 +745,15 @@ Deno.test("downgrade subscription from pro to basic", async () => {
     }
     await stripeService.createSubscription(
       workspace.stripe_customer_id,
-      PRO_PRODUCT,
-      MONTHLY_BILLING_CYCLE,
+      stripeTypes.PRO_PRODUCT,
+      stripeTypes.MONTHLY_BILLING_CYCLE,
       null,
     );
 
-    const { url, method, body } = BillingApiTypes.prepareDowngradeSubscription({
+    const { url, method, body } = billingApiTypes.prepareDowngradeSubscription({
       workspaceId: workspace.id,
-      product: BASIC_PRODUCT,
-      billingCycle: MONTHLY_BILLING_CYCLE,
+      product: stripeTypes.BASIC_PRODUCT,
+      billingCycle: stripeTypes.MONTHLY_BILLING_CYCLE,
     });
 
     const response = await api.handle(
@@ -793,10 +791,10 @@ Deno.test("downgrade subscription - cannot downgrade to superior product", async
     // Set up basic subscription first
     await setupBasicSubscription(workspace.id);
 
-    const { url, method, body } = BillingApiTypes.prepareDowngradeSubscription({
+    const { url, method, body } = billingApiTypes.prepareDowngradeSubscription({
       workspaceId: workspace.id,
-      product: PRO_PRODUCT, // Superior product
-      billingCycle: MONTHLY_BILLING_CYCLE,
+      product: stripeTypes.PRO_PRODUCT, // Superior product
+      billingCycle: stripeTypes.MONTHLY_BILLING_CYCLE,
     });
 
     const response = await api.handle(
@@ -841,8 +839,8 @@ Deno.test("downgrade subscription from pro to basic - with matching price ID", a
     }
     await stripeService.createSubscription(
       workspace.stripe_customer_id,
-      PRO_PRODUCT,
-      MONTHLY_BILLING_CYCLE,
+      stripeTypes.PRO_PRODUCT,
+      stripeTypes.MONTHLY_BILLING_CYCLE,
       null,
     );
 
@@ -852,10 +850,10 @@ Deno.test("downgrade subscription from pro to basic - with matching price ID", a
       "price_pro_monthly",
     );
 
-    const { url, method, body } = BillingApiTypes.prepareDowngradeSubscription({
+    const { url, method, body } = billingApiTypes.prepareDowngradeSubscription({
       workspaceId: workspace.id,
-      product: BASIC_PRODUCT,
-      billingCycle: MONTHLY_BILLING_CYCLE,
+      product: stripeTypes.BASIC_PRODUCT,
+      billingCycle: stripeTypes.MONTHLY_BILLING_CYCLE,
     });
 
     const response = await api.handle(
@@ -893,7 +891,7 @@ Deno.test("create portal session", async () => {
       "Test Team Workspace",
     );
 
-    const { url, method, body } = BillingApiTypes.prepareCreatePortalSession({
+    const { url, method, body } = billingApiTypes.prepareCreatePortalSession({
       workspaceId: workspace.id,
       returnUrl: "https://example.com/billing",
     });
@@ -934,7 +932,7 @@ Deno.test("create portal session - not a member", async () => {
     // Create second user (not a member)
     const { token: nonMemberToken } = await createTestUserAndToken();
 
-    const { url, method, body } = BillingApiTypes.prepareCreatePortalSession({
+    const { url, method, body } = billingApiTypes.prepareCreatePortalSession({
       workspaceId: workspace.id,
       returnUrl: "https://example.com/billing",
     });
@@ -1005,7 +1003,7 @@ Deno.test("create payment method portal session", async () => {
       url,
       method,
       body,
-    } = BillingApiTypes.prepareCreatePortalSessionPaymentMethod({
+    } = billingApiTypes.prepareCreatePortalSessionPaymentMethod({
       workspaceId: workspace.id,
       returnUrl: "https://example.com/billing",
     });
@@ -1050,7 +1048,7 @@ Deno.test("create payment method portal session - not a member", async () => {
       url,
       method,
       body,
-    } = BillingApiTypes.prepareCreatePortalSessionPaymentMethod({
+    } = billingApiTypes.prepareCreatePortalSessionPaymentMethod({
       workspaceId: workspace.id,
       returnUrl: "https://example.com/billing",
     });
@@ -1127,8 +1125,8 @@ Deno.test("all endpoints require authentication", async () => {
         method: "POST",
         body: {
           workspaceId: workspace.id,
-          product: PRO_PRODUCT,
-          billingCycle: MONTHLY_BILLING_CYCLE,
+          product: stripeTypes.PRO_PRODUCT,
+          billingCycle: stripeTypes.MONTHLY_BILLING_CYCLE,
         },
       },
       {
@@ -1136,8 +1134,8 @@ Deno.test("all endpoints require authentication", async () => {
         method: "POST",
         body: {
           workspaceId: workspace.id,
-          product: BASIC_PRODUCT,
-          billingCycle: MONTHLY_BILLING_CYCLE,
+          product: stripeTypes.BASIC_PRODUCT,
+          billingCycle: stripeTypes.MONTHLY_BILLING_CYCLE,
         },
       },
       {
@@ -1206,16 +1204,16 @@ Deno.test("upgrade subscription - yearly to monthly billing cycle change", async
     }
     await stripeService.createSubscription(
       workspace.stripe_customer_id,
-      PRO_PRODUCT,
-      YEARLY_BILLING_CYCLE,
+      stripeTypes.PRO_PRODUCT,
+      stripeTypes.YEARLY_BILLING_CYCLE,
       null,
     );
 
     // Try to "upgrade" to monthly (which is actually inferior)
-    const { url, method, body } = BillingApiTypes.prepareUpgradeSubscription({
+    const { url, method, body } = billingApiTypes.prepareUpgradeSubscription({
       workspaceId: workspace.id,
-      product: PRO_PRODUCT,
-      billingCycle: MONTHLY_BILLING_CYCLE,
+      product: stripeTypes.PRO_PRODUCT,
+      billingCycle: stripeTypes.MONTHLY_BILLING_CYCLE,
     });
 
     const response = await api.handle(
@@ -1257,16 +1255,16 @@ Deno.test("downgrade subscription - monthly to yearly billing cycle change", asy
     }
     await stripeService.createSubscription(
       workspace.stripe_customer_id,
-      PRO_PRODUCT,
-      MONTHLY_BILLING_CYCLE,
+      stripeTypes.PRO_PRODUCT,
+      stripeTypes.MONTHLY_BILLING_CYCLE,
       null,
     );
 
     // Try to "downgrade" to yearly (which is actually superior)
-    const { url, method, body } = BillingApiTypes.prepareDowngradeSubscription({
+    const { url, method, body } = billingApiTypes.prepareDowngradeSubscription({
       workspaceId: workspace.id,
-      product: PRO_PRODUCT,
-      billingCycle: YEARLY_BILLING_CYCLE,
+      product: stripeTypes.PRO_PRODUCT,
+      billingCycle: stripeTypes.YEARLY_BILLING_CYCLE,
     });
 
     const response = await api.handle(
@@ -1311,8 +1309,8 @@ Deno.test("upgrade subscription - pro monthly to pro yearly (billing cycle upgra
     }
     await stripeService.createSubscription(
       workspace.stripe_customer_id,
-      PRO_PRODUCT,
-      MONTHLY_BILLING_CYCLE,
+      stripeTypes.PRO_PRODUCT,
+      stripeTypes.MONTHLY_BILLING_CYCLE,
       null,
     );
 
@@ -1323,10 +1321,10 @@ Deno.test("upgrade subscription - pro monthly to pro yearly (billing cycle upgra
       true,
     );
 
-    const { url, method, body } = BillingApiTypes.prepareUpgradeSubscription({
+    const { url, method, body } = billingApiTypes.prepareUpgradeSubscription({
       workspaceId: workspace.id,
-      product: PRO_PRODUCT, // Same product
-      billingCycle: YEARLY_BILLING_CYCLE, // Upgrade to yearly
+      product: stripeTypes.PRO_PRODUCT, // Same product
+      billingCycle: stripeTypes.YEARLY_BILLING_CYCLE, // Upgrade to yearly
     });
 
     const response = await api.handle(
@@ -1378,10 +1376,10 @@ Deno.test(
         true,
       );
 
-      const { url, method, body } = BillingApiTypes.prepareUpgradeSubscription({
+      const { url, method, body } = billingApiTypes.prepareUpgradeSubscription({
         workspaceId: workspace.id,
-        product: BASIC_PRODUCT, // Same product
-        billingCycle: MONTHLY_BILLING_CYCLE, // Same billing cycle
+        product: stripeTypes.BASIC_PRODUCT, // Same product
+        billingCycle: stripeTypes.MONTHLY_BILLING_CYCLE, // Same billing cycle
       });
 
       const response = await api.handle(

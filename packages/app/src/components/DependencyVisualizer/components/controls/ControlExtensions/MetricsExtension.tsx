@@ -1,13 +1,4 @@
-import {
-  type Metric,
-  metricCharacterCount,
-  metricCodeCharacterCount,
-  metricCodeLineCount,
-  metricCyclomaticComplexity,
-  metricDependencyCount,
-  metricDependentCount,
-  metricLinesCount,
-} from "@stackcore/core/manifest";
+import { dependencyManifestTypes } from "@stackcore/shared";
 import {
   Tooltip,
   TooltipContent,
@@ -25,32 +16,32 @@ import {
 export default function MetricsExtension(props: {
   busy: boolean;
   metricState: {
-    metric: Metric | undefined;
-    setMetric: (metric: Metric | undefined) => void;
+    metric: dependencyManifestTypes.Metric | undefined;
+    setMetric: (metric: dependencyManifestTypes.Metric | undefined) => void;
   };
 }) {
   const metric = props.metricState.metric;
 
-  function getMetricLabel(metric: Metric | undefined) {
-    if (metric === metricLinesCount) {
+  function getMetricLabel(metric: dependencyManifestTypes.Metric | undefined) {
+    if (metric === dependencyManifestTypes.metricLinesCount) {
       return "Lines";
     }
-    if (metric === metricCodeLineCount) {
+    if (metric === dependencyManifestTypes.metricCodeLineCount) {
       return "Code Lines";
     }
-    if (metric === metricCharacterCount) {
+    if (metric === dependencyManifestTypes.metricCharacterCount) {
       return "Chars";
     }
-    if (metric === metricCodeCharacterCount) {
+    if (metric === dependencyManifestTypes.metricCodeCharacterCount) {
       return "Code Chars";
     }
-    if (metric === metricDependencyCount) {
+    if (metric === dependencyManifestTypes.metricDependencyCount) {
       return "Dependencies";
     }
-    if (metric === metricDependentCount) {
+    if (metric === dependencyManifestTypes.metricDependentCount) {
       return "Dependents";
     }
-    if (metric === metricCyclomaticComplexity) {
+    if (metric === dependencyManifestTypes.metricCyclomaticComplexity) {
       return "Complexity";
     } else {
       return "None";
@@ -73,14 +64,38 @@ export default function MetricsExtension(props: {
         <DropdownMenuContent>
           {([
             { metric: undefined, label: "No Metric" },
-            { metric: metricLinesCount, label: "Lines" },
-            { metric: metricCodeLineCount, label: "Code Lines" },
-            { metric: metricCharacterCount, label: "Total Characters" },
-            { metric: metricCodeCharacterCount, label: "Code Characters" },
-            { metric: metricDependencyCount, label: "Dependencies" },
-            { metric: metricDependentCount, label: "Dependents" },
-            { metric: metricCyclomaticComplexity, label: "Complexity" },
-          ] as { metric: Metric | undefined; label: string }[]).map((val) => (
+            {
+              metric: dependencyManifestTypes.metricLinesCount,
+              label: "Lines",
+            },
+            {
+              metric: dependencyManifestTypes.metricCodeLineCount,
+              label: "Code Lines",
+            },
+            {
+              metric: dependencyManifestTypes.metricCharacterCount,
+              label: "Total Characters",
+            },
+            {
+              metric: dependencyManifestTypes.metricCodeCharacterCount,
+              label: "Code Characters",
+            },
+            {
+              metric: dependencyManifestTypes.metricDependencyCount,
+              label: "Dependencies",
+            },
+            {
+              metric: dependencyManifestTypes.metricDependentCount,
+              label: "Dependents",
+            },
+            {
+              metric: dependencyManifestTypes.metricCyclomaticComplexity,
+              label: "Complexity",
+            },
+          ] as {
+            metric: dependencyManifestTypes.Metric | undefined;
+            label: string;
+          }[]).map((val) => (
             <DropdownMenuItem
               key={val.label}
               onClick={() => props.metricState?.setMetric?.(val.metric)}

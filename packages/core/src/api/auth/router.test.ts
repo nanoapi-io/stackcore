@@ -7,8 +7,7 @@ import { getNumericDate, verify } from "djwt";
 import settings from "../../settings.ts";
 import type { User } from "../../db/models/user.ts";
 import { createTestUserAndToken } from "../../testHelpers/auth.ts";
-import { ADMIN_ROLE } from "../../db/models/member.ts";
-import { prepareMe, prepareRequestOtp, prepareVerifyOtp } from "./types.ts";
+import { authApiTypes, memberTypes } from "@stackcore/shared";
 
 Deno.test("request otp, invalid email", async () => {
   initKyselyDb();
@@ -17,7 +16,7 @@ Deno.test("request otp, invalid email", async () => {
   try {
     const email = `invalidemail`;
 
-    const requestInfo = prepareRequestOtp({ email });
+    const requestInfo = authApiTypes.prepareRequestOtp({ email });
 
     const response = await api.handle(
       new Request(`http://localhost:3000${requestInfo.url}`, {
@@ -52,7 +51,7 @@ Deno.test("request otp for new user", async () => {
     // User should not exist
     assertEquals(user, undefined);
 
-    const requestInfo = prepareRequestOtp({ email });
+    const requestInfo = authApiTypes.prepareRequestOtp({ email });
 
     const response = await api.handle(
       new Request(`http://localhost:3000${requestInfo.url}`, {
@@ -130,7 +129,7 @@ Deno.test("request otp for existing user", async () => {
     assertEquals(user.otp, null);
     assertEquals(user.otp_expires_at, null);
 
-    const requestInfo = prepareRequestOtp({ email });
+    const requestInfo = authApiTypes.prepareRequestOtp({ email });
 
     const response = await api.handle(
       new Request(`http://localhost:3000${requestInfo.url}`, {
@@ -177,7 +176,7 @@ Deno.test("verify otp for new user", async () => {
       .executeTakeFirstOrThrow();
     if (!otp) throw new Error("Failed to get OTP");
 
-    const requestInfo = prepareVerifyOtp({ email, otp });
+    const requestInfo = authApiTypes.prepareVerifyOtp({ email, otp });
 
     const response = await api.handle(
       new Request(`http://localhost:3000${requestInfo.url}`, {
@@ -238,7 +237,7 @@ Deno.test("verify otp for new user", async () => {
       .where("user_id", "=", user.id)
       .executeTakeFirstOrThrow();
 
-    assertEquals(personalWorkspaceMember.role, ADMIN_ROLE);
+    assertEquals(personalWorkspaceMember.role, memberTypes.ADMIN_ROLE);
   } finally {
     await resetTables();
     await destroyKyselyDb();
@@ -253,7 +252,7 @@ Deno.test("request otp - should prevent spam requests within interval", async ()
     const email = `test-${crypto.randomUUID()}@example.com`;
 
     // First OTP request should succeed
-    const firstRequestInfo = prepareRequestOtp({ email });
+    const firstRequestInfo = authApiTypes.prepareRequestOtp({ email });
     const firstResponse = await api.handle(
       new Request(`http://localhost:3000${firstRequestInfo.url}`, {
         method: firstRequestInfo.method,
@@ -280,7 +279,7 @@ Deno.test("request otp - should prevent spam requests within interval", async ()
     assertNotEquals(user?.otp_requested_at, null);
 
     // Second OTP request immediately after should be rejected
-    const secondRequestInfo = prepareRequestOtp({ email });
+    const secondRequestInfo = authApiTypes.prepareRequestOtp({ email });
     const secondResponse = await api.handle(
       new Request(`http://localhost:3000${secondRequestInfo.url}`, {
         method: secondRequestInfo.method,
@@ -352,7 +351,7 @@ Deno.test("verify otp for existing user", async () => {
       .where("user_id", "=", user.id)
       .executeTakeFirstOrThrow();
 
-    assertEquals(personalWorkspaceMember.role, ADMIN_ROLE);
+    assertEquals(personalWorkspaceMember.role, memberTypes.ADMIN_ROLE);
 
     // set otp_requested_at in the past to make sure the user can request an OTP again
     await db
@@ -373,7 +372,7 @@ Deno.test("verify otp for existing user", async () => {
       .executeTakeFirstOrThrow();
     if (!otp) throw new Error("Failed to get OTP");
 
-    const requestInfo = prepareVerifyOtp({ email, otp });
+    const requestInfo = authApiTypes.prepareVerifyOtp({ email, otp });
 
     const response = await api.handle(
       new Request(`http://localhost:3000${requestInfo.url}`, {
@@ -443,7 +442,10 @@ Deno.test("verify otp - should block after max failed attempts", async () => {
 
     // Make 3 failed attempts (assuming MAX_ATTEMPTS is 3)
     for (let i = 0; i < settings.OTP.MAX_ATTEMPTS; i++) {
-      const requestInfo = prepareVerifyOtp({ email, otp: wrongOtp });
+      const requestInfo = authApiTypes.prepareVerifyOtp({
+        email,
+        otp: wrongOtp,
+      });
 
       const response = await api.handle(
         new Request(`http://localhost:3000${requestInfo.url}`, {
@@ -461,7 +463,10 @@ Deno.test("verify otp - should block after max failed attempts", async () => {
     }
 
     // Next attempt should be blocked
-    const blockedRequestInfo = prepareVerifyOtp({ email, otp: wrongOtp });
+    const blockedRequestInfo = authApiTypes.prepareVerifyOtp({
+      email,
+      otp: wrongOtp,
+    });
     const blockedResponse = await api.handle(
       new Request(`http://localhost:3000${blockedRequestInfo.url}`, {
         method: blockedRequestInfo.method,
@@ -477,7 +482,10 @@ Deno.test("verify otp - should block after max failed attempts", async () => {
     assertEquals(blockedResponseBody.error, "otp_max_attempts");
 
     // Even correct OTP should be blocked now
-    const correctRequestInfo = prepareVerifyOtp({ email, otp: validOtp });
+    const correctRequestInfo = authApiTypes.prepareVerifyOtp({
+      email,
+      otp: validOtp,
+    });
     const correctResponse = await api.handle(
       new Request(`http://localhost:3000${correctRequestInfo.url}`, {
         method: correctRequestInfo.method,
@@ -507,7 +515,7 @@ Deno.test(
       const email = `test-${crypto.randomUUID()}@example.com`;
 
       // Request initial OTP
-      const requestOtpInfo = prepareRequestOtp({ email });
+      const requestOtpInfo = authApiTypes.prepareRequestOtp({ email });
       await api.handle(
         new Request(`http://localhost:3000${requestOtpInfo.url}`, {
           method: requestOtpInfo.method,
@@ -521,7 +529,10 @@ Deno.test(
       // Make some failed attempts
       const wrongOtp = "000000";
       for (let i = 0; i < 2; i++) {
-        const verifyInfo = prepareVerifyOtp({ email, otp: wrongOtp });
+        const verifyInfo = authApiTypes.prepareVerifyOtp({
+          email,
+          otp: wrongOtp,
+        });
         await api.handle(
           new Request(`http://localhost:3000${verifyInfo.url}`, {
             method: verifyInfo.method,
@@ -569,7 +580,7 @@ Deno.test(
       assertEquals(user.otp_attempts, 0); // Should be reset
 
       // Should be able to verify with new OTP
-      const newVerifyInfo = prepareVerifyOtp({ email, otp });
+      const newVerifyInfo = authApiTypes.prepareVerifyOtp({ email, otp });
       const response = await api.handle(
         new Request(`http://localhost:3000${newVerifyInfo.url}`, {
           method: newVerifyInfo.method,
@@ -603,7 +614,10 @@ Deno.test("verify otp - should track failed attempts correctly", async () => {
     const wrongOtp = "000000";
 
     // Make first failed attempt
-    const firstAttemptInfo = prepareVerifyOtp({ email, otp: wrongOtp });
+    const firstAttemptInfo = authApiTypes.prepareVerifyOtp({
+      email,
+      otp: wrongOtp,
+    });
     const firstResponse = await api.handle(
       new Request(`http://localhost:3000${firstAttemptInfo.url}`, {
         method: firstAttemptInfo.method,
@@ -624,7 +638,10 @@ Deno.test("verify otp - should track failed attempts correctly", async () => {
     assertEquals(user.otp_attempts, 1);
 
     // Make second failed attempt
-    const secondAttemptInfo = prepareVerifyOtp({ email, otp: wrongOtp });
+    const secondAttemptInfo = authApiTypes.prepareVerifyOtp({
+      email,
+      otp: wrongOtp,
+    });
     const secondResponse = await api.handle(
       new Request(`http://localhost:3000${secondAttemptInfo.url}`, {
         method: secondAttemptInfo.method,
@@ -656,7 +673,7 @@ Deno.test("get user info", async () => {
   try {
     const { token, userId, email } = await createTestUserAndToken();
 
-    const requestInfo = prepareMe();
+    const requestInfo = authApiTypes.prepareMe();
 
     const response = await api.handle(
       new Request(`http://localhost:3000${requestInfo.url}`, {

@@ -25,7 +25,7 @@ import {
   FormLabel,
   FormMessage,
 } from "../../components/shadcn/Form.tsx";
-import { ProjectApiTypes } from "@stackcore/core/responses";
+import { projectApiTypes } from "@stackcore/shared";
 import {
   Tabs,
   TabsContent,
@@ -102,7 +102,7 @@ export default function AddProjectPage() {
     setIsBusy(true);
 
     try {
-      const { url, method, body } = ProjectApiTypes.prepareCreateProject({
+      const { url, method, body } = projectApiTypes.prepareCreateProject({
         name: values.name,
         repoUrl: values.repoUrl,
         workspaceId: selectedWorkspaceId,
@@ -139,7 +139,7 @@ export default function AddProjectPage() {
       }
 
       const createResponseBody = await response
-        .json() as ProjectApiTypes.CreateProjectResponse;
+        .json() as projectApiTypes.CreateProjectResponse;
 
       toast.success("Project created");
 

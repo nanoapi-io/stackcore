@@ -5,7 +5,7 @@ import { resetTables } from "../../testHelpers/db.ts";
 import { createTestUserAndToken } from "../../testHelpers/auth.ts";
 import { WorkspaceService } from "../workspace/service.ts";
 import { ProjectService } from "./service.ts";
-import { ProjectApiTypes } from "../responseType.ts";
+import { projectApiTypes } from "@stackcore/shared";
 
 // --- CREATE PROJECT TESTS ---
 Deno.test("create a project", async () => {
@@ -29,7 +29,7 @@ Deno.test("create a project", async () => {
       .executeTakeFirstOrThrow();
 
     // Create a project via API
-    const { url, method, body } = ProjectApiTypes.prepareCreateProject({
+    const { url, method, body } = projectApiTypes.prepareCreateProject({
       name: "Test Project",
       repoUrl: "https://github.com/test/test",
       workspaceId: workspace.id,
@@ -126,7 +126,7 @@ Deno.test("create a project with a duplicate name should fail", async () => {
     );
 
     // Try to create a project with the same name
-    const { url, method, body } = ProjectApiTypes.prepareCreateProject({
+    const { url, method, body } = projectApiTypes.prepareCreateProject({
       name: "Test Project",
       repoUrl: "https://github.com/test/test",
       workspaceId: workspace.id,
@@ -191,7 +191,7 @@ Deno.test("create a project - non-member of workspace", async () => {
     const { token: nonMemberToken } = await createTestUserAndToken();
 
     // Try to create a project in an workspace the user is not a member of
-    const { url, method, body } = ProjectApiTypes.prepareCreateProject({
+    const { url, method, body } = projectApiTypes.prepareCreateProject({
       name: "Unauthorized Project",
       repoUrl: "https://github.com/test/test",
       workspaceId: workspace.id,
@@ -239,7 +239,7 @@ Deno.test("create project - invalid input validation", async () => {
     const { token } = await createTestUserAndToken();
 
     // Test with invalid JSON
-    const { url, method, body } = ProjectApiTypes.prepareCreateProject({
+    const { url, method, body } = projectApiTypes.prepareCreateProject({
       name: "Test Project",
       repoUrl: "https://github.com/test/test",
       workspaceId: 1,
@@ -272,7 +272,7 @@ Deno.test("create project - invalid input validation", async () => {
     assertEquals(response?.status, 400);
 
     // Test with missing required fields
-    const { url: url2, method: method2, body: body2 } = ProjectApiTypes
+    const { url: url2, method: method2, body: body2 } = projectApiTypes
       .prepareCreateProject({
         name: "Test Project",
         repoUrl: "https://github.com/test/test",
@@ -360,7 +360,7 @@ Deno.test("get project details", async () => {
       .executeTakeFirstOrThrow();
 
     // Get project details via API
-    const { url, method } = ProjectApiTypes.prepareGetProjectDetails(
+    const { url, method } = projectApiTypes.prepareGetProjectDetails(
       project.id,
     );
 
@@ -441,7 +441,7 @@ Deno.test("get project details - non-member of workspace", async () => {
     const { token: nonMemberToken } = await createTestUserAndToken();
 
     // Try to get project details as non-member
-    const { url, method } = ProjectApiTypes.prepareGetProjectDetails(
+    const { url, method } = projectApiTypes.prepareGetProjectDetails(
       project.id,
     );
 
@@ -471,7 +471,7 @@ Deno.test("get project details - project not found", async () => {
     const { token } = await createTestUserAndToken();
 
     // Try to get details for non-existent project
-    const { url, method } = ProjectApiTypes.prepareGetProjectDetails(999);
+    const { url, method } = projectApiTypes.prepareGetProjectDetails(999);
 
     const response = await api.handle(
       new Request(`http://localhost:3000${url}`, {
@@ -571,7 +571,7 @@ Deno.test("get project details - deactivated workspace", async () => {
       .execute();
 
     // Try to get project details from deactivated workspace
-    const { url, method } = ProjectApiTypes.prepareGetProjectDetails(
+    const { url, method } = projectApiTypes.prepareGetProjectDetails(
       project.id,
     );
 
@@ -641,7 +641,7 @@ Deno.test("get user projects", async () => {
       );
     }
 
-    const { url, method, body } = ProjectApiTypes.prepareGetProjects({
+    const { url, method } = projectApiTypes.prepareGetProjects({
       page: 1,
       limit: 5,
       workspaceId: workspace.id,
@@ -650,7 +650,6 @@ Deno.test("get user projects", async () => {
     const response = await api.handle(
       new Request(`http://localhost:3000${url}`, {
         method,
-        body: JSON.stringify(body),
         headers: {
           "Authorization": `Bearer ${token}`,
         },
@@ -722,7 +721,7 @@ Deno.test("get user projects, pagination", async () => {
       );
     }
 
-    const { url, method, body } = ProjectApiTypes.prepareGetProjects({
+    const { url, method } = projectApiTypes.prepareGetProjects({
       page: 2,
       limit: 5,
       workspaceId: workspace.id,
@@ -731,7 +730,6 @@ Deno.test("get user projects, pagination", async () => {
     const response = await api.handle(
       new Request(`http://localhost:3000${url}`, {
         method,
-        body: JSON.stringify(body),
         headers: {
           "Authorization": `Bearer ${token}`,
         },
@@ -803,7 +801,7 @@ Deno.test("get user projects, search by name", async () => {
       );
     }
 
-    const { url, method } = ProjectApiTypes.prepareGetProjects({
+    const { url, method } = projectApiTypes.prepareGetProjects({
       page: 1,
       limit: 5,
       search: "Test Project 0",
@@ -909,7 +907,7 @@ Deno.test("update a project", async () => {
       .executeTakeFirstOrThrow();
 
     // Create a project via API
-    const { url, method, body } = ProjectApiTypes.prepareCreateProject({
+    const { url, method, body } = projectApiTypes.prepareCreateProject({
       name: "Original Project Name",
       repoUrl: "https://github.com/test/test",
       workspaceId: workspace.id,
@@ -950,7 +948,7 @@ Deno.test("update a project", async () => {
       .executeTakeFirstOrThrow();
 
     // Update project name via API
-    const { url: url2, method: method2, body: body2 } = ProjectApiTypes
+    const { url: url2, method: method2, body: body2 } = projectApiTypes
       .prepareUpdateProject(project.id, {
         name: "Updated Project Name",
         repoUrl: "https://github.com/test/test",
@@ -1055,7 +1053,7 @@ Deno.test("update a project - non-member", async () => {
     // Create second user (not a member of the workspace)
     const { token: nonMemberTokenNM } = await createTestUserAndToken();
 
-    const { url, method, body } = ProjectApiTypes.prepareUpdateProject(
+    const { url, method, body } = projectApiTypes.prepareUpdateProject(
       project.id,
       {
         name: "Unauthorized Update",
@@ -1171,7 +1169,7 @@ Deno.test("update project - duplicate name in same workspace", async () => {
       .executeTakeFirstOrThrow();
 
     // Try to update Project 2 to have the same name as Project 1
-    const { url, method, body } = ProjectApiTypes.prepareUpdateProject(
+    const { url, method, body } = projectApiTypes.prepareUpdateProject(
       project2.id,
       {
         name: "Project 1",
@@ -1268,7 +1266,7 @@ Deno.test("delete a project", async () => {
       .executeTakeFirstOrThrow();
 
     // --- DELETE ---
-    const { url, method } = ProjectApiTypes.prepareDeleteProject(project.id);
+    const { url, method } = projectApiTypes.prepareDeleteProject(project.id);
 
     const response = await api.handle(
       new Request(`http://localhost:3000${url}`, {
@@ -1351,7 +1349,7 @@ Deno.test("delete a project - non-member", async () => {
     // Create second user (not a member of the workspace)
     const { token: nonMemberTokenNM } = await createTestUserAndToken();
 
-    const { url, method } = ProjectApiTypes.prepareDeleteProject(projectNM.id);
+    const { url, method } = projectApiTypes.prepareDeleteProject(projectNM.id);
 
     const responseNM = await api.handle(
       new Request(`http://localhost:3000${url}`, {

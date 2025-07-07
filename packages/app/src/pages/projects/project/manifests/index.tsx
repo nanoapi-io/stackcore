@@ -27,7 +27,7 @@ import {
 import { DataTablePagination } from "../../../../components/shadcn/Datatablepagination.tsx";
 import { toast } from "sonner";
 import { Eye, Plus, ScrollText } from "lucide-react";
-import { ManifestApiTypes } from "@stackcore/core/responses";
+import { manifestApiTypes } from "@stackcore/shared";
 import { Separator } from "../../../../components/shadcn/Separator.tsx";
 import { useCoreApi } from "../../../../contexts/CoreApi.tsx";
 import type { ProjectPageContext } from "../base.tsx";
@@ -39,7 +39,7 @@ export default function ProjectManifests() {
 
   const [isBusy, setIsBusy] = useState(false);
   const [manifests, setManifests] = useState<
-    ManifestApiTypes.GetManifestsResponse["results"]
+    manifestApiTypes.GetManifestsResponse["results"]
   >([]);
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState("");
@@ -59,7 +59,7 @@ export default function ProjectManifests() {
     const pageSize = pagination.pageSize;
 
     try {
-      const { url, method } = ManifestApiTypes.prepareGetManifests({
+      const { url, method } = manifestApiTypes.prepareGetManifests({
         projectId: context.project.id,
         page,
         limit: pageSize,
@@ -73,7 +73,7 @@ export default function ProjectManifests() {
       }
 
       const data = await response
-        .json() as ManifestApiTypes.GetManifestsResponse;
+        .json() as manifestApiTypes.GetManifestsResponse;
 
       setManifests(data.results);
       setTotal(data.total);
@@ -98,7 +98,7 @@ export default function ProjectManifests() {
   }, [search]);
 
   const columns: ColumnDef<
-    ManifestApiTypes.GetManifestsResponse["results"][number]
+    manifestApiTypes.GetManifestsResponse["results"][number]
   >[] = [
     {
       accessorKey: "branch",
@@ -160,6 +160,32 @@ export default function ProjectManifests() {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => {
+        // async function handleClick() {
+        //   const {
+        //     url: smartFilterUrl,
+        //     method: smartFilterMethod,
+        //     body: smartFilterBody,
+        //   } = manifestApiTypes.prepareSmartFilter(
+        //     row.original.id,
+        //     {
+        //       prompt:
+        //         "show me all classes with cyclomatic complexity more than 20",
+        //     },
+        //   );
+
+        //   await coreApi.handleRequest(
+        //     smartFilterUrl,
+        //     smartFilterMethod,
+        //     smartFilterBody,
+        //   );
+        //   console.log("clicked", row.original.id);
+        // }
+        // return (
+        //   <Button variant="secondary" size="icon" onClick={handleClick}>
+        //     <Eye />
+        //   </Button>
+        // )
+
         return (
           <Link
             to={`/projects/${context.project.id}/manifests/${row.original.id}`}

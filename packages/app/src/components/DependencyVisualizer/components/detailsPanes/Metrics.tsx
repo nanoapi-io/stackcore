@@ -1,41 +1,34 @@
 import {
-  type AuditManifest,
-  type DependencyManifest,
-  metricCharacterCount,
-  metricCodeCharacterCount,
-  metricCodeLineCount,
-  metricCyclomaticComplexity,
-  metricDependencyCount,
-  metricDependentCount,
-  metricLinesCount,
-} from "@stackcore/core/manifest";
+  type auditManifestTypes,
+  dependencyManifestTypes,
+} from "@stackcore/shared";
 import { Alert, AlertDescription } from "../../../shadcn/Alert.tsx";
 
 export default function Metrics(props: {
   dependencyManifest:
-    | DependencyManifest[string]
-    | DependencyManifest[string]["symbols"][string]
+    | dependencyManifestTypes.DependencyManifest[string]
+    | dependencyManifestTypes.DependencyManifest[string]["symbols"][string]
     | undefined;
   auditManifest:
-    | AuditManifest[string]
-    | AuditManifest[string]["symbols"][string]
+    | auditManifestTypes.AuditManifest[string]
+    | auditManifestTypes.AuditManifest[string]["symbols"][string]
     | undefined;
 }) {
   function metricToHumanString(metric: string) {
     switch (metric) {
-      case metricLinesCount:
+      case dependencyManifestTypes.metricLinesCount:
         return "Lines";
-      case metricCodeLineCount:
+      case dependencyManifestTypes.metricCodeLineCount:
         return "Code Lines";
-      case metricCharacterCount:
+      case dependencyManifestTypes.metricCharacterCount:
         return "Characters";
-      case metricCodeCharacterCount:
+      case dependencyManifestTypes.metricCodeCharacterCount:
         return "Code Characters";
-      case metricDependencyCount:
+      case dependencyManifestTypes.metricDependencyCount:
         return "Dependencies";
-      case metricDependentCount:
+      case dependencyManifestTypes.metricDependentCount:
         return "Dependents";
-      case metricCyclomaticComplexity:
+      case dependencyManifestTypes.metricCyclomaticComplexity:
         return "Cyclomatic Complexity";
       default:
         return metric;

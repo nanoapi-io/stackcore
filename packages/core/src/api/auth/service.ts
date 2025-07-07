@@ -3,14 +3,10 @@ import { db } from "../../db/database.ts";
 import settings from "../../settings.ts";
 import { sendOtpEmail, sendWelcomeEmail } from "../../email/index.ts";
 import { StripeService } from "../../stripe/index.ts";
-import {
-  BASIC_PRODUCT,
-  MONTHLY_BILLING_CYCLE,
-  shouldHaveAccess,
-} from "../../db/models/workspace.ts";
-import { ADMIN_ROLE } from "../../db/models/member.ts";
+import { shouldHaveAccess } from "../../db/models/workspace.ts";
 import type { User } from "../../db/models/user.ts";
-import { type Session, sessionSchema } from "./types.ts";
+import { memberTypes, stripeTypes } from "@stackcore/shared";
+import { type Session, sessionSchema } from "./middleware.ts";
 
 export const secretCryptoKey = await crypto.subtle.importKey(
   "raw",
@@ -177,7 +173,7 @@ export class AuthService {
         await trx
           .insertInto("member")
           .values({
-            role: ADMIN_ROLE,
+            role: memberTypes.ADMIN_ROLE,
             workspace_id: newPersonalWorkspace.id,
             user_id: user.id,
             created_at: new Date(),
@@ -191,8 +187,8 @@ export class AuthService {
         );
         const subscription = await stripeService.createSubscription(
           customer.id,
-          BASIC_PRODUCT,
-          MONTHLY_BILLING_CYCLE,
+          stripeTypes.BASIC_PRODUCT,
+          stripeTypes.MONTHLY_BILLING_CYCLE,
           settings.STRIPE.BILLING_THRESHOLD_BASIC,
         );
 

@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { useCoreApi } from "../../../../contexts/CoreApi.tsx";
-import { ManifestApiTypes } from "@stackcore/core/responses";
-import type {
-  AuditManifest,
-  DependencyManifest,
-} from "@stackcore/core/manifest";
+import {
+  type auditManifestTypes,
+  type dependencyManifestTypes,
+  manifestApiTypes,
+} from "@stackcore/shared";
 import { Loader } from "lucide-react";
 import DependencyVisualizer from "../../../../components/DependencyVisualizer/DependencyVisualizer.tsx";
 
@@ -18,15 +18,15 @@ export default function ProjectManifest() {
   const [isBusy, setIsBusy] = useState(true);
 
   const [manifestData, setManifestData] = useState<
-    ManifestApiTypes.GetManifestDetailsResponse | undefined
+    manifestApiTypes.GetManifestDetailsResponse | undefined
   >(undefined);
 
   const [dependencyManifest, setDependencyManifest] = useState<
-    DependencyManifest | undefined
+    dependencyManifestTypes.DependencyManifest | undefined
   >(undefined);
 
   const [auditManifest, setAuditManifest] = useState<
-    ManifestApiTypes.GetManifestAuditResponse | undefined
+    manifestApiTypes.GetManifestAuditResponse | undefined
   >(undefined);
 
   async function fetchManifest(url: string) {
@@ -35,7 +35,7 @@ export default function ProjectManifest() {
       throw new Error("Failed to fetch manifest");
     }
     const manifest = await response
-      .json() as unknown as DependencyManifest;
+      .json() as unknown as dependencyManifestTypes.DependencyManifest;
 
     return manifest;
   }
@@ -53,7 +53,7 @@ export default function ProjectManifest() {
         const manifestIdNum = parseInt(manifestId);
 
         // Fetch manifest details
-        const { url: manifestUrl, method: manifestMethod } = ManifestApiTypes
+        const { url: manifestUrl, method: manifestMethod } = manifestApiTypes
           .prepareGetManifestDetails(manifestIdNum);
         const manifestResponse = await coreApi.handleRequest(
           manifestUrl,
@@ -65,14 +65,14 @@ export default function ProjectManifest() {
         }
 
         const manifest = await manifestResponse
-          .json() as ManifestApiTypes.GetManifestDetailsResponse;
+          .json() as manifestApiTypes.GetManifestDetailsResponse;
         setManifestData(manifest);
 
         const dependencyManifest = await fetchManifest(manifest.manifest);
         setDependencyManifest(dependencyManifest);
 
         // Fetch audit manifest
-        const { url: auditUrl, method: auditMethod } = ManifestApiTypes
+        const { url: auditUrl, method: auditMethod } = manifestApiTypes
           .prepareGetManifestAudit(manifestIdNum);
         const auditResponse = await coreApi.handleRequest(
           auditUrl,
@@ -107,8 +107,8 @@ export default function ProjectManifest() {
   return (
     <DependencyVisualizer
       manifestId={manifestData?.id || 0}
-      dependencyManifest={dependencyManifest as DependencyManifest}
-      auditManifest={auditManifest as AuditManifest}
+      dependencyManifest={dependencyManifest as dependencyManifestTypes.DependencyManifest}
+      auditManifest={auditManifest as auditManifestTypes.AuditManifest}
     />
   );
 }

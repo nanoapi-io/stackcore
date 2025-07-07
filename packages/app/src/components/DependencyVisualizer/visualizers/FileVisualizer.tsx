@@ -4,10 +4,9 @@ import Controls from "../components/controls/Controls.tsx";
 import type { VisualizerContext } from "../DependencyVisualizer.tsx";
 import { FileDependencyVisualizer } from "../cytoscape/fileDependencyVisualizer/index.ts";
 import type {
-  AuditManifest,
-  DependencyManifest,
-  Metric,
-} from "@stackcore/core/manifest";
+  auditManifestTypes,
+  dependencyManifestTypes,
+} from "@stackcore/shared";
 import MetricsExtension from "../components/controls/ControlExtensions/MetricsExtension.tsx";
 import { useTheme } from "../../../contexts/ThemeProvider.tsx";
 import FiltersExtension from "../components/controls/ControlExtensions/FiltersExtension.tsx";
@@ -32,12 +31,16 @@ export default function FileVisualizer(
   >(undefined);
 
   const metricFromUrl = (searchParams.get("metric") || undefined) as
-    | Metric
+    | dependencyManifestTypes.Metric
     | undefined;
 
-  const [metric, setMetric] = useState<Metric | undefined>(metricFromUrl);
+  const [metric, setMetric] = useState<
+    dependencyManifestTypes.Metric | undefined
+  >(metricFromUrl);
 
-  function handleMetricChange(metric: Metric | undefined) {
+  function handleMetricChange(
+    metric: dependencyManifestTypes.Metric | undefined,
+  ) {
     if (metric) {
       searchParams.set("metric", metric);
       setSearchParams(searchParams);
@@ -51,18 +54,23 @@ export default function FileVisualizer(
   const [contextMenu, setContextMenu] = useState<
     {
       position: { x: number; y: number };
-      fileDependencyManifest: DependencyManifest[string];
-      symbolDependencyManifest: DependencyManifest[string]["symbols"][string];
+      fileDependencyManifest:
+        dependencyManifestTypes.DependencyManifest[string];
+      symbolDependencyManifest:
+        dependencyManifestTypes.DependencyManifest[string]["symbols"][string];
     } | undefined
   >(undefined);
 
   const [detailsPane, setDetailsPane] = useState<
     {
       manifestId: number;
-      fileDependencyManifest: DependencyManifest[string];
-      symbolDependencyManifest: DependencyManifest[string]["symbols"][string];
-      fileAuditManifest: AuditManifest[string];
-      symbolAuditManifest: AuditManifest[string]["symbols"][string];
+      fileDependencyManifest:
+        dependencyManifestTypes.DependencyManifest[string];
+      symbolDependencyManifest:
+        dependencyManifestTypes.DependencyManifest[string]["symbols"][string];
+      fileAuditManifest: auditManifestTypes.AuditManifest[string];
+      symbolAuditManifest:
+        auditManifestTypes.AuditManifest[string]["symbols"][string];
     } | undefined
   >(undefined);
 

@@ -1,8 +1,5 @@
 import { db } from "../../db/database.ts";
-import type {
-  GetProjectDetailsResponse,
-  GetProjectsResponse,
-} from "./types.ts";
+import type { projectApiTypes } from "@stackcore/shared";
 
 export const projectAlreadyExistsErrorCode = "project_already_exists";
 export const projectNotFoundError = "project_not_found";
@@ -107,7 +104,7 @@ export class ProjectService {
   public async getProjectDetails(
     userId: number,
     projectId: number,
-  ): Promise<{ error?: string } | GetProjectDetailsResponse> {
+  ): Promise<{ error?: string } | projectApiTypes.GetProjectDetailsResponse> {
     // Get project with access check via workspace membership
     const project = await db
       .selectFrom("project")
@@ -131,7 +128,7 @@ export class ProjectService {
       return { error: projectNotFoundError };
     }
 
-    return project as GetProjectDetailsResponse;
+    return project;
   }
 
   /**
@@ -143,7 +140,7 @@ export class ProjectService {
     limit: number,
     search?: string,
     workspaceId?: number,
-  ): Promise<{ error: string } | GetProjectsResponse> {
+  ): Promise<{ error: string } | projectApiTypes.GetProjectsResponse> {
     // First check if user has access to the workspace
     if (workspaceId) {
       const hasAccess = await db

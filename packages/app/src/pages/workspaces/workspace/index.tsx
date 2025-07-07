@@ -14,7 +14,7 @@ import {
 } from "../../../components/shadcn/Card.tsx";
 import { Badge } from "../../../components/shadcn/Badge.tsx";
 import { Skeleton } from "../../../components/shadcn/Skeleton.tsx";
-import { MemberApiTypes, WorkspaceApiTypes } from "@stackcore/core/responses";
+import { memberTypes, workspaceApiTypes } from "@stackcore/shared";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader, Trash } from "lucide-react";
 import { Button } from "../../../components/shadcn/Button.tsx";
@@ -117,7 +117,7 @@ export default function WorkspacePage() {
                     )}
                   </CardTitle>
                   {(workspace &&
-                    workspace.role === MemberApiTypes.ADMIN_ROLE &&
+                    workspace.role === memberTypes.ADMIN_ROLE &&
                     workspace.isTeam) && (
                     <DeactivateWorkspaceDialog
                       workspace={workspace}
@@ -192,7 +192,7 @@ function DeactivateWorkspaceDialog(
   async function onSubmit() {
     setIsBusy(true);
     try {
-      const { url, method } = WorkspaceApiTypes.prepareDeactivateWorkspace(
+      const { url, method } = workspaceApiTypes.prepareDeactivateWorkspace(
         props.workspace.id,
       );
 

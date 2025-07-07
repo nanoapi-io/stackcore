@@ -1,7 +1,7 @@
 import type {
-  AuditManifest,
-  DependencyManifest,
-} from "@stackcore/core/manifest";
+  auditManifestTypes,
+  dependencyManifestTypes,
+} from "@stackcore/shared";
 import {
   Sheet,
   SheetContent,
@@ -26,8 +26,8 @@ import SymbolExtractionDialog from "../SymbolExtractionDialog.tsx";
 export default function FileDetailsPane(props: {
   context: {
     manifestId: number;
-    fileDependencyManifest: DependencyManifest[string];
-    fileAuditManifest: AuditManifest[string];
+    fileDependencyManifest: dependencyManifestTypes.DependencyManifest[string];
+    fileAuditManifest: auditManifestTypes.AuditManifest[string];
   } | undefined;
   onClose: () => void;
 }) {

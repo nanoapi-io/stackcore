@@ -2,24 +2,17 @@ import { type Context, Status } from "@oak/oak";
 import { db } from "../../db/database.ts";
 import { StripeService } from "../../stripe/index.ts";
 import type { Stripe } from "stripe";
-import {
-  BASIC_PRODUCT,
-  CUSTOM_PRODUCT,
-  MONTHLY_BILLING_CYCLE,
-  PREMIUM_PRODUCT,
-  PRO_PRODUCT,
-  type StripeBillingCycle,
-  type StripeProduct,
-  YEARLY_BILLING_CYCLE,
-} from "../../db/models/workspace.ts";
 import { shouldHaveAccess } from "../../db/models/workspace.ts";
-import { ADMIN_ROLE } from "../../db/models/member.ts";
 import {
   sendSubscriptionDowngradedEmail,
   sendSubscriptionUpgradedEmail,
 } from "../../email/index.ts";
 import settings from "../../settings.ts";
-import type { SubscriptionDetails } from "./types.ts";
+import {
+  type billingApiTypes,
+  memberTypes,
+  stripeTypes,
+} from "@stackcore/shared";
 
 const notAMemberOfWorkspaceError = "not_a_member_of_workspace";
 const notAnAdminError = "not_an_admin";
@@ -38,7 +31,9 @@ export class BillingService {
   public async getSubscription(
     userId: number,
     workspaceId: number,
-  ): Promise<{ subscription?: SubscriptionDetails; error?: string }> {
+  ): Promise<
+    { subscription?: billingApiTypes.SubscriptionDetails; error?: string }
+  > {
     const isMember = await db
       .selectFrom("member")
       .select("user_id")
@@ -88,40 +83,43 @@ export class BillingService {
     const priceId = subscription.items.data[0].price.id;
 
     const priceIdMap = {
-      [settings.STRIPE.PRODUCTS[BASIC_PRODUCT][MONTHLY_BILLING_CYCLE].PRICE_ID]:
-        {
-          product: BASIC_PRODUCT as StripeProduct,
-          billingCycle: MONTHLY_BILLING_CYCLE as StripeBillingCycle,
-        },
-      [settings.STRIPE.PRODUCTS[PRO_PRODUCT][MONTHLY_BILLING_CYCLE].PRICE_ID]: {
-        product: PRO_PRODUCT as StripeProduct,
-        billingCycle: MONTHLY_BILLING_CYCLE as StripeBillingCycle,
+      [settings.STRIPE.PRODUCTS.BASIC.MONTHLY.PRICE_ID]: {
+        product: stripeTypes.BASIC_PRODUCT as stripeTypes.StripeProduct,
+        billingCycle: stripeTypes
+          .MONTHLY_BILLING_CYCLE as stripeTypes.StripeBillingCycle,
       },
-      [settings.STRIPE.PRODUCTS[PRO_PRODUCT][YEARLY_BILLING_CYCLE].PRICE_ID]: {
-        product: PRO_PRODUCT as StripeProduct,
-        billingCycle: YEARLY_BILLING_CYCLE as StripeBillingCycle,
+      [settings.STRIPE.PRODUCTS.PRO.MONTHLY.PRICE_ID]: {
+        product: stripeTypes.PRO_PRODUCT as stripeTypes.StripeProduct,
+        billingCycle: stripeTypes
+          .MONTHLY_BILLING_CYCLE as stripeTypes.StripeBillingCycle,
       },
-      [
-        settings.STRIPE.PRODUCTS[PREMIUM_PRODUCT][MONTHLY_BILLING_CYCLE]
-          .PRICE_ID
-      ]: {
-        product: PREMIUM_PRODUCT as StripeProduct,
-        billingCycle: MONTHLY_BILLING_CYCLE as StripeBillingCycle,
+      [settings.STRIPE.PRODUCTS.PRO.YEARLY.PRICE_ID]: {
+        product: stripeTypes.PRO_PRODUCT as stripeTypes.StripeProduct,
+        billingCycle: stripeTypes
+          .YEARLY_BILLING_CYCLE as stripeTypes.StripeBillingCycle,
       },
       [
-        settings.STRIPE.PRODUCTS[PREMIUM_PRODUCT][YEARLY_BILLING_CYCLE].PRICE_ID
+        settings.STRIPE.PRODUCTS.PREMIUM.MONTHLY.PRICE_ID
       ]: {
-        product: PREMIUM_PRODUCT as StripeProduct,
-        billingCycle: YEARLY_BILLING_CYCLE as StripeBillingCycle,
+        product: stripeTypes.PREMIUM_PRODUCT as stripeTypes.StripeProduct,
+        billingCycle: stripeTypes
+          .MONTHLY_BILLING_CYCLE as stripeTypes.StripeBillingCycle,
+      },
+      [
+        settings.STRIPE.PRODUCTS.PREMIUM.YEARLY.PRICE_ID
+      ]: {
+        product: stripeTypes.PREMIUM_PRODUCT as stripeTypes.StripeProduct,
+        billingCycle: stripeTypes
+          .YEARLY_BILLING_CYCLE as stripeTypes.StripeBillingCycle,
       },
     };
 
     const productInfo = priceIdMap[priceId];
 
     if (!productInfo) {
-      const subscriptionDetails: SubscriptionDetails = {
+      const subscriptionDetails: billingApiTypes.SubscriptionDetails = {
         currentUsage,
-        product: CUSTOM_PRODUCT,
+        product: stripeTypes.CUSTOM_PRODUCT,
         billingCycle: null,
         hasDefaultPaymentMethod,
         cancelAt: null,
@@ -133,16 +131,18 @@ export class BillingService {
     }
 
     const cancelAt = subscription.cancel_at;
-    let newProductWhenCanceled: StripeProduct | null = null;
-    let newBillingCycleWhenCanceled: StripeBillingCycle | null = null;
+    let newProductWhenCanceled: stripeTypes.StripeProduct | null = null;
+    let newBillingCycleWhenCanceled: stripeTypes.StripeBillingCycle | null =
+      null;
     if (cancelAt) {
       newProductWhenCanceled = subscription.metadata
-        .new_product_when_canceled as StripeProduct || null;
+        .new_product_when_canceled as stripeTypes.StripeProduct || null;
       newBillingCycleWhenCanceled = subscription.metadata
-        .new_billing_cycle_when_canceled as StripeBillingCycle || null;
+        .new_billing_cycle_when_canceled as stripeTypes.StripeBillingCycle ||
+        null;
     }
 
-    const subscriptionDetails: SubscriptionDetails = {
+    const subscriptionDetails: billingApiTypes.SubscriptionDetails = {
       currentUsage,
       product: productInfo.product,
       billingCycle: productInfo.billingCycle,
@@ -234,8 +234,8 @@ export class BillingService {
   public async upgradeSubscription(
     userId: number,
     workspaceId: number,
-    product: StripeProduct,
-    billingCycle: StripeBillingCycle,
+    product: stripeTypes.StripeProduct,
+    billingCycle: stripeTypes.StripeBillingCycle,
   ): Promise<{ error?: string }> {
     const isMember = await db
       .selectFrom("member")
@@ -254,7 +254,7 @@ export class BillingService {
       return { error: notAMemberOfWorkspaceError };
     }
 
-    if (isMember.role !== ADMIN_ROLE) {
+    if (isMember.role !== memberTypes.ADMIN_ROLE) {
       return { error: notAnAdminError };
     }
 
@@ -276,15 +276,17 @@ export class BillingService {
 
     // Check if user is upgrading to a superior product
     switch (currentSubscription.product) {
-      case CUSTOM_PRODUCT:
+      case stripeTypes.CUSTOM_PRODUCT:
         return { error: cannotChangeCustomProductError };
-      case PREMIUM_PRODUCT:
-        if ([BASIC_PRODUCT, PRO_PRODUCT].includes(product)) {
+      case stripeTypes.PREMIUM_PRODUCT:
+        if (
+          [stripeTypes.BASIC_PRODUCT, stripeTypes.PRO_PRODUCT].includes(product)
+        ) {
           return { error: cannotUpgradeToInferiorProductError };
         }
         break;
-      case PRO_PRODUCT:
-        if ([BASIC_PRODUCT].includes(product)) {
+      case stripeTypes.PRO_PRODUCT:
+        if ([stripeTypes.BASIC_PRODUCT].includes(product)) {
           return { error: cannotUpgradeToInferiorProductError };
         }
         break;
@@ -293,8 +295,8 @@ export class BillingService {
     // Check if user is upgrading to a superior billing cycle
     if (currentSubscription.product === product) {
       switch (currentSubscription.billingCycle) {
-        case YEARLY_BILLING_CYCLE:
-          if (billingCycle === MONTHLY_BILLING_CYCLE) {
+        case stripeTypes.YEARLY_BILLING_CYCLE:
+          if (billingCycle === stripeTypes.MONTHLY_BILLING_CYCLE) {
             return { error: cannotUpgradeToInferiorProductError };
           }
           break;
@@ -352,7 +354,7 @@ export class BillingService {
         "user.id",
       )
       .where("member.workspace_id", "=", workspaceId)
-      .where("member.role", "=", ADMIN_ROLE)
+      .where("member.role", "=", memberTypes.ADMIN_ROLE)
       .execute();
 
     await sendSubscriptionUpgradedEmail({
@@ -368,8 +370,8 @@ export class BillingService {
   public async downgradeSubscription(
     userId: number,
     workspaceId: number,
-    product: StripeProduct,
-    billingCycle: StripeBillingCycle,
+    product: stripeTypes.StripeProduct,
+    billingCycle: stripeTypes.StripeBillingCycle,
   ) {
     const isMember = await db
       .selectFrom("member")
@@ -388,7 +390,7 @@ export class BillingService {
       return { error: notAMemberOfWorkspaceError };
     }
 
-    if (isMember.role !== ADMIN_ROLE) {
+    if (isMember.role !== memberTypes.ADMIN_ROLE) {
       return { error: notAnAdminError };
     }
 
@@ -406,15 +408,19 @@ export class BillingService {
 
     // check if user is downgrading to an inferior product
     switch (currentSubscription.product) {
-      case CUSTOM_PRODUCT:
+      case stripeTypes.CUSTOM_PRODUCT:
         return { error: cannotChangeCustomProductError };
-      case PRO_PRODUCT:
-        if ([PREMIUM_PRODUCT].includes(product)) {
+      case stripeTypes.PRO_PRODUCT:
+        if ([stripeTypes.PREMIUM_PRODUCT].includes(product)) {
           return { error: cannotDowngradeToSuperiorProductError };
         }
         break;
-      case BASIC_PRODUCT:
-        if ([PRO_PRODUCT, PREMIUM_PRODUCT].includes(product)) {
+      case stripeTypes.BASIC_PRODUCT:
+        if (
+          [stripeTypes.PRO_PRODUCT, stripeTypes.PREMIUM_PRODUCT].includes(
+            product,
+          )
+        ) {
           return { error: cannotDowngradeToSuperiorProductError };
         }
         break;
@@ -423,12 +429,12 @@ export class BillingService {
     // Check if the user is downgrading to an inferior billing cycle
     if (currentSubscription.product === product) {
       switch (currentSubscription.billingCycle) {
-        case MONTHLY_BILLING_CYCLE:
-          if (billingCycle === YEARLY_BILLING_CYCLE) {
+        case stripeTypes.MONTHLY_BILLING_CYCLE:
+          if (billingCycle === stripeTypes.YEARLY_BILLING_CYCLE) {
             return { error: cannotDowngradeToSuperiorProductError };
           }
           break;
-        case YEARLY_BILLING_CYCLE:
+        case stripeTypes.YEARLY_BILLING_CYCLE:
           // this is allowed
           break;
       }
@@ -485,7 +491,7 @@ export class BillingService {
         "user.id",
       )
       .where("member.workspace_id", "=", workspaceId)
-      .where("member.role", "=", ADMIN_ROLE)
+      .where("member.role", "=", memberTypes.ADMIN_ROLE)
       .execute();
 
     const newSubscriptionDate = currentSubscription.cancelAt
@@ -576,12 +582,19 @@ export class BillingService {
       return;
     }
 
-    if (![BASIC_PRODUCT, PRO_PRODUCT, PREMIUM_PRODUCT].includes(newProduct)) {
+    if (
+      ![
+        stripeTypes.BASIC_PRODUCT,
+        stripeTypes.PRO_PRODUCT,
+        stripeTypes.PREMIUM_PRODUCT,
+      ].includes(newProduct)
+    ) {
       throw new Error(`Invalid product: ${newProduct}`);
     }
 
     if (
-      ![MONTHLY_BILLING_CYCLE, YEARLY_BILLING_CYCLE].includes(newLicensePeriod)
+      ![stripeTypes.MONTHLY_BILLING_CYCLE, stripeTypes.YEARLY_BILLING_CYCLE]
+        .includes(newLicensePeriod)
     ) {
       throw new Error(`Invalid license period: ${newLicensePeriod}`);
     }
@@ -596,8 +609,8 @@ export class BillingService {
 
     const newSubscription = await stripeService.createSubscription(
       customer.id,
-      newProduct as StripeProduct,
-      newLicensePeriod as StripeBillingCycle,
+      newProduct as stripeTypes.StripeProduct,
+      newLicensePeriod as stripeTypes.StripeBillingCycle,
       null,
     );
 

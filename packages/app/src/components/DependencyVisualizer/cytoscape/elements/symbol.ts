@@ -1,15 +1,7 @@
 import type {
-  AuditManifest,
-  DependencyManifest,
-  metricCharacterCount,
-  metricCodeCharacterCount,
-  metricCodeLineCount,
-  metricCyclomaticComplexity,
-  metricDependencyCount,
-  metricDependentCount,
-  metricLinesCount,
-  SymbolType,
-} from "@stackcore/core/manifest";
+  auditManifestTypes,
+  dependencyManifestTypes,
+} from "@stackcore/shared";
 import {
   getCollapsedSymbolNodeLabel,
   getExpandedSymbolNodeLabel,
@@ -27,13 +19,13 @@ function createNodeData(params: {
   symbolType: string;
   isExternal: boolean;
   metricsSeverity: {
-    [metricLinesCount]: number;
-    [metricCodeLineCount]: number;
-    [metricCodeCharacterCount]: number;
-    [metricCharacterCount]: number;
-    [metricDependencyCount]: number;
-    [metricDependentCount]: number;
-    [metricCyclomaticComplexity]: number;
+    [dependencyManifestTypes.metricLinesCount]: number;
+    [dependencyManifestTypes.metricCodeLineCount]: number;
+    [dependencyManifestTypes.metricCodeCharacterCount]: number;
+    [dependencyManifestTypes.metricCharacterCount]: number;
+    [dependencyManifestTypes.metricDependencyCount]: number;
+    [dependencyManifestTypes.metricDependentCount]: number;
+    [dependencyManifestTypes.metricCyclomaticComplexity]: number;
   };
   expandedLabel: string;
   collapsedLabel: string;
@@ -76,10 +68,10 @@ interface CustomNodeDefinition extends NodeDefinition {
 }
 
 function traverseSymbolGraph(
-  symbol: DependencyManifest[string]["symbols"][string],
+  symbol: dependencyManifestTypes.DependencyManifest[string]["symbols"][string],
   symbolNodeId: string,
-  dependencyManifest: DependencyManifest,
-  auditManifest: AuditManifest,
+  dependencyManifest: dependencyManifestTypes.DependencyManifest,
+  auditManifest: auditManifestTypes.AuditManifest,
   nodeMap: Map<string, CustomNodeDefinition>,
   edgeMap: Map<string, EdgeDefinition>,
   currentDepth: number,
@@ -90,8 +82,12 @@ function traverseSymbolGraph(
   // Process dependencies if we haven't reached max depth
   if (currentDepth < maxDepsDepth) {
     Object.values(symbol.dependencies).forEach((dep) => {
-      let depDependencyManifest: DependencyManifest[string] | undefined;
-      let depAuditManifest: AuditManifest[string] | undefined;
+      let depDependencyManifest:
+        | dependencyManifestTypes.DependencyManifest[string]
+        | undefined;
+      let depAuditManifest:
+        | auditManifestTypes.AuditManifest[string]
+        | undefined;
 
       if (!dep.isExternal) {
         depDependencyManifest = dependencyManifest[dep.id];
@@ -116,7 +112,8 @@ function traverseSymbolGraph(
         }
         visited.add(depSymbolNodeId);
 
-        let depSymbolType: SymbolType | "unknown" = "unknown";
+        let depSymbolType: dependencyManifestTypes.SymbolType | "unknown" =
+          "unknown";
         if (depDependencyManifest) {
           depSymbolType = depDependencyManifest.symbols[depSymbolName].type;
         }
@@ -268,8 +265,8 @@ export function getSymbolElementsForSymbol(
   symbolId: string,
   dependencyDepth: number,
   dependentDepth: number,
-  dependencyManifest: DependencyManifest,
-  auditManifest: AuditManifest,
+  dependencyManifest: dependencyManifestTypes.DependencyManifest,
+  auditManifest: auditManifestTypes.AuditManifest,
 ) {
   const fileManifest = dependencyManifest[fileName];
   if (!fileManifest) {

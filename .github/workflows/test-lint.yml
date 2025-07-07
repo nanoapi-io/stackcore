@@ -12,7 +12,7 @@ jobs:
       - name: Set up Deno
         uses: denoland/setup-deno@v2
         with:
-          deno-version: v2.3.5
+          deno-version: v2.4.0
 
       - name: Install dependencies
         run: |
@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:17
+        image: pgvector/pgvector:pg17
         env:
           POSTGRES_PASSWORD: password
           POSTGRES_USER: user
@@ -47,7 +47,7 @@ jobs:
       - name: Set up Deno
         uses: denoland/setup-deno@v2
         with:
-          deno-version: v2.3.5
+          deno-version: v2.4.0
 
       - name: Install dependencies
         run: |

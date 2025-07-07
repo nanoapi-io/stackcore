@@ -1,14 +1,7 @@
 import {
-  type AuditManifest,
-  type Metric,
-  metricCharacterCount,
-  metricCodeCharacterCount,
-  metricCodeLineCount,
-  metricCyclomaticComplexity,
-  metricDependencyCount,
-  metricDependentCount,
-  metricLinesCount,
-} from "@stackcore/core/manifest";
+  type auditManifestTypes,
+  dependencyManifestTypes,
+} from "@stackcore/shared";
 
 /**
  * Extracts metric severity levels from an audit manifest for visualization.
@@ -22,23 +15,24 @@ import {
  */
 export function getMetricsSeverityForNode(
   auditManifest:
-    | AuditManifest[string]
-    | AuditManifest[string]["symbols"][string]
+    | auditManifestTypes.AuditManifest[string]
+    | auditManifestTypes.AuditManifest[string]["symbols"][string]
     | undefined,
 ) {
-  const metricsSeverity: Record<Metric, number> = {
-    [metricLinesCount]: 0,
-    [metricCodeLineCount]: 0,
-    [metricCodeCharacterCount]: 0,
-    [metricCharacterCount]: 0,
-    [metricDependencyCount]: 0,
-    [metricDependentCount]: 0,
-    [metricCyclomaticComplexity]: 0,
+  const metricsSeverity: Record<dependencyManifestTypes.Metric, number> = {
+    [dependencyManifestTypes.metricLinesCount]: 0,
+    [dependencyManifestTypes.metricCodeLineCount]: 0,
+    [dependencyManifestTypes.metricCodeCharacterCount]: 0,
+    [dependencyManifestTypes.metricCharacterCount]: 0,
+    [dependencyManifestTypes.metricDependencyCount]: 0,
+    [dependencyManifestTypes.metricDependentCount]: 0,
+    [dependencyManifestTypes.metricCyclomaticComplexity]: 0,
   };
 
   if (auditManifest) {
     Object.entries(auditManifest.alerts).forEach(([metric, value]) => {
-      metricsSeverity[metric as Metric] = value.severity;
+      metricsSeverity[metric as dependencyManifestTypes.Metric] =
+        value.severity;
     });
   }
 
