@@ -1,7 +1,7 @@
-export const BASIC_PRODUCT = "basic";
-export const PRO_PRODUCT = "pro";
-export const PREMIUM_PRODUCT = "premium";
-export const CUSTOM_PRODUCT = "custom";
+export const BASIC_PRODUCT = "BASIC";
+export const PRO_PRODUCT = "PRO";
+export const PREMIUM_PRODUCT = "PREMIUM";
+export const CUSTOM_PRODUCT = "CUSTOM";
 
 export type StripeProduct =
   | typeof BASIC_PRODUCT
@@ -9,8 +9,8 @@ export type StripeProduct =
   | typeof PREMIUM_PRODUCT
   | typeof CUSTOM_PRODUCT;
 
-export const MONTHLY_BILLING_CYCLE = "monthly";
-export const YEARLY_BILLING_CYCLE = "yearly";
+export const MONTHLY_BILLING_CYCLE = "MONTHLY";
+export const YEARLY_BILLING_CYCLE = "YEARLY";
 
 export type StripeBillingCycle =
   | typeof MONTHLY_BILLING_CYCLE

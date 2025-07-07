@@ -10,6 +10,7 @@ import {
   type dependencyManifestTypes,
   manifestApiTypes,
 } from "@stackcore/shared";
+import { downloadJsonFromBucket } from "../../bucketStorage/index.ts";
 
 // Helper function to provide default project configuration values
 function getDefaultProjectConfig() {
@@ -80,13 +81,62 @@ Deno.test("create a manifest", async () => {
       .where("name", "=", "Test Project")
       .executeTakeFirstOrThrow();
 
+    const sampleManifest: dependencyManifestTypes.DependencyManifest = {
+      "src/index.py": {
+        id: "src/index.py",
+        filePath: "src/index.py",
+        language: "python",
+        metrics: {
+          linesCount: 12,
+          codeLineCount: 8,
+          characterCount: 200,
+          codeCharacterCount: 150,
+          dependencyCount: 1,
+          dependentCount: 0,
+          cyclomaticComplexity: 3,
+        },
+        dependencies: {
+          "./utils": {
+            id: "./utils",
+            isExternal: false,
+            symbols: {},
+          },
+        },
+        dependents: {},
+        symbols: {
+          "MyClass": {
+            id: "MyClass",
+            type: "class" as const,
+            metrics: {
+              linesCount: 12,
+              codeLineCount: 8,
+              characterCount: 200,
+              codeCharacterCount: 150,
+              dependencyCount: 1,
+              dependentCount: 0,
+              cyclomaticComplexity: 3,
+            },
+            description: "",
+            dependencies: {
+              "./utils.py": {
+                id: "./utils.py",
+                isExternal: false,
+                symbols: {},
+              },
+            },
+            dependents: {},
+          },
+        },
+      },
+    };
+
     // Create a manifest via API
     const { url, method, body } = manifestApiTypes.prepareCreateManifest({
       projectId: project.id,
       branch: "main",
       commitSha: "abc123",
       commitShaDate: new Date(),
-      manifest: { test: "data" },
+      manifest: sampleManifest,
     });
 
     const createResponse = await api.handle(
@@ -116,6 +166,10 @@ Deno.test("create a manifest", async () => {
     assertEquals(manifest.branch, "main");
     assertEquals(manifest.commitSha, "abc123");
     assertEquals(manifest.version, 1);
+
+    // Verify manifest was created in bucket
+    const manifestContent = await downloadJsonFromBucket(manifest.manifest);
+    assertEquals(manifestContent, sampleManifest);
   } finally {
     await resetTables();
     await destroyKyselyDb();
@@ -774,16 +828,61 @@ Deno.test("get manifest details", async () => {
 
     // Create manifest
     const manifestService = new ManifestService();
+    const sampleManifest: dependencyManifestTypes.DependencyManifest = {
+      "src/index.py": {
+        id: "src/index.py",
+        filePath: "src/index.py",
+        language: "python",
+        metrics: {
+          linesCount: 12,
+          codeLineCount: 8,
+          characterCount: 200,
+          codeCharacterCount: 150,
+          dependencyCount: 1,
+          dependentCount: 0,
+          cyclomaticComplexity: 3,
+        },
+        dependencies: {
+          "./utils": {
+            id: "./utils",
+            isExternal: false,
+            symbols: {},
+          },
+        },
+        dependents: {},
+        symbols: {
+          "MyClass": {
+            id: "MyClass",
+            type: "class" as const,
+            metrics: {
+              linesCount: 12,
+              codeLineCount: 8,
+              characterCount: 200,
+              codeCharacterCount: 150,
+              dependencyCount: 1,
+              dependentCount: 0,
+              cyclomaticComplexity: 3,
+            },
+            description: "",
+            dependencies: {
+              "./utils.py": {
+                id: "./utils.py",
+                isExternal: false,
+                symbols: {},
+              },
+            },
+            dependents: {},
+          },
+        },
+      },
+    };
     const createResponse = await manifestService.createManifest(
       userId,
       project.id,
       "main",
       "abc123",
       new Date(),
-      {
-        test: "data",
-        complex: { nested: "value" },
-      } as unknown as dependencyManifestTypes.DependencyManifest,
+      sampleManifest,
     );
 
     if ("error" in createResponse) {
@@ -817,14 +916,6 @@ Deno.test("get manifest details", async () => {
     assertEquals(manifest.commitSha, "abc123");
     assertEquals(manifest.version, 1);
     assertEquals(manifest.manifest.length > 0, true);
-
-    // get the content of the manifest from the bucket
-    const manifestContentResponse = await fetch(
-      manifest.manifest,
-    );
-    const manifestContent = await manifestContentResponse.json();
-    assertEquals(manifestContent.test, "data");
-    assertEquals(manifestContent.complex.nested, "value");
   } finally {
     await resetTables();
     await destroyKyselyDb();
@@ -1162,7 +1253,7 @@ Deno.test("get manifest audit", async () => {
 
     // Create manifest with sample dependency manifest structure
     const manifestService = new ManifestService();
-    const sampleManifest = {
+    const sampleManifest: dependencyManifestTypes.DependencyManifest = {
       "src/index.py": {
         id: "src/index.py",
         filePath: "src/index.py",
@@ -1197,7 +1288,7 @@ Deno.test("get manifest audit", async () => {
               dependentCount: 0,
               cyclomaticComplexity: 3,
             },
-            description: "MyClass description",
+            description: "",
             dependencies: {
               "./utils.py": {
                 id: "./utils.py",
@@ -1244,18 +1335,18 @@ Deno.test("get manifest audit", async () => {
     assertEquals(typeof auditManifest, "object");
 
     // Check that it has the expected file entry
-    assertEquals(typeof auditManifest["src/index.ts"], "object");
-    assertEquals(auditManifest["src/index.ts"].id, "src/index.ts");
-    assertEquals(typeof auditManifest["src/index.ts"].alerts, "object");
-    assertEquals(typeof auditManifest["src/index.ts"].symbols, "object");
+    assertEquals(typeof auditManifest["src/index.py"], "object");
+    assertEquals(auditManifest["src/index.py"].id, "src/index.py");
+    assertEquals(typeof auditManifest["src/index.py"].alerts, "object");
+    assertEquals(typeof auditManifest["src/index.py"].symbols, "object");
 
     // Check that the symbol is present
     assertEquals(
-      typeof auditManifest["src/index.ts"].symbols["MyClass"],
+      typeof auditManifest["src/index.py"].symbols["MyClass"],
       "object",
     );
     assertEquals(
-      auditManifest["src/index.ts"].symbols["MyClass"].id,
+      auditManifest["src/index.py"].symbols["MyClass"].id,
       "MyClass",
     );
   } finally {
