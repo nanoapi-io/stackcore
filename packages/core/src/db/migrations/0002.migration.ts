@@ -1,4 +1,4 @@
-import { type Kysely, sql } from "kysely";
+import type { Kysely } from "kysely";
 import {
   downloadJsonFromBucket,
   uploadJsonToBucket,
@@ -7,9 +7,6 @@ import type { dependencyManifestTypes } from "@stackcore/shared";
 
 // deno-lint-ignore no-explicit-any
 export async function up(db: Kysely<any>): Promise<void> {
-  // Create vector extension
-  await db.executeQuery(sql`CREATE EXTENSION vector;`.compile(db));
-
   const manifestRecords = await db.selectFrom("manifest").selectAll()
     .execute();
 
@@ -37,7 +34,6 @@ export async function up(db: Kysely<any>): Promise<void> {
 }
 
 // deno-lint-ignore no-explicit-any
-export async function down(db: Kysely<any>): Promise<void> {
-  // Drop vector extension
-  await db.executeQuery(sql`DROP EXTENSION vector;`.compile(db));
+export async function down(_db: Kysely<any>): Promise<void> {
+  // Do nothing
 }
