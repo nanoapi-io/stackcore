@@ -24,7 +24,7 @@ import {
   FormLabel,
   FormMessage,
 } from "../../components/shadcn/Form.tsx";
-import { WorkspaceApiTypes } from "@stackcore/core/responses";
+import { workspaceApiTypes } from "@stackcore/shared";
 
 export default function AddWorkspacePage() {
   const navigate = useNavigate();
@@ -46,7 +46,7 @@ export default function AddWorkspacePage() {
     setIsBusy(true);
 
     try {
-      const { url, method, body } = WorkspaceApiTypes
+      const { url, method, body } = workspaceApiTypes
         .prepareCreateWorkspace({
           name: values.name,
         });
@@ -69,7 +69,7 @@ export default function AddWorkspacePage() {
       toast.success("Workspace created");
 
       const workspace = await response
-        .json() as WorkspaceApiTypes.CreateWorkspaceResponse;
+        .json() as workspaceApiTypes.CreateWorkspaceResponse;
 
       await refreshWorkspaces();
 

@@ -1,12 +1,7 @@
 import { Router, Status } from "@oak/oak";
 import { WorkspaceService } from "./service.ts";
 import { authMiddleware } from "../auth/middleware.ts";
-import {
-  createWorkspacePayloadSchema,
-  type CreateWorkspaceResponse,
-  type GetWorkspacesResponse,
-  updateWorkspaceSchema,
-} from "./types.ts";
+import type { workspaceApiTypes } from "@stackcore/shared";
 import z from "zod";
 import settings from "../../settings.ts";
 
@@ -17,7 +12,13 @@ const router = new Router();
 router.post("/", authMiddleware, async (ctx) => {
   const body = await ctx.request.body.json();
 
-  const parsedBody = createWorkspacePayloadSchema.safeParse(body);
+  const createWorkspacePayloadSchema = z.object({
+    name: z.string(),
+  });
+
+  const parsedBody = createWorkspacePayloadSchema.safeParse(
+    body,
+  );
 
   if (!parsedBody.success) {
     ctx.response.status = Status.BadRequest;
@@ -39,7 +40,7 @@ router.post("/", authMiddleware, async (ctx) => {
   }
 
   ctx.response.status = Status.Created;
-  ctx.response.body = result as CreateWorkspaceResponse;
+  ctx.response.body = result as workspaceApiTypes.CreateWorkspaceResponse;
 });
 
 // Get all workspaces for current user
@@ -66,13 +67,14 @@ router.get("/", authMiddleware, async (ctx) => {
     return;
   }
 
-  const response: GetWorkspacesResponse = await workspaceService
-    .getWorkspaces(
-      userId,
-      parsedSearchParams.data.page,
-      parsedSearchParams.data.limit,
-      parsedSearchParams.data.search,
-    );
+  const response: workspaceApiTypes.GetWorkspacesResponse =
+    await workspaceService
+      .getWorkspaces(
+        userId,
+        parsedSearchParams.data.page,
+        parsedSearchParams.data.limit,
+        parsedSearchParams.data.search,
+      );
 
   ctx.response.status = Status.OK;
   ctx.response.body = response;
@@ -95,6 +97,10 @@ router.patch("/:workspaceId", authMiddleware, async (ctx) => {
   }
 
   const body = await ctx.request.body.json();
+
+  const updateWorkspaceSchema = z.object({
+    name: z.string(),
+  });
 
   const parsedBody = updateWorkspaceSchema.safeParse(body);
 

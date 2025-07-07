@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from "react-router";
-import type { DependencyManifest } from "@stackcore/core/manifest";
+import type { dependencyManifestTypes } from "@stackcore/shared";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,8 +14,9 @@ import DisplayNameWithTooltip from "../DisplayNameWithTootip.tsx";
 export default function SymbolContextMenu(props: {
   context: {
     position: { x: number; y: number };
-    fileDependencyManifest: DependencyManifest[string];
-    symbolDependencyManifest: DependencyManifest[string]["symbols"][string];
+    fileDependencyManifest: dependencyManifestTypes.DependencyManifest[string];
+    symbolDependencyManifest:
+      dependencyManifestTypes.DependencyManifest[string]["symbols"][string];
   } | undefined;
   onClose: () => void;
   onOpenDetails: (filePath: string, symbolId: string) => void;

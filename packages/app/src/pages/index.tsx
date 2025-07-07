@@ -19,9 +19,9 @@ import {
   Settings,
   Users,
 } from "lucide-react";
-import { ProjectApiTypes } from "@stackcore/core/responses";
+import { projectApiTypes } from "@stackcore/shared";
 
-type Project = ProjectApiTypes.GetProjectsResponse["results"][number];
+type Project = projectApiTypes.GetProjectsResponse["results"][number];
 
 export default function IndexPage() {
   const coreApi = useCoreApi();
@@ -48,7 +48,7 @@ export default function IndexPage() {
 
     setIsLoadingProjects(true);
     try {
-      const { url, method } = ProjectApiTypes.prepareGetProjects({
+      const { url, method } = projectApiTypes.prepareGetProjects({
         page: 1,
         limit: 5,
         workspaceId: selectedWorkspaceId,
@@ -57,7 +57,7 @@ export default function IndexPage() {
       const response = await coreApi.handleRequest(url, method);
       if (response.ok) {
         const data = await response
-          .json() as ProjectApiTypes.GetProjectsResponse;
+          .json() as projectApiTypes.GetProjectsResponse;
         setRecentProjects(data.results || []);
       }
     } catch (error) {

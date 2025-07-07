@@ -29,7 +29,7 @@ import {
   FormLabel,
   FormMessage,
 } from "../components/shadcn/Form.tsx";
-import { AuthApiTypes } from "@stackcore/core/responses";
+import { authApiTypes } from "@stackcore/shared";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -69,7 +69,7 @@ export default function LoginPage() {
     setIsBusy(true);
 
     try {
-      const { url, method, body } = AuthApiTypes.prepareRequestOtp({
+      const { url, method, body } = authApiTypes.prepareRequestOtp({
         email: values.email,
       });
 
@@ -116,7 +116,7 @@ export default function LoginPage() {
         url,
         method,
         body,
-      } = AuthApiTypes.prepareVerifyOtp(
+      } = authApiTypes.prepareVerifyOtp(
         { email: emailForm.getValues("email"), otp: values.otp },
       );
 
@@ -146,7 +146,7 @@ export default function LoginPage() {
         throw new Error("Failed to verify one time password");
       }
 
-      const { token } = await response.json() as AuthApiTypes.VerifyOtpResponse;
+      const { token } = await response.json() as authApiTypes.VerifyOtpResponse;
 
       coreApiContext.login(token);
 

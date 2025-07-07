@@ -1,5 +1,4 @@
-import { z } from "zod";
-import type { MemberRole } from "../../db/models/member.ts";
+import type { MemberRole } from "../member.ts";
 
 export {
   BASIC_PRODUCT,
@@ -10,20 +9,23 @@ export {
   type StripeBillingCycle,
   type StripeProduct,
   YEARLY_BILLING_CYCLE,
-} from "../../db/models/workspace.ts";
+} from "../stripe.ts";
 
-export const createWorkspacePayloadSchema = z.object({
-  name: z.string(),
-});
-export type CreateWorkspacePayload = z.infer<
-  typeof createWorkspacePayloadSchema
->;
+export type CreateWorkspacePayload = {
+  name: string;
+};
 
 export type CreateWorkspaceResponse = {
   id: number;
 };
 
-export function prepareCreateWorkspace(payload: CreateWorkspacePayload) {
+export function prepareCreateWorkspace(
+  payload: CreateWorkspacePayload,
+): {
+  url: string;
+  method: string;
+  body: CreateWorkspacePayload;
+} {
   return {
     url: "/workspaces",
     method: "POST",
@@ -35,7 +37,10 @@ export function prepareGetWorkspaces(payload: {
   page: number;
   limit: number;
   search?: string;
-}) {
+}): {
+  url: string;
+  method: string;
+} {
   const searchParams = new URLSearchParams();
   searchParams.set("page", payload.page.toString());
   searchParams.set("limit", payload.limit.toString());
@@ -46,7 +51,6 @@ export function prepareGetWorkspaces(payload: {
   return {
     url: `/workspaces?${searchParams.toString()}`,
     method: "GET",
-    body: undefined,
   };
 }
 
@@ -61,17 +65,18 @@ export type GetWorkspacesResponse = {
   total: number;
 };
 
-export const updateWorkspaceSchema = z.object({
-  name: z.string(),
-});
-export type UpdateWorkspacePayload = z.infer<
-  typeof updateWorkspaceSchema
->;
+export type UpdateWorkspacePayload = {
+  name: string;
+};
 
 export function prepareUpdateWorkspace(
   workspaceId: number,
   payload: UpdateWorkspacePayload,
-) {
+): {
+  url: string;
+  method: string;
+  body: UpdateWorkspacePayload;
+} {
   return {
     url: `/workspaces/${workspaceId}`,
     method: "PATCH",
@@ -79,10 +84,14 @@ export function prepareUpdateWorkspace(
   };
 }
 
-export function prepareDeactivateWorkspace(workspaceId: number) {
+export function prepareDeactivateWorkspace(
+  workspaceId: number,
+): {
+  url: string;
+  method: string;
+} {
   return {
     url: `/workspaces/${workspaceId}/deactivate`,
     method: "POST",
-    body: undefined,
   };
 }

@@ -1,7 +1,16 @@
 import { type RouterContext, type RouterMiddleware, Status } from "@oak/oak";
 import { AuthService } from "./service.ts";
 import { TokenService } from "../token/service.ts";
-import { type Session, sessionSchema } from "./types.ts";
+import z from "zod";
+
+export const sessionSchema = z.object({
+  userId: z.number(),
+  email: z.string(),
+});
+export type Session = {
+  userId: number;
+  email: string;
+};
 
 export const authMiddleware: RouterMiddleware<string> = async (
   ctx: RouterContext<string>,

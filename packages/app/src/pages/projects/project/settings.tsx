@@ -24,7 +24,7 @@ import {
   FormLabel,
   FormMessage,
 } from "../../../components/shadcn/Form.tsx";
-import { ProjectApiTypes } from "@stackcore/core/responses";
+import { projectApiTypes } from "@stackcore/shared";
 import {
   Tabs,
   TabsContent,
@@ -98,7 +98,7 @@ export default function ProjectSettings() {
     setIsBusy(true);
 
     try {
-      const { url, method, body } = ProjectApiTypes.prepareUpdateProject(
+      const { url, method, body } = projectApiTypes.prepareUpdateProject(
         context.project.id,
         {
           name: values.name,

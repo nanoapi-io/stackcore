@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import type {
-  AuditManifest,
-  DependencyManifest,
-} from "@stackcore/core/manifest";
+import {
+  type auditManifestTypes,
+  type dependencyManifestTypes,
+  manifestApiTypes,
+} from "@stackcore/shared";
 import {
   Sidebar,
   SidebarContent,
@@ -27,9 +28,17 @@ import {
   FolderOpen,
   ScanEye,
   SearchCode,
+  Sparkles,
+  X,
 } from "lucide-react";
 import { ScrollArea, ScrollBar } from "../../shadcn/Scrollarea.tsx";
 import DisplayNameWithTooltip from "./DisplayNameWithTootip.tsx";
+import { toast } from "sonner";
+import { useCoreApi } from "../../../contexts/CoreApi.tsx";
+import z from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { Form, FormField } from "../../shadcn/Form.tsx";
 
 export interface ExplorerNodeData {
   id: string;
@@ -40,24 +49,94 @@ export interface ExplorerNodeData {
 }
 
 export function FileExplorerSidebar(props: {
-  dependencyManifest: DependencyManifest;
-  auditManifest: AuditManifest;
+  dependencyManifestId: number;
+  dependencyManifest: dependencyManifestTypes.DependencyManifest;
+  auditManifest: auditManifestTypes.AuditManifest;
   onHighlightInCytoscape: (node: ExplorerNodeData) => void;
   toDetails: (node: ExplorerNodeData) => string;
 }) {
-  const [search, setSearch] = useState<string>("");
+  const coreApi = useCoreApi();
+
+  const [busy, setBusy] = useState<boolean>(false);
+  const [filteredSymbols, setFilteredSymbols] = useState<
+    { fileId: string; symbolId: string }[]
+  >([]);
 
   const [explorerTree, setExplorerTree] = useState<ExplorerNodeData>();
 
   // Build the explorer tree when the dependency manifest changes
   useEffect(() => {
-    const tree = buildExplorerTree(props.dependencyManifest, search);
+    const tree = buildExplorerTree(props.dependencyManifest, []);
     setExplorerTree(tree);
-  }, [props.dependencyManifest, search]);
+  }, [props.dependencyManifest]);
+
+  const searchSchema = z.object({
+    search: z.string().min(1, "Search is required"),
+  });
+
+  const form = useForm<z.infer<typeof searchSchema>>({
+    resolver: zodResolver(searchSchema),
+    defaultValues: {
+      search: "",
+    },
+  });
+
+  async function onSubmitSearch(values: z.infer<typeof searchSchema>) {
+    setBusy(true);
+    try {
+      const {
+        url: smartFilterUrl,
+        method: smartFilterMethod,
+        body: smartFilterBody,
+      } = manifestApiTypes.prepareSmartFilter(
+        props.dependencyManifestId,
+        {
+          prompt: values.search,
+        },
+      );
+
+      const response = await coreApi.handleRequest(
+        smartFilterUrl,
+        smartFilterMethod,
+        smartFilterBody,
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to search for files");
+      }
+
+      const responseData = await response
+        .json() as manifestApiTypes.SmartFilterResponse;
+
+      if (!responseData.success) {
+        toast.error(responseData.message);
+        return;
+      }
+
+      const filteredSymbols = responseData.results;
+
+      setFilteredSymbols(filteredSymbols);
+
+      const tree = buildExplorerTree(props.dependencyManifest, filteredSymbols);
+      setExplorerTree(tree);
+
+      toast.success(responseData.message);
+    } catch (error) {
+      console.error(error);
+      toast.error("Error searching for files");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function onClearSearch() {
+    setFilteredSymbols([]);
+    setExplorerTree(buildExplorerTree(props.dependencyManifest, []));
+  }
 
   function buildExplorerTree(
-    dependencyManifest: DependencyManifest,
-    search: string,
+    dependencyManifest: dependencyManifestTypes.DependencyManifest,
+    filteredSymbols: { fileId: string; symbolId: string }[],
   ): ExplorerNodeData | undefined {
     const getExplorerNodeId = (filePath: string, instanceId?: string) => {
       if (instanceId) {
@@ -72,28 +151,30 @@ export function FileExplorerSidebar(props: {
       children: new Map(),
     };
 
-    // Filter function to check if a string matches the search term
-    const matchesSearch = (text: string): boolean => {
-      if (!search) return true;
-      return text.toLowerCase().includes(search.toLowerCase());
-    };
+    // Create a set for faster lookup of filtered symbols
+    const filteredSymbolsSet = new Set(
+      filteredSymbols.map((s) => `${s.fileId}#${s.symbolId}`),
+    );
 
-    // Track if any nodes match the search to avoid empty results
+    // Create a set of files that have filtered symbols
+    const filesWithFilteredSymbols = new Set(
+      filteredSymbols.map((s) => s.fileId),
+    );
+
+    // If no filtered symbols provided, show everything
+    const shouldShowAll = filteredSymbols.length === 0;
+
+    // Track if any nodes match the filter to avoid empty results
     let hasMatchingNodes = false;
 
     for (const fileDependencyManifest of Object.values(dependencyManifest)) {
       const filePath = fileDependencyManifest.filePath;
-      const fileName = filePath.split("/").pop() || "";
-      const fileMatchesSearch = matchesSearch(fileName);
 
-      // Check if any symbols match the search
-      const matchingSymbols = Object.keys(fileDependencyManifest.symbols)
-        .filter(
-          (symbolId) => matchesSearch(symbolId),
-        );
+      // Check if this file should be included
+      const fileShouldBeIncluded = shouldShowAll ||
+        filesWithFilteredSymbols.has(filePath);
 
-      // Skip this file if neither the file nor any symbols match the search
-      if (search && !fileMatchesSearch && matchingSymbols.length === 0) {
+      if (!fileShouldBeIncluded) {
         continue;
       }
 
@@ -114,9 +195,10 @@ export function FileExplorerSidebar(props: {
       }
       currentNode.fileId = getExplorerNodeId(filePath);
 
-      // Only add symbols that match the search or if no search is provided
+      // Add symbols - either all symbols if no filter, or only filtered symbols
       for (const instanceId of Object.keys(fileDependencyManifest.symbols)) {
-        if (!search || matchesSearch(instanceId)) {
+        const symbolKey = `${filePath}#${instanceId}`;
+        if (shouldShowAll || filteredSymbolsSet.has(symbolKey)) {
           const id = getExplorerNodeId(filePath, instanceId);
           currentNode.children.set(id, {
             id: id,
@@ -129,8 +211,8 @@ export function FileExplorerSidebar(props: {
       }
     }
 
-    // If no nodes match the search, return an empty tree
-    if (search && !hasMatchingNodes) {
+    // If no nodes match the filter, return an empty tree
+    if (!shouldShowAll && !hasMatchingNodes) {
       return undefined;
     }
 
@@ -138,10 +220,28 @@ export function FileExplorerSidebar(props: {
       // First recursively flatten all children
       if (node.children.size > 0) {
         const flattenedChildren = new Map<string, ExplorerNodeData>();
+
+        // Sort children into folders and files
+        const folders: Array<[string, ExplorerNodeData]> = [];
+        const files: Array<[string, ExplorerNodeData]> = [];
+
         for (const [id, child] of node.children) {
           const flattenedChild = flattenTree(child);
-          flattenedChildren.set(id, flattenedChild);
+          if (flattenedChild.fileId) {
+            files.push([id, flattenedChild]);
+          } else {
+            folders.push([id, flattenedChild]);
+          }
         }
+
+        // Add folders first, then files
+        for (const [id, folder] of folders) {
+          flattenedChildren.set(id, folder);
+        }
+        for (const [id, file] of files) {
+          flattenedChildren.set(id, file);
+        }
+
         node.children = flattenedChildren;
       }
 
@@ -167,7 +267,9 @@ export function FileExplorerSidebar(props: {
     };
 
     // Flatten nodes that have only one child
-    return flattenTree(root);
+    const flattenedTree = flattenTree(root);
+
+    return flattenedTree;
   }
 
   return (
@@ -186,23 +288,57 @@ export function FileExplorerSidebar(props: {
       <SidebarContent>
         <SidebarGroup className="flex h-full">
           <ScrollArea>
-            <Tooltip delayDuration={500}>
-              <TooltipTrigger asChild>
-                <Input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search"
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmitSearch)}
+                className="flex items-center gap-2"
+              >
+                <FormField
+                  control={form.control}
+                  name="search"
+                  render={({ field }) => (
+                    <Tooltip delayDuration={500}>
+                      <TooltipTrigger asChild>
+                        <Input
+                          {...field}
+                          placeholder="Search"
+                          disabled={busy}
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <div className="text-sm">
+                          AI-powered search for code exploration.
+                          <br />
+                          Filter by type (e.g. "show all classes"),
+                          <br />
+                          by metrics (e.g. "functions with high complexity"),
+                          <br />
+                          or by business domain (e.g. "auth related code").
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
                 />
-              </TooltipTrigger>
-              <TooltipContent>
-                <div className="text-sm">
-                  Search for a file or symbol.
-                  <br />
-                  The search will find partial matches in both symbol names and
-                  file paths.
-                </div>
-              </TooltipContent>
-            </Tooltip>
+                <Button
+                  type="submit"
+                  disabled={busy}
+                  variant="ghost"
+                  size="icon"
+                >
+                  <Sparkles />
+                </Button>
+                {filteredSymbols.length > 0 && (
+                  <Button
+                    onClick={onClearSearch}
+                    disabled={busy}
+                    variant="ghost"
+                    size="icon"
+                  >
+                    <X />
+                  </Button>
+                )}
+              </form>
+            </Form>
 
             <div className="pt-2">
               {!explorerTree

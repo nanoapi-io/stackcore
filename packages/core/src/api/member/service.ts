@@ -1,6 +1,5 @@
 import { db } from "../../db/database.ts";
-import { ADMIN_ROLE, type MemberRole } from "../../db/models/member.ts";
-import type { GetMembersResponse } from "./types.ts";
+import { type memberApiTypes, memberTypes } from "@stackcore/shared";
 
 export const notMemberOfWorkspaceError = "not_member_of_workspace";
 export const notAdminOfWorkspaceError = "not_admin_of_workspace";
@@ -17,7 +16,7 @@ export class MemberService {
     page: number,
     limit: number,
     search?: string,
-  ): Promise<{ error: string } | GetMembersResponse> {
+  ): Promise<{ error: string } | memberApiTypes.GetMembersResponse> {
     // check if user is a member of the workspace
     const userMember = await db
       .selectFrom("member")
@@ -84,7 +83,7 @@ export class MemberService {
   public async updateMemberRole(
     userId: number,
     memberId: number,
-    role: MemberRole,
+    role: memberTypes.MemberRole,
   ): Promise<{ error?: string }> {
     // First check if user is an admin of the workspace of the member
 
@@ -109,7 +108,7 @@ export class MemberService {
       return { error: notMemberOfWorkspaceError };
     }
 
-    if (userMember.role !== ADMIN_ROLE) {
+    if (userMember.role !== memberTypes.ADMIN_ROLE) {
       return { error: notAdminOfWorkspaceError };
     }
 
@@ -155,7 +154,7 @@ export class MemberService {
       return { error: notMemberOfWorkspaceError };
     }
 
-    if (userMember.role !== ADMIN_ROLE) {
+    if (userMember.role !== memberTypes.ADMIN_ROLE) {
       return { error: notAdminOfWorkspaceError };
     }
 

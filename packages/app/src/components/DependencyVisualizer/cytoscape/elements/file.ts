@@ -1,15 +1,7 @@
 import type {
-  AuditManifest,
-  DependencyManifest,
-  metricCharacterCount,
-  metricCodeCharacterCount,
-  metricCodeLineCount,
-  metricCyclomaticComplexity,
-  metricDependencyCount,
-  metricDependentCount,
-  metricLinesCount,
-  SymbolType,
-} from "@stackcore/core/manifest";
+  auditManifestTypes,
+  dependencyManifestTypes,
+} from "@stackcore/shared";
 import {
   getCollapsedSymbolNodeLabel,
   getExpandedSymbolNodeLabel,
@@ -30,13 +22,13 @@ function createNodeData(params: {
   symbolType: string;
   isExternal: boolean;
   metricsSeverity: {
-    [metricLinesCount]: number;
-    [metricCodeLineCount]: number;
-    [metricCodeCharacterCount]: number;
-    [metricCharacterCount]: number;
-    [metricDependencyCount]: number;
-    [metricDependentCount]: number;
-    [metricCyclomaticComplexity]: number;
+    [dependencyManifestTypes.metricLinesCount]: number;
+    [dependencyManifestTypes.metricCodeLineCount]: number;
+    [dependencyManifestTypes.metricCodeCharacterCount]: number;
+    [dependencyManifestTypes.metricCharacterCount]: number;
+    [dependencyManifestTypes.metricDependencyCount]: number;
+    [dependencyManifestTypes.metricDependentCount]: number;
+    [dependencyManifestTypes.metricCyclomaticComplexity]: number;
   };
   expandedLabel: string;
   collapsedLabel: string;
@@ -79,16 +71,18 @@ interface CustomNodeDefinition extends NodeDefinition {
 }
 
 function processDependencies(
-  symbol: DependencyManifest[string]["symbols"][string],
+  symbol: dependencyManifestTypes.DependencyManifest[string]["symbols"][string],
   symbolNodeId: string,
-  dependencyManifest: DependencyManifest,
-  auditManifest: AuditManifest,
+  dependencyManifest: dependencyManifestTypes.DependencyManifest,
+  auditManifest: auditManifestTypes.AuditManifest,
   nodes: CustomNodeDefinition[],
   edges: EdgeDefinition[],
 ) {
   Object.values(symbol.dependencies).forEach((dep) => {
-    let depDependencyManifest: DependencyManifest[string] | undefined;
-    let depAuditManifest: AuditManifest[string] | undefined;
+    let depDependencyManifest:
+      | dependencyManifestTypes.DependencyManifest[string]
+      | undefined;
+    let depAuditManifest: auditManifestTypes.AuditManifest[string] | undefined;
 
     if (!dep.isExternal) {
       depDependencyManifest = dependencyManifest[dep.id];
@@ -105,7 +99,8 @@ function processDependencies(
       );
 
       if (!existingNode) {
-        let depSymbolType: SymbolType | "unknown" = "unknown";
+        let depSymbolType: dependencyManifestTypes.SymbolType | "unknown" =
+          "unknown";
         if (depDependencyManifest) {
           depSymbolType = depDependencyManifest.symbols[depSymbolName].type;
         }
@@ -156,10 +151,10 @@ function processDependencies(
 }
 
 function processDependents(
-  symbol: DependencyManifest[string]["symbols"][string],
+  symbol: dependencyManifestTypes.DependencyManifest[string]["symbols"][string],
   symbolNodeId: string,
-  dependencyManifest: DependencyManifest,
-  auditManifest: AuditManifest,
+  dependencyManifest: dependencyManifestTypes.DependencyManifest,
+  auditManifest: auditManifestTypes.AuditManifest,
   nodes: CustomNodeDefinition[],
   edges: EdgeDefinition[],
 ) {
@@ -222,8 +217,8 @@ function processDependents(
 
 export function getSymbolElementsInFile(
   fileId: string,
-  dependencyManifest: DependencyManifest,
-  auditManifest: AuditManifest,
+  dependencyManifest: dependencyManifestTypes.DependencyManifest,
+  auditManifest: auditManifestTypes.AuditManifest,
 ) {
   const fileManifest = dependencyManifest[fileId];
   if (!fileManifest) {

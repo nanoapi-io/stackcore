@@ -1,12 +1,12 @@
 import { Outlet, useNavigate, useParams } from "react-router";
 import { useEffect, useState } from "react";
 import { Skeleton } from "../../../components/shadcn/Skeleton.tsx";
-import { ProjectApiTypes } from "@stackcore/core/responses";
+import { projectApiTypes } from "@stackcore/shared";
 import { toast } from "sonner";
 import { useCoreApi } from "../../../contexts/CoreApi.tsx";
 
 export type ProjectPageContext = {
-  project: ProjectApiTypes.GetProjectDetailsResponse;
+  project: projectApiTypes.GetProjectDetailsResponse;
 };
 
 export default function ProjectBase() {
@@ -15,7 +15,7 @@ export default function ProjectBase() {
 
   const { projectId } = useParams<{ projectId: string }>();
   const [project, setProject] = useState<
-    ProjectApiTypes.GetProjectDetailsResponse | undefined
+    projectApiTypes.GetProjectDetailsResponse | undefined
   >(undefined);
 
   async function getProject() {
@@ -25,7 +25,7 @@ export default function ProjectBase() {
 
     try {
       // Use the new efficient project details endpoint
-      const { url, method } = ProjectApiTypes.prepareGetProjectDetails(
+      const { url, method } = projectApiTypes.prepareGetProjectDetails(
         parseInt(projectId),
       );
 
@@ -41,7 +41,7 @@ export default function ProjectBase() {
       }
 
       const projectData = await response
-        .json() as ProjectApiTypes.GetProjectDetailsResponse;
+        .json() as projectApiTypes.GetProjectDetailsResponse;
       setProject(projectData);
     } catch (error) {
       console.error(error);

@@ -5,14 +5,11 @@ import type {
   Selectable,
   Updateable,
 } from "kysely";
-
-export const ADMIN_ROLE = "admin";
-export const MEMBER_ROLE = "member";
-export type MemberRole = typeof ADMIN_ROLE | typeof MEMBER_ROLE;
+import type { memberTypes } from "@stackcore/shared";
 
 export interface MemberTable {
   id: Generated<number>;
-  role: MemberRole;
+  role: memberTypes.MemberRole;
   workspace_id: number;
   user_id: number;
   created_at: ColumnType<Date>;

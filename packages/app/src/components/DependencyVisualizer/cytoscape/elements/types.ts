@@ -1,24 +1,16 @@
-import type {
-  metricCharacterCount,
-  metricCodeCharacterCount,
-  metricCodeLineCount,
-  metricCyclomaticComplexity,
-  metricDependencyCount,
-  metricDependentCount,
-  metricLinesCount,
-} from "@stackcore/core/manifest";
+import type { dependencyManifestTypes } from "@stackcore/shared";
 
 export interface NapiNodeData {
   id: string;
   position: { x: number; y: number };
   metricsSeverity: {
-    [metricLinesCount]: number;
-    [metricCodeLineCount]: number;
-    [metricCodeCharacterCount]: number;
-    [metricCharacterCount]: number;
-    [metricDependencyCount]: number;
-    [metricDependentCount]: number;
-    [metricCyclomaticComplexity]: number;
+    [dependencyManifestTypes.metricLinesCount]: number;
+    [dependencyManifestTypes.metricCodeLineCount]: number;
+    [dependencyManifestTypes.metricCodeCharacterCount]: number;
+    [dependencyManifestTypes.metricCharacterCount]: number;
+    [dependencyManifestTypes.metricDependencyCount]: number;
+    [dependencyManifestTypes.metricDependentCount]: number;
+    [dependencyManifestTypes.metricCyclomaticComplexity]: number;
   };
   expanded: {
     label: string;

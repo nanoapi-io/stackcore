@@ -1,7 +1,6 @@
 import { Router, Status } from "@oak/oak";
 import { InvitationService } from "./service.ts";
 import { authMiddleware } from "../auth/middleware.ts";
-import { createInvitationSchema } from "./types.ts";
 import z from "zod";
 
 const invitationService = new InvitationService();
@@ -10,6 +9,12 @@ const router = new Router();
 // Create invitation to join a workspace
 router.post("/", authMiddleware, async (ctx) => {
   const body = await ctx.request.body.json();
+
+  const createInvitationSchema = z.object({
+    workspaceId: z.number(),
+    email: z.string().email(),
+    returnUrl: z.string(),
+  });
 
   const parsedBody = createInvitationSchema.safeParse(body);
 

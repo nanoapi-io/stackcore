@@ -1,15 +1,5 @@
 import type { NodeSingular, StylesheetJson } from "cytoscape";
-import {
-  type Metric,
-  symbolTypeClass,
-  symbolTypeDelegate,
-  symbolTypeEnum,
-  symbolTypeFunction,
-  symbolTypeInterface,
-  symbolTypeRecord,
-  symbolTypeStruct,
-  symbolTypeVariable,
-} from "@stackcore/core/manifest";
+import { dependencyManifestTypes } from "@stackcore/shared";
 import type { NapiNodeData, SymbolNapiNodeData } from "../elements/types.ts";
 
 interface CytoscapeStyles {
@@ -112,7 +102,7 @@ function getCytoscapeStyles(theme: "light" | "dark" = "light") {
 }
 
 export function getCytoscapeStylesheet(
-  targetMetric: Metric | undefined,
+  targetMetric: dependencyManifestTypes.Metric | undefined,
   theme: "light" | "dark" = "light",
 ) {
   const styles = getCytoscapeStyles(theme);
@@ -166,16 +156,16 @@ export function getCytoscapeStylesheet(
           const data = node.data() as SymbolNapiNodeData;
           if (data.isExternal) return "octagon";
           switch (data.symbolType) {
-            case symbolTypeClass:
-            case symbolTypeInterface:
-            case symbolTypeStruct:
-            case symbolTypeEnum:
-            case symbolTypeRecord:
+            case dependencyManifestTypes.symbolTypeClass:
+            case dependencyManifestTypes.symbolTypeInterface:
+            case dependencyManifestTypes.symbolTypeStruct:
+            case dependencyManifestTypes.symbolTypeEnum:
+            case dependencyManifestTypes.symbolTypeRecord:
               return "hexagon";
-            case symbolTypeFunction:
-            case symbolTypeDelegate:
+            case dependencyManifestTypes.symbolTypeFunction:
+            case dependencyManifestTypes.symbolTypeDelegate:
               return "roundrectangle";
-            case symbolTypeVariable:
+            case dependencyManifestTypes.symbolTypeVariable:
               return "ellipse";
             default:
               return "ellipse";

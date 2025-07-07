@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from "react-router";
-import { InvitationApiTypes } from "@stackcore/core/responses";
+import { invitationApiTypes } from "@stackcore/shared";
 import { useCoreApi } from "../../contexts/CoreApi.tsx";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
@@ -39,14 +39,13 @@ export default function InvitationClaimPage() {
     try {
       setClaimState("loading");
 
-      const { url, method, body } = InvitationApiTypes.prepareClaimInvitation(
+      const { url, method } = invitationApiTypes.prepareClaimInvitation(
         uuid,
       );
 
       const response = await coreApi.handleRequest(
         url,
         method,
-        body,
       );
 
       if (response.ok && response.status === 200) {

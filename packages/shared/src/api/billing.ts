@@ -1,13 +1,4 @@
-import { z } from "zod";
-import {
-  BASIC_PRODUCT,
-  MONTHLY_BILLING_CYCLE,
-  PREMIUM_PRODUCT,
-  PRO_PRODUCT,
-  type StripeBillingCycle,
-  type StripeProduct,
-  YEARLY_BILLING_CYCLE,
-} from "../../db/models/workspace.ts";
+import type { StripeBillingCycle, StripeProduct } from "../stripe.ts";
 
 export type SubscriptionDetails = {
   currentUsage: number;
@@ -21,7 +12,10 @@ export type SubscriptionDetails = {
 
 export function prepareGetSubscription(
   workspaceId: number,
-) {
+): {
+  url: string;
+  method: string;
+} {
   const searchParams = new URLSearchParams();
   searchParams.set("workspaceId", workspaceId.toString());
 
@@ -31,19 +25,19 @@ export function prepareGetSubscription(
   };
 }
 
-export const upgradeSubscriptionRequestSchema = z.object({
-  workspaceId: z.number(),
-  product: z.enum([BASIC_PRODUCT, PRO_PRODUCT, PREMIUM_PRODUCT]),
-  billingCycle: z.enum([MONTHLY_BILLING_CYCLE, YEARLY_BILLING_CYCLE]),
-});
-
-export type UpgradeSubscriptionRequest = z.infer<
-  typeof upgradeSubscriptionRequestSchema
->;
+export type UpgradeSubscriptionRequest = {
+  workspaceId: number;
+  product: StripeProduct;
+  billingCycle: StripeBillingCycle;
+};
 
 export function prepareUpgradeSubscription(
   payload: UpgradeSubscriptionRequest,
-) {
+): {
+  url: string;
+  method: string;
+  body: UpgradeSubscriptionRequest;
+} {
   return {
     url: "/billing/subscription/upgrade",
     method: "POST",
@@ -51,19 +45,19 @@ export function prepareUpgradeSubscription(
   };
 }
 
-export const downgradeSubscriptionRequestSchema = z.object({
-  workspaceId: z.number(),
-  product: z.enum([BASIC_PRODUCT, PRO_PRODUCT, PREMIUM_PRODUCT]),
-  billingCycle: z.enum([MONTHLY_BILLING_CYCLE, YEARLY_BILLING_CYCLE]),
-});
-
-export type DowngradeSubscriptionRequest = z.infer<
-  typeof downgradeSubscriptionRequestSchema
->;
+export type DowngradeSubscriptionRequest = {
+  workspaceId: number;
+  product: StripeProduct;
+  billingCycle: StripeBillingCycle;
+};
 
 export function prepareDowngradeSubscription(
   payload: DowngradeSubscriptionRequest,
-) {
+): {
+  url: string;
+  method: string;
+  body: DowngradeSubscriptionRequest;
+} {
   return {
     url: "/billing/subscription/downgrade",
     method: "POST",
@@ -71,14 +65,10 @@ export function prepareDowngradeSubscription(
   };
 }
 
-export const createPortalSessionRequestSchema = z.object({
-  workspaceId: z.number(),
-  returnUrl: z.string(),
-});
-
-export type CreatePortalSessionRequest = z.infer<
-  typeof createPortalSessionRequestSchema
->;
+export type CreatePortalSessionRequest = {
+  workspaceId: number;
+  returnUrl: string;
+};
 
 export type CreatePortalSessionResponse = {
   url: string;
@@ -86,7 +76,11 @@ export type CreatePortalSessionResponse = {
 
 export function prepareCreatePortalSession(
   payload: CreatePortalSessionRequest,
-) {
+): {
+  url: string;
+  method: string;
+  body: CreatePortalSessionRequest;
+} {
   return {
     url: "/billing/portal",
     method: "POST",
@@ -96,7 +90,11 @@ export function prepareCreatePortalSession(
 
 export function prepareCreatePortalSessionPaymentMethod(
   payload: CreatePortalSessionRequest,
-) {
+): {
+  url: string;
+  method: string;
+  body: CreatePortalSessionRequest;
+} {
   return {
     url: "/billing/portal/paymentMethod",
     method: "POST",

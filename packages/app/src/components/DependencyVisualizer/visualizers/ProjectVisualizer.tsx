@@ -7,10 +7,9 @@ import type { VisualizerContext } from "../DependencyVisualizer.tsx";
 import FileDetailsPane from "../components/detailsPanes/FileDetailsPane.tsx";
 import { ProjectDependencyVisualizer } from "../cytoscape/projectDependencyVisualizer/index.ts";
 import type {
-  AuditManifest,
-  DependencyManifest,
-  Metric,
-} from "@stackcore/core/manifest";
+  auditManifestTypes,
+  dependencyManifestTypes,
+} from "@stackcore/shared";
 import { useTheme } from "../../../contexts/ThemeProvider.tsx";
 
 export default function ProjectVisualizer(props: VisualizerContext) {
@@ -27,12 +26,16 @@ export default function ProjectVisualizer(props: VisualizerContext) {
   >(undefined);
 
   const metricFromUrl = (searchParams.get("metric") || undefined) as
-    | Metric
+    | dependencyManifestTypes.Metric
     | undefined;
 
-  const [metric, setMetric] = useState<Metric | undefined>(metricFromUrl);
+  const [metric, setMetric] = useState<
+    dependencyManifestTypes.Metric | undefined
+  >(metricFromUrl);
 
-  function handleMetricChange(metric: Metric | undefined) {
+  function handleMetricChange(
+    metric: dependencyManifestTypes.Metric | undefined,
+  ) {
     if (metric) {
       searchParams.set("metric", metric);
       setSearchParams(searchParams);
@@ -46,15 +49,17 @@ export default function ProjectVisualizer(props: VisualizerContext) {
   const [contextMenu, setContextMenu] = useState<
     {
       position: { x: number; y: number };
-      fileDependencyManifest: DependencyManifest[string];
+      fileDependencyManifest:
+        dependencyManifestTypes.DependencyManifest[string];
     } | undefined
   >(undefined);
 
   const [detailsPane, setDetailsPane] = useState<
     {
       manifestId: number;
-      fileDependencyManifest: DependencyManifest[string];
-      fileAuditManifest: AuditManifest[string];
+      fileDependencyManifest:
+        dependencyManifestTypes.DependencyManifest[string];
+      fileAuditManifest: auditManifestTypes.AuditManifest[string];
     } | undefined
   >(undefined);
 

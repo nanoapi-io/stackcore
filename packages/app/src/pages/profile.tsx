@@ -50,7 +50,7 @@ import { Copy, Key, Loader, Plus, Trash, User } from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { TokenApiTypes } from "@stackcore/core/responses";
+import { tokenApiTypes } from "@stackcore/shared";
 
 type Token = {
   id: number;
@@ -80,7 +80,7 @@ export default function ProfilePage() {
     const pageSize = pagination.pageSize;
 
     try {
-      const { url, method } = TokenApiTypes.prepareGetTokens({
+      const { url, method } = tokenApiTypes.prepareGetTokens({
         page,
         limit: pageSize,
       });
@@ -91,7 +91,7 @@ export default function ProfilePage() {
         throw new Error("Failed to get tokens");
       }
 
-      const data = await response.json() as TokenApiTypes.GetTokensResponse;
+      const data = await response.json() as tokenApiTypes.GetTokensResponse;
 
       setTokens(data.results);
       setTotal(data.total);
@@ -352,7 +352,7 @@ function CreateTokenDialog(
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsBusy(true);
     try {
-      const { url, method, body } = TokenApiTypes.prepareCreateToken({
+      const { url, method, body } = tokenApiTypes.prepareCreateToken({
         name: values.name,
       });
 
@@ -366,7 +366,7 @@ function CreateTokenDialog(
         throw new Error("Failed to create token");
       }
 
-      const data = await response.json() as TokenApiTypes.CreateTokenResponse;
+      const data = await response.json() as tokenApiTypes.CreateTokenResponse;
 
       setCreatedToken(data.uuid);
       toast.success("Token created");
@@ -493,7 +493,7 @@ function DeleteTokenDialog(
   async function handleDelete() {
     setIsBusy(true);
     try {
-      const { url, method } = TokenApiTypes.prepareDeleteToken(props.token.id);
+      const { url, method } = tokenApiTypes.prepareDeleteToken(props.token.id);
 
       const response = await coreApi.handleRequest(url, method);
 

@@ -1,14 +1,6 @@
 import stripe from "stripe";
 import settings from "../settings.ts";
-import {
-  BASIC_PRODUCT,
-  MONTHLY_BILLING_CYCLE,
-  PREMIUM_PRODUCT,
-  PRO_PRODUCT,
-  type StripeBillingCycle,
-  type StripeProduct,
-  YEARLY_BILLING_CYCLE,
-} from "../db/models/workspace.ts";
+import { stripeTypes } from "@stackcore/shared";
 
 export function getStripe() {
   if (settings.STRIPE.USE_MOCK) {
@@ -43,35 +35,30 @@ export class StripeService {
   }
 
   private getStandardStripeProductPriceId(
-    product: StripeProduct,
-    billingCycle: StripeBillingCycle,
+    product: stripeTypes.StripeProduct,
+    billingCycle: stripeTypes.StripeBillingCycle,
   ) {
-    if (product === BASIC_PRODUCT) {
-      if (billingCycle === MONTHLY_BILLING_CYCLE) {
-        return settings.STRIPE.PRODUCTS[BASIC_PRODUCT][MONTHLY_BILLING_CYCLE]
-          .PRICE_ID;
+    if (product === stripeTypes.BASIC_PRODUCT) {
+      if (billingCycle === stripeTypes.MONTHLY_BILLING_CYCLE) {
+        return settings.STRIPE.PRODUCTS.BASIC.MONTHLY.PRICE_ID;
       }
     }
 
-    if (product === PRO_PRODUCT) {
-      if (billingCycle === MONTHLY_BILLING_CYCLE) {
-        return settings.STRIPE.PRODUCTS[PRO_PRODUCT][MONTHLY_BILLING_CYCLE]
-          .PRICE_ID;
+    if (product === stripeTypes.PRO_PRODUCT) {
+      if (billingCycle === stripeTypes.MONTHLY_BILLING_CYCLE) {
+        return settings.STRIPE.PRODUCTS.PRO.MONTHLY.PRICE_ID;
       }
-      if (billingCycle === YEARLY_BILLING_CYCLE) {
-        return settings.STRIPE.PRODUCTS[PRO_PRODUCT][YEARLY_BILLING_CYCLE]
-          .PRICE_ID;
+      if (billingCycle === stripeTypes.YEARLY_BILLING_CYCLE) {
+        return settings.STRIPE.PRODUCTS.PRO.YEARLY.PRICE_ID;
       }
     }
 
-    if (product === PREMIUM_PRODUCT) {
-      if (billingCycle === MONTHLY_BILLING_CYCLE) {
-        return settings.STRIPE.PRODUCTS[PREMIUM_PRODUCT][MONTHLY_BILLING_CYCLE]
-          .PRICE_ID;
+    if (product === stripeTypes.PREMIUM_PRODUCT) {
+      if (billingCycle === stripeTypes.MONTHLY_BILLING_CYCLE) {
+        return settings.STRIPE.PRODUCTS.PREMIUM.MONTHLY.PRICE_ID;
       }
-      if (billingCycle === YEARLY_BILLING_CYCLE) {
-        return settings.STRIPE.PRODUCTS[PREMIUM_PRODUCT][YEARLY_BILLING_CYCLE]
-          .PRICE_ID;
+      if (billingCycle === stripeTypes.YEARLY_BILLING_CYCLE) {
+        return settings.STRIPE.PRODUCTS.PREMIUM.YEARLY.PRICE_ID;
       }
     }
 
@@ -81,8 +68,8 @@ export class StripeService {
 
   public async createSubscription(
     stripeCustomerId: string,
-    product: StripeProduct,
-    licensePeriod: StripeBillingCycle,
+    product: stripeTypes.StripeProduct,
+    licensePeriod: stripeTypes.StripeBillingCycle,
     billingThreshold: number | null,
   ) {
     const priceId = this.getStandardStripeProductPriceId(
@@ -129,8 +116,8 @@ export class StripeService {
 
   public async switchSubscription(
     stripeCustomerId: string,
-    product: StripeProduct,
-    licensePeriod: StripeBillingCycle,
+    product: stripeTypes.StripeProduct,
+    licensePeriod: stripeTypes.StripeBillingCycle,
     billingThreshold: number | null,
     switchMethod: "upgrade" | "downgrade",
   ) {

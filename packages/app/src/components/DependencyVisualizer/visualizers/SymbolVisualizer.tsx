@@ -7,9 +7,9 @@ import type { VisualizerContext } from "../DependencyVisualizer.tsx";
 import SymbolDetailsPane from "../components/detailsPanes/SymbolDetailsPane.tsx";
 import { useTheme } from "../../../contexts/ThemeProvider.tsx";
 import type {
-  AuditManifest,
-  DependencyManifest,
-} from "@stackcore/core/manifest";
+  auditManifestTypes,
+  dependencyManifestTypes,
+} from "@stackcore/shared";
 import { SymbolDependencyVisualizer } from "../cytoscape/symbolDependencyVisualizer/index.ts";
 
 export default function SymbolVisualizer(
@@ -59,18 +59,23 @@ export default function SymbolVisualizer(
   const [contextMenu, setContextMenu] = useState<
     {
       position: { x: number; y: number };
-      fileDependencyManifest: DependencyManifest[string];
-      symbolDependencyManifest: DependencyManifest[string]["symbols"][string];
+      fileDependencyManifest:
+        dependencyManifestTypes.DependencyManifest[string];
+      symbolDependencyManifest:
+        dependencyManifestTypes.DependencyManifest[string]["symbols"][string];
     } | undefined
   >(undefined);
 
   const [detailsPane, setDetailsPane] = useState<
     {
       manifestId: number;
-      fileDependencyManifest: DependencyManifest[string];
-      symbolDependencyManifest: DependencyManifest[string]["symbols"][string];
-      fileAuditManifest: AuditManifest[string];
-      symbolAuditManifest: AuditManifest[string]["symbols"][string];
+      fileDependencyManifest:
+        dependencyManifestTypes.DependencyManifest[string];
+      symbolDependencyManifest:
+        dependencyManifestTypes.DependencyManifest[string]["symbols"][string];
+      fileAuditManifest: auditManifestTypes.AuditManifest[string];
+      symbolAuditManifest:
+        auditManifestTypes.AuditManifest[string]["symbols"][string];
     } | undefined
   >(undefined); // Hook to update highlight node in the graph
 

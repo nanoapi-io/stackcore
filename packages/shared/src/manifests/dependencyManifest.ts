@@ -1,5 +1,3 @@
-import z from "zod";
-
 // Dependency manifest version 1
 // We will add more versions in the future for backward compatibility
 
@@ -43,64 +41,37 @@ export type SymbolType =
   | typeof symbolTypeRecord
   | typeof symbolTypeDelegate;
 
-export const metricsSchema = z.object({
-  [metricLinesCount]: z.number(),
-  [metricCodeLineCount]: z.number(),
-  [metricCharacterCount]: z.number(),
-  [metricCodeCharacterCount]: z.number(),
-  [metricDependencyCount]: z.number(),
-  [metricDependentCount]: z.number(),
-  [metricCyclomaticComplexity]: z.number(),
-});
+type DependencyInfo = {
+  id: string;
+  isExternal: boolean;
+  symbols: Record<string, string>;
+};
 
-const symbolTypeSchema = z.enum([
-  symbolTypeClass,
-  symbolTypeFunction,
-  symbolTypeVariable,
-  symbolTypeStruct,
-  symbolTypeEnum,
-  symbolTypeUnion,
-  symbolTypeTypedef,
-  symbolTypeInterface,
-  symbolTypeRecord,
-  symbolTypeDelegate,
-]);
+type DependentInfo = {
+  id: string;
+  symbols: Record<string, string>;
+};
 
-const dependencyInfoSchema = z.object({
-  id: z.string(),
-  isExternal: z.boolean(),
-  symbols: z.record(z.string(), z.string()),
-});
+type SymbolDependencyManifest = {
+  id: string;
+  type: SymbolType;
+  metrics: Record<Metric, number>;
+  description: string;
+  dependencies: Record<string, DependencyInfo>;
+  dependents: Record<string, DependentInfo>;
+};
 
-const dependentInfoSchema = z.object({
-  id: z.string(),
-  symbols: z.record(z.string(), z.string()),
-});
+type FileDependencyManifest = {
+  id: string;
+  filePath: string;
+  language: string;
+  metrics: Record<Metric, number>;
+  dependencies: Record<string, DependencyInfo>;
+  dependents: Record<string, DependentInfo>;
+  symbols: Record<string, SymbolDependencyManifest>;
+};
 
-const symbolDependencyManifestSchema = z.object({
-  id: z.string(),
-  type: symbolTypeSchema,
-  metrics: metricsSchema,
-  dependencies: z.record(z.string(), dependencyInfoSchema),
-  dependents: z.record(z.string(), dependentInfoSchema),
-});
-
-const fileDependencyManifestSchema = z.object({
-  id: z.string(),
-  filePath: z.string(),
-  language: z.string(),
-  metrics: metricsSchema,
-  dependencies: z.record(z.string(), dependencyInfoSchema),
-  dependents: z.record(z.string(), dependentInfoSchema),
-  symbols: z.record(z.string(), symbolDependencyManifestSchema),
-});
-
-const dependencyManifestV1Schema = z.record(
-  z.string(),
-  fileDependencyManifestSchema,
-);
-
-export type DependencyManifestV1 = z.infer<typeof dependencyManifestV1Schema>;
+export type DependencyManifestV1 = Record<string, FileDependencyManifest>;
 
 // Union type for all dependency manifest versions
 // Add new versions here as they are created

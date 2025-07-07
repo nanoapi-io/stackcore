@@ -9,7 +9,7 @@ import {
   WorkspaceService,
 } from "./service.ts";
 import { createTestUserAndToken } from "../../testHelpers/auth.ts";
-import { WorkspaceApiTypes } from "../responseType.ts";
+import { workspaceApiTypes } from "@stackcore/shared";
 
 // POST / (create workspace)
 Deno.test("create a team workspace", async () => {
@@ -19,7 +19,7 @@ Deno.test("create a team workspace", async () => {
   try {
     const { token } = await createTestUserAndToken();
 
-    const { url, method, body } = WorkspaceApiTypes
+    const { url, method, body } = workspaceApiTypes
       .prepareCreateWorkspace({
         name: "Test Team",
       });
@@ -76,7 +76,7 @@ Deno.test("create a team workspace with a duplicate name should fail", async () 
     const workspaceService = new WorkspaceService();
     await workspaceService.createTeamWorkspace("Test Team", userId);
 
-    const { url, method, body } = WorkspaceApiTypes
+    const { url, method, body } = workspaceApiTypes
       .prepareCreateWorkspace({
         name: "Test Team",
       });
@@ -119,7 +119,7 @@ Deno.test("get user workspaces", async () => {
       );
     }
 
-    const { url, method } = WorkspaceApiTypes.prepareGetWorkspaces({
+    const { url, method } = workspaceApiTypes.prepareGetWorkspaces({
       page: 1,
       limit: 5,
     });
@@ -164,7 +164,7 @@ Deno.test("get user workspaces, pagination", async () => {
       );
     }
 
-    const { url, method } = WorkspaceApiTypes.prepareGetWorkspaces({
+    const { url, method } = workspaceApiTypes.prepareGetWorkspaces({
       page: 2,
       limit: 5,
     });
@@ -212,7 +212,7 @@ Deno.test("get user workspaces, search by name", async () => {
       );
     }
 
-    const { url, method } = WorkspaceApiTypes.prepareGetWorkspaces({
+    const { url, method } = workspaceApiTypes.prepareGetWorkspaces({
       page: 1,
       limit: 5,
       search: "Test Workspace 0",
@@ -263,7 +263,7 @@ Deno.test("update an workspace", async () => {
       .where("name", "=", "Original Name")
       .executeTakeFirstOrThrow();
 
-    const { url, method, body } = WorkspaceApiTypes
+    const { url, method, body } = workspaceApiTypes
       .prepareUpdateWorkspace(
         workspace.id,
         {
@@ -328,7 +328,7 @@ Deno.test("update an workspace - non-member", async () => {
     // Create second user (not a member of the workspace)
     const { token: nonMemberToken } = await createTestUserAndToken();
 
-    const { url, method, body } = WorkspaceApiTypes
+    const { url, method, body } = workspaceApiTypes
       .prepareUpdateWorkspace(
         workspace.id,
         {
@@ -381,7 +381,7 @@ Deno.test("deactivate an workspace", async () => {
       .where("name", "=", "Test Team")
       .executeTakeFirstOrThrow();
 
-    const { url, method } = WorkspaceApiTypes.prepareDeactivateWorkspace(
+    const { url, method } = workspaceApiTypes.prepareDeactivateWorkspace(
       workspace.id,
     );
 
@@ -438,7 +438,7 @@ Deno.test("deactivate an workspace - non-member", async () => {
     // Create second user (not a member of the workspace)
     const { token: nonMemberToken } = await createTestUserAndToken();
 
-    const { url, method } = WorkspaceApiTypes.prepareDeactivateWorkspace(
+    const { url, method } = workspaceApiTypes.prepareDeactivateWorkspace(
       workspace.id,
     );
 
@@ -481,7 +481,7 @@ Deno.test(
     try {
       const { token, personalWorkspaceId } = await createTestUserAndToken();
 
-      const { url, method } = WorkspaceApiTypes.prepareDeactivateWorkspace(
+      const { url, method } = workspaceApiTypes.prepareDeactivateWorkspace(
         personalWorkspaceId,
       );
 

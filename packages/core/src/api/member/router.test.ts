@@ -10,8 +10,7 @@ import {
   notAdminOfWorkspaceError,
   notMemberOfWorkspaceError,
 } from "./service.ts";
-import { MemberApiTypes } from "../responseType.ts";
-import type { MemberRole } from "../../db/models/member.ts";
+import { memberApiTypes, type memberTypes } from "@stackcore/shared";
 
 // GET /:workspaceId/members (list members)
 Deno.test("get workspace members", async () => {
@@ -49,7 +48,7 @@ Deno.test("get workspace members", async () => {
         .execute();
     }
 
-    const { url, method } = MemberApiTypes.prepareGetMembers({
+    const { url, method } = memberApiTypes.prepareGetMembers({
       workspaceId: workspace.id,
       page: 1,
       limit: 10,
@@ -87,7 +86,7 @@ Deno.test("get workspace members - invalid parameters", async () => {
     const { token } = await createTestUserAndToken();
 
     // Invalid workspace ID
-    const { url, method } = MemberApiTypes.prepareGetMembers({
+    const { url, method } = memberApiTypes.prepareGetMembers({
       workspaceId: -1,
       page: 1,
       limit: 10,
@@ -119,7 +118,7 @@ Deno.test("get workspace members - invalid page/limit values", async () => {
   try {
     const { token } = await createTestUserAndToken();
 
-    const { url, method } = MemberApiTypes.prepareGetMembers({
+    const { url, method } = memberApiTypes.prepareGetMembers({
       workspaceId: 1,
       page: -1,
       limit: -10,
@@ -166,7 +165,7 @@ Deno.test("get workspace members - empty search", async () => {
       .where("name", "=", "Test Workspace")
       .executeTakeFirstOrThrow();
 
-    const { url, method } = MemberApiTypes.prepareGetMembers({
+    const { url, method } = memberApiTypes.prepareGetMembers({
       workspaceId: workspace.id,
       page: 1,
       limit: 10,
@@ -231,7 +230,7 @@ Deno.test("get workspace members - pagination", async () => {
         .execute();
     }
 
-    const { url: url1, method: method1 } = MemberApiTypes.prepareGetMembers({
+    const { url: url1, method: method1 } = memberApiTypes.prepareGetMembers({
       workspaceId: workspace.id,
       page: 1,
       limit: 10,
@@ -256,7 +255,7 @@ Deno.test("get workspace members - pagination", async () => {
     assertEquals(responseBody1.total, 16); // 15 added members + 1 creator
     assertEquals(responseBody1.results.length, 10);
 
-    const { url: url2, method: method2 } = MemberApiTypes.prepareGetMembers({
+    const { url: url2, method: method2 } = memberApiTypes.prepareGetMembers({
       workspaceId: workspace.id,
       page: 2,
       limit: 10,
@@ -310,7 +309,7 @@ Deno.test("get workspace members - not a member", async () => {
     // Create second user (not a member of the workspace)
     const { token: nonMemberToken } = await createTestUserAndToken();
 
-    const { url, method } = MemberApiTypes.prepareGetMembers({
+    const { url, method } = memberApiTypes.prepareGetMembers({
       workspaceId: workspace.id,
       page: 1,
       limit: 10,
@@ -387,7 +386,7 @@ Deno.test("get workspace members - with search", async () => {
     }
 
     // Search for members with "test" in their email
-    const { url, method } = MemberApiTypes.prepareGetMembers({
+    const { url, method } = memberApiTypes.prepareGetMembers({
       workspaceId: workspace.id,
       page: 1,
       limit: 10,
@@ -452,7 +451,7 @@ Deno.test("update member role", async () => {
       .returningAll()
       .executeTakeFirstOrThrow();
 
-    const { url, method, body } = MemberApiTypes.prepareUpdateMemberRole(
+    const { url, method, body } = memberApiTypes.prepareUpdateMemberRole(
       memberRecord.id,
       {
         role: "admin",
@@ -539,7 +538,7 @@ Deno.test("update member role - non-admin user", async () => {
       .returningAll()
       .executeTakeFirstOrThrow();
 
-    const { url, method, body } = MemberApiTypes.prepareUpdateMemberRole(
+    const { url, method, body } = memberApiTypes.prepareUpdateMemberRole(
       targetMember.id,
       {
         role: "admin",
@@ -600,7 +599,7 @@ Deno.test("update member role - cannot update self", async () => {
       .where("user_id", "=", userId)
       .executeTakeFirstOrThrow();
 
-    const { url, method, body } = MemberApiTypes.prepareUpdateMemberRole(
+    const { url, method, body } = memberApiTypes.prepareUpdateMemberRole(
       adminMember.id,
       {
         role: "member",
@@ -666,10 +665,10 @@ Deno.test("update member role - invalid role value", async () => {
       .returningAll()
       .executeTakeFirstOrThrow();
 
-    const { url, method, body } = MemberApiTypes.prepareUpdateMemberRole(
+    const { url, method, body } = memberApiTypes.prepareUpdateMemberRole(
       memberRecord.id,
       {
-        role: "invalid_role" as MemberRole,
+        role: "invalid_role" as memberTypes.MemberRole,
       },
     );
 
@@ -703,7 +702,7 @@ Deno.test("update member role - non-existent member", async () => {
   try {
     const { token } = await createTestUserAndToken();
 
-    const { url, method, body } = MemberApiTypes.prepareUpdateMemberRole(
+    const { url, method, body } = memberApiTypes.prepareUpdateMemberRole(
       999999,
       {
         role: "admin",
@@ -742,7 +741,7 @@ Deno.test("update member role - invalid member ID format", async () => {
   try {
     const { token } = await createTestUserAndToken();
 
-    const { url, method, body } = MemberApiTypes.prepareUpdateMemberRole(
+    const { url, method, body } = memberApiTypes.prepareUpdateMemberRole(
       -1,
       {
         role: "admin",
@@ -807,7 +806,7 @@ Deno.test("remove member from workspace", async () => {
       .returningAll()
       .executeTakeFirstOrThrow();
 
-    const { url, method } = MemberApiTypes.prepareDeleteMember(
+    const { url, method } = memberApiTypes.prepareDeleteMember(
       memberRecord.id,
     );
 
@@ -875,7 +874,7 @@ Deno.test("remove member - cannot remove self", async () => {
       .where("user_id", "=", userId)
       .executeTakeFirstOrThrow();
 
-    const { url, method } = MemberApiTypes.prepareDeleteMember(
+    const { url, method } = memberApiTypes.prepareDeleteMember(
       adminMember.id,
     );
 
@@ -909,7 +908,7 @@ Deno.test("remove member - non-existent member", async () => {
   try {
     const { token } = await createTestUserAndToken();
 
-    const { url, method } = MemberApiTypes.prepareDeleteMember(
+    const { url, method } = memberApiTypes.prepareDeleteMember(
       999999,
     );
 
@@ -943,7 +942,7 @@ Deno.test("remove member - invalid member ID format", async () => {
   try {
     const { token } = await createTestUserAndToken();
 
-    const { url, method } = MemberApiTypes.prepareDeleteMember(
+    const { url, method } = memberApiTypes.prepareDeleteMember(
       -1,
     );
 
@@ -1015,7 +1014,7 @@ Deno.test("remove member - not admin", async () => {
       .returningAll()
       .executeTakeFirstOrThrow();
 
-    const { url, method } = MemberApiTypes.prepareDeleteMember(
+    const { url, method } = memberApiTypes.prepareDeleteMember(
       targetMember.id,
     );
 

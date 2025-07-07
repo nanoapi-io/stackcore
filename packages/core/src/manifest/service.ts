@@ -1,15 +1,7 @@
-import type { AuditManifest } from "./auditManifest/types.ts";
 import {
-  type DependencyManifest,
-  type DependencyManifestV1,
-  metricCharacterCount,
-  metricCodeCharacterCount,
-  metricCodeLineCount,
-  metricCyclomaticComplexity,
-  metricDependencyCount,
-  metricDependentCount,
-  metricLinesCount,
-} from "./dependencyManifest/types.ts";
+  type auditManifestTypes,
+  dependencyManifestTypes,
+} from "@stackcore/shared";
 
 function getNumberSeverityLevel(
   value: number,
@@ -30,7 +22,7 @@ function getNumberSeverityLevel(
 
 export function generateAuditManifest(
   version: number,
-  dependencyManifest: DependencyManifest,
+  dependencyManifest: dependencyManifestTypes.DependencyManifest,
   config: {
     file: {
       maxCodeChar: number;
@@ -51,12 +43,12 @@ export function generateAuditManifest(
       maxCyclomaticComplexity: number;
     };
   },
-): AuditManifest {
+): auditManifestTypes.AuditManifest {
   // Detect version and delegate to appropriate handler
   switch (version) {
     case 1:
       return generateAuditManifestV1(
-        dependencyManifest as DependencyManifestV1,
+        dependencyManifest as dependencyManifestTypes.DependencyManifestV1,
         config,
       );
     default:
@@ -65,7 +57,7 @@ export function generateAuditManifest(
 }
 
 function generateAuditManifestV1(
-  depencyManifest: DependencyManifestV1,
+  depencyManifest: dependencyManifestTypes.DependencyManifestV1,
   config: {
     file: {
       maxCodeChar: number;
@@ -86,11 +78,11 @@ function generateAuditManifestV1(
       maxCyclomaticComplexity: number;
     };
   },
-): AuditManifest {
-  const auditManifest: AuditManifest = {};
+): auditManifestTypes.AuditManifest {
+  const auditManifest: auditManifestTypes.AuditManifest = {};
 
   for (const fileDependencyManifest of Object.values(depencyManifest)) {
-    const fileAuditManifest: AuditManifest[string] = {
+    const fileAuditManifest: auditManifestTypes.AuditManifest[string] = {
       id: fileDependencyManifest.id,
       alerts: {},
       symbols: {},
@@ -100,25 +92,26 @@ function generateAuditManifestV1(
       fileDependencyManifest.metrics.codeCharacterCount;
     const codeCharacterCountTarget = config.file.maxCodeChar;
     if (codeCharacterCountValue > codeCharacterCountTarget) {
-      fileAuditManifest.alerts[metricCodeCharacterCount] = {
-        metric: metricCodeCharacterCount,
-        severity: getNumberSeverityLevel(
-          codeCharacterCountValue,
-          codeCharacterCountTarget,
-        ),
-        message: {
-          short: "File too large",
-          long:
-            `File exceeds maximum character limit (${codeCharacterCountValue}/${codeCharacterCountTarget})`,
-        },
-      };
+      fileAuditManifest
+        .alerts[dependencyManifestTypes.metricCodeCharacterCount] = {
+          metric: dependencyManifestTypes.metricCodeCharacterCount,
+          severity: getNumberSeverityLevel(
+            codeCharacterCountValue,
+            codeCharacterCountTarget,
+          ),
+          message: {
+            short: "File too large",
+            long:
+              `File exceeds maximum character limit (${codeCharacterCountValue}/${codeCharacterCountTarget})`,
+          },
+        };
     }
 
     const characterCountValue = fileDependencyManifest.metrics.characterCount;
     const characterCountTarget = config.file.maxChar;
     if (characterCountValue > characterCountTarget) {
-      fileAuditManifest.alerts[metricCharacterCount] = {
-        metric: metricCharacterCount,
+      fileAuditManifest.alerts[dependencyManifestTypes.metricCharacterCount] = {
+        metric: dependencyManifestTypes.metricCharacterCount,
         severity: getNumberSeverityLevel(
           characterCountValue,
           characterCountTarget,
@@ -134,8 +127,8 @@ function generateAuditManifestV1(
     const codeLineCountValue = fileDependencyManifest.metrics.codeLineCount;
     const codeLineCountTarget = config.file.maxCodeLine;
     if (codeLineCountValue > codeLineCountTarget) {
-      fileAuditManifest.alerts[metricCodeLineCount] = {
-        metric: metricCodeLineCount,
+      fileAuditManifest.alerts[dependencyManifestTypes.metricCodeLineCount] = {
+        metric: dependencyManifestTypes.metricCodeLineCount,
         severity: getNumberSeverityLevel(
           codeLineCountValue,
           codeLineCountTarget,
@@ -151,8 +144,8 @@ function generateAuditManifestV1(
     const linesCountValue = fileDependencyManifest.metrics.linesCount;
     const linesCountTarget = config.file.maxLine;
     if (linesCountValue > linesCountTarget) {
-      fileAuditManifest.alerts[metricLinesCount] = {
-        metric: metricLinesCount,
+      fileAuditManifest.alerts[dependencyManifestTypes.metricLinesCount] = {
+        metric: dependencyManifestTypes.metricLinesCount,
         severity: getNumberSeverityLevel(linesCountValue, linesCountTarget),
         message: {
           short: "Too many lines",
@@ -165,25 +158,26 @@ function generateAuditManifestV1(
     const dependencyCountValue = fileDependencyManifest.metrics.dependencyCount;
     const dependencyCountTarget = config.file.maxDependency;
     if (dependencyCountValue > dependencyCountTarget) {
-      fileAuditManifest.alerts[metricDependencyCount] = {
-        metric: metricDependencyCount,
-        severity: getNumberSeverityLevel(
-          dependencyCountValue,
-          dependencyCountTarget,
-        ),
-        message: {
-          short: "Too many dependencies",
-          long:
-            `File exceeds maximum dependency count (${dependencyCountValue}/${dependencyCountTarget})`,
-        },
-      };
+      fileAuditManifest.alerts[dependencyManifestTypes.metricDependencyCount] =
+        {
+          metric: dependencyManifestTypes.metricDependencyCount,
+          severity: getNumberSeverityLevel(
+            dependencyCountValue,
+            dependencyCountTarget,
+          ),
+          message: {
+            short: "Too many dependencies",
+            long:
+              `File exceeds maximum dependency count (${dependencyCountValue}/${dependencyCountTarget})`,
+          },
+        };
     }
 
     const dependentCountValue = fileDependencyManifest.metrics.dependentCount;
     const dependentCountTarget = config.file.maxDependent;
     if (dependentCountValue > dependentCountTarget) {
-      fileAuditManifest.alerts[metricDependentCount] = {
-        metric: metricDependentCount,
+      fileAuditManifest.alerts[dependencyManifestTypes.metricDependentCount] = {
+        metric: dependencyManifestTypes.metricDependentCount,
         severity: getNumberSeverityLevel(
           dependentCountValue,
           dependentCountTarget,
@@ -200,82 +194,87 @@ function generateAuditManifestV1(
       fileDependencyManifest.metrics.cyclomaticComplexity;
     const cyclomaticComplexityTarget = config.file.maxCyclomaticComplexity;
     if (cyclomaticComplexityValue > cyclomaticComplexityTarget) {
-      fileAuditManifest.alerts[metricCyclomaticComplexity] = {
-        metric: metricCyclomaticComplexity,
-        severity: getNumberSeverityLevel(
-          cyclomaticComplexityValue,
-          cyclomaticComplexityTarget,
-        ),
-        message: {
-          short: "Too complex",
-          long:
-            `File exceeds maximum cyclomatic complexity (${cyclomaticComplexityValue}/${cyclomaticComplexityTarget})`,
-        },
-      };
+      fileAuditManifest
+        .alerts[dependencyManifestTypes.metricCyclomaticComplexity] = {
+          metric: dependencyManifestTypes.metricCyclomaticComplexity,
+          severity: getNumberSeverityLevel(
+            cyclomaticComplexityValue,
+            cyclomaticComplexityTarget,
+          ),
+          message: {
+            short: "Too complex",
+            long:
+              `File exceeds maximum cyclomatic complexity (${cyclomaticComplexityValue}/${cyclomaticComplexityTarget})`,
+          },
+        };
     }
 
     for (const symbol of Object.values(fileDependencyManifest.symbols)) {
-      const symbolAuditManifest: AuditManifest[string]["symbols"][string] = {
-        id: symbol.id,
-        alerts: {},
-      };
+      const symbolAuditManifest:
+        auditManifestTypes.AuditManifest[string]["symbols"][string] = {
+          id: symbol.id,
+          alerts: {},
+        };
 
       const codeCharacterCountValue = symbol.metrics.codeCharacterCount;
       const codeCharacterCountTarget = config.symbol.maxCodeChar;
       if (codeCharacterCountValue > codeCharacterCountTarget) {
-        symbolAuditManifest.alerts[metricCodeCharacterCount] = {
-          metric: metricCodeCharacterCount,
-          severity: getNumberSeverityLevel(
-            codeCharacterCountValue,
-            codeCharacterCountTarget,
-          ),
-          message: {
-            short: "Symbol too large",
-            long:
-              `Symbol exceeds maximum character limit (${codeCharacterCountValue}/${codeCharacterCountTarget})`,
-          },
-        };
+        symbolAuditManifest
+          .alerts[dependencyManifestTypes.metricCodeCharacterCount] = {
+            metric: dependencyManifestTypes.metricCodeCharacterCount,
+            severity: getNumberSeverityLevel(
+              codeCharacterCountValue,
+              codeCharacterCountTarget,
+            ),
+            message: {
+              short: "Symbol too large",
+              long:
+                `Symbol exceeds maximum character limit (${codeCharacterCountValue}/${codeCharacterCountTarget})`,
+            },
+          };
       }
 
       const characterCountValue = symbol.metrics.characterCount;
       const characterCountTarget = config.symbol.maxChar;
       if (characterCountValue > characterCountTarget) {
-        symbolAuditManifest.alerts[metricCharacterCount] = {
-          metric: metricCharacterCount,
-          severity: getNumberSeverityLevel(
-            characterCountValue,
-            characterCountTarget,
-          ),
-          message: {
-            short: "Symbol too large",
-            long:
-              `Symbol exceeds maximum character limit (${characterCountValue}/${characterCountTarget})`,
-          },
-        };
+        symbolAuditManifest
+          .alerts[dependencyManifestTypes.metricCharacterCount] = {
+            metric: dependencyManifestTypes.metricCharacterCount,
+            severity: getNumberSeverityLevel(
+              characterCountValue,
+              characterCountTarget,
+            ),
+            message: {
+              short: "Symbol too large",
+              long:
+                `Symbol exceeds maximum character limit (${characterCountValue}/${characterCountTarget})`,
+            },
+          };
       }
 
       const codeLineCountValue = symbol.metrics.codeLineCount;
       const codeLineCountTarget = config.symbol.maxCodeLine;
       if (codeLineCountValue > codeLineCountTarget) {
-        symbolAuditManifest.alerts[metricCodeLineCount] = {
-          metric: metricCodeLineCount,
-          severity: getNumberSeverityLevel(
-            codeLineCountValue,
-            codeLineCountTarget,
-          ),
-          message: {
-            short: "Symbol too long",
-            long:
-              `Symbol exceeds maximum line count (${codeLineCountValue}/${codeLineCountTarget})`,
-          },
-        };
+        symbolAuditManifest
+          .alerts[dependencyManifestTypes.metricCodeLineCount] = {
+            metric: dependencyManifestTypes.metricCodeLineCount,
+            severity: getNumberSeverityLevel(
+              codeLineCountValue,
+              codeLineCountTarget,
+            ),
+            message: {
+              short: "Symbol too long",
+              long:
+                `Symbol exceeds maximum line count (${codeLineCountValue}/${codeLineCountTarget})`,
+            },
+          };
       }
 
       const linesCountValue = symbol.metrics.linesCount;
       const linesCountTarget = config.symbol.maxLine;
       if (linesCountValue > linesCountTarget) {
-        symbolAuditManifest.alerts[metricLinesCount] = {
-          metric: metricLinesCount,
+        symbolAuditManifest.alerts[dependencyManifestTypes.metricLinesCount] = {
+          metric: dependencyManifestTypes.metricLinesCount,
           severity: getNumberSeverityLevel(linesCountValue, linesCountTarget),
           message: {
             short: "Symbol too long",
@@ -288,52 +287,55 @@ function generateAuditManifestV1(
       const dependencyCountValue = symbol.metrics.dependencyCount;
       const dependencyCountTarget = config.symbol.maxDependency;
       if (dependencyCountValue > dependencyCountTarget) {
-        symbolAuditManifest.alerts[metricDependencyCount] = {
-          metric: metricDependencyCount,
-          severity: getNumberSeverityLevel(
-            dependencyCountValue,
-            dependencyCountTarget,
-          ),
-          message: {
-            short: "Too many dependencies",
-            long:
-              `Symbol exceeds maximum dependency count (${dependencyCountValue}/${dependencyCountTarget})`,
-          },
-        };
+        symbolAuditManifest
+          .alerts[dependencyManifestTypes.metricDependencyCount] = {
+            metric: dependencyManifestTypes.metricDependencyCount,
+            severity: getNumberSeverityLevel(
+              dependencyCountValue,
+              dependencyCountTarget,
+            ),
+            message: {
+              short: "Too many dependencies",
+              long:
+                `Symbol exceeds maximum dependency count (${dependencyCountValue}/${dependencyCountTarget})`,
+            },
+          };
       }
 
       const dependentCountValue = symbol.metrics.dependentCount;
       const dependentCountTarget = config.symbol.maxDependent;
       if (dependentCountValue > dependentCountTarget) {
-        symbolAuditManifest.alerts[metricDependentCount] = {
-          metric: metricDependentCount,
-          severity: getNumberSeverityLevel(
-            dependentCountValue,
-            dependentCountTarget,
-          ),
-          message: {
-            short: "Too many dependents",
-            long:
-              `Symbol exceeds maximum dependent count (${dependentCountValue}/${dependentCountTarget})`,
-          },
-        };
+        symbolAuditManifest
+          .alerts[dependencyManifestTypes.metricDependentCount] = {
+            metric: dependencyManifestTypes.metricDependentCount,
+            severity: getNumberSeverityLevel(
+              dependentCountValue,
+              dependentCountTarget,
+            ),
+            message: {
+              short: "Too many dependents",
+              long:
+                `Symbol exceeds maximum dependent count (${dependentCountValue}/${dependentCountTarget})`,
+            },
+          };
       }
 
       const cyclomaticComplexityValue = symbol.metrics.cyclomaticComplexity;
       const cyclomaticComplexityTarget = config.symbol.maxCyclomaticComplexity;
       if (cyclomaticComplexityValue > cyclomaticComplexityTarget) {
-        symbolAuditManifest.alerts[metricCyclomaticComplexity] = {
-          metric: metricCyclomaticComplexity,
-          severity: getNumberSeverityLevel(
-            cyclomaticComplexityValue,
-            cyclomaticComplexityTarget,
-          ),
-          message: {
-            short: "Symbol too complex",
-            long:
-              `Symbol exceeds maximum cyclomatic complexity (${cyclomaticComplexityValue}/${cyclomaticComplexityTarget})`,
-          },
-        };
+        symbolAuditManifest
+          .alerts[dependencyManifestTypes.metricCyclomaticComplexity] = {
+            metric: dependencyManifestTypes.metricCyclomaticComplexity,
+            severity: getNumberSeverityLevel(
+              cyclomaticComplexityValue,
+              cyclomaticComplexityTarget,
+            ),
+            message: {
+              short: "Symbol too complex",
+              long:
+                `Symbol exceeds maximum cyclomatic complexity (${cyclomaticComplexityValue}/${cyclomaticComplexityTarget})`,
+            },
+          };
       }
 
       fileAuditManifest.symbols[symbol.id] = symbolAuditManifest;

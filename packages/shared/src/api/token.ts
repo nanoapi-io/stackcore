@@ -1,10 +1,6 @@
-import { z } from "zod";
-
-export const createTokenSchema = z.object({
-  name: z.string().nonempty(),
-});
-
-export type CreateTokenPayload = z.infer<typeof createTokenSchema>;
+export type CreateTokenPayload = {
+  name: string;
+};
 
 export type CreateTokenResponse = {
   uuid: string;
@@ -21,7 +17,13 @@ export type GetTokensResponse = {
   total: number;
 };
 
-export function prepareCreateToken(payload: CreateTokenPayload) {
+export function prepareCreateToken(
+  payload: CreateTokenPayload,
+): {
+  url: string;
+  method: string;
+  body: CreateTokenPayload;
+} {
   return {
     url: `/tokens`,
     method: "POST",
@@ -33,7 +35,10 @@ export function prepareGetTokens(payload: {
   page: number;
   limit: number;
   search?: string;
-}) {
+}): {
+  url: string;
+  method: string;
+} {
   const searchParams = new URLSearchParams();
   searchParams.set("page", payload.page.toString());
   searchParams.set("limit", payload.limit.toString());
@@ -44,14 +49,15 @@ export function prepareGetTokens(payload: {
   return {
     url: `/tokens?${searchParams.toString()}`,
     method: "GET",
-    body: undefined,
   };
 }
 
-export function prepareDeleteToken(tokenId: number) {
+export function prepareDeleteToken(tokenId: number): {
+  url: string;
+  method: string;
+} {
   return {
     url: `/tokens/${tokenId}`,
     method: "DELETE",
-    body: undefined,
   };
 }

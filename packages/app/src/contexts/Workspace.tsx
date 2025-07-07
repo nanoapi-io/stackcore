@@ -1,10 +1,10 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useCoreApi } from "./CoreApi.tsx";
-import { WorkspaceApiTypes } from "@stackcore/core/responses";
+import { workspaceApiTypes } from "@stackcore/shared";
 
 export type Workspace =
-  WorkspaceApiTypes.GetWorkspacesResponse["results"][number];
+  workspaceApiTypes.GetWorkspacesResponse["results"][number];
 
 type WorkspaceContextType = {
   isBusy: boolean;
@@ -47,7 +47,7 @@ export function WorkspaceProvider(
     const workspaces: Workspace[] = [];
 
     while (true) {
-      const { url, method } = WorkspaceApiTypes.prepareGetWorkspaces({
+      const { url, method } = workspaceApiTypes.prepareGetWorkspaces({
         page,
         limit,
       });
@@ -58,7 +58,7 @@ export function WorkspaceProvider(
       }
 
       const responseData = await response
-        .json() as WorkspaceApiTypes.GetWorkspacesResponse;
+        .json() as workspaceApiTypes.GetWorkspacesResponse;
 
       workspaces.push(...responseData.results);
 

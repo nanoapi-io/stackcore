@@ -9,11 +9,7 @@ import {
   CardTitle,
 } from "../../../components/shadcn/Card.tsx";
 import { Button } from "../../../components/shadcn/Button.tsx";
-import {
-  BillingApiTypes,
-  MemberApiTypes,
-  WorkspaceApiTypes,
-} from "@stackcore/core/responses";
+import { billingApiTypes, memberTypes, stripeTypes } from "@stackcore/shared";
 import { Check, CreditCard, Loader } from "lucide-react";
 import {
   Dialog,
@@ -49,12 +45,12 @@ export default function WorkspaceSubscription() {
   const coreApi = useCoreApi();
 
   const [subscription, setSubscription] = useState<
-    BillingApiTypes.SubscriptionDetails | undefined
+    billingApiTypes.SubscriptionDetails | undefined
   >(undefined);
   const [billingCycle, setBillingCycle] = useState<
-    WorkspaceApiTypes.StripeBillingCycle
+    stripeTypes.StripeBillingCycle
   >(
-    WorkspaceApiTypes.YEARLY_BILLING_CYCLE,
+    stripeTypes.YEARLY_BILLING_CYCLE,
   );
 
   useEffect(() => {
@@ -63,7 +59,7 @@ export default function WorkspaceSubscription() {
 
   async function getSubscription(workspaceId: number) {
     try {
-      const { url, method } = BillingApiTypes.prepareGetSubscription(
+      const { url, method } = billingApiTypes.prepareGetSubscription(
         workspaceId,
       );
 
@@ -73,7 +69,7 @@ export default function WorkspaceSubscription() {
         throw new Error("Failed to get subscription");
       }
 
-      const data = await response.json() as BillingApiTypes.SubscriptionDetails;
+      const data = await response.json() as billingApiTypes.SubscriptionDetails;
 
       setSubscription(data);
     } catch (error) {
@@ -88,7 +84,7 @@ export default function WorkspaceSubscription() {
     setStripePortalBusy(true);
 
     try {
-      const { url, method, body } = BillingApiTypes.prepareCreatePortalSession({
+      const { url, method, body } = billingApiTypes.prepareCreatePortalSession({
         workspaceId: context.workspace.id,
         returnUrl: globalThis.location.href,
       });
@@ -119,7 +115,7 @@ export default function WorkspaceSubscription() {
     setStripePortalPaymentMethodBusy(true);
 
     try {
-      const { url, method, body } = BillingApiTypes
+      const { url, method, body } = billingApiTypes
         .prepareCreatePortalSessionPaymentMethod({
           workspaceId: context.workspace.id,
           returnUrl: globalThis.location.href,
@@ -145,26 +141,25 @@ export default function WorkspaceSubscription() {
   }
 
   function getChangeType(
-    currentProduct: WorkspaceApiTypes.StripeProduct,
-    currentBillingCycle: WorkspaceApiTypes.StripeBillingCycle | null,
-    newProduct: WorkspaceApiTypes.StripeProduct,
-    newBillingCycle: WorkspaceApiTypes.StripeBillingCycle,
+    currentProduct: stripeTypes.StripeProduct,
+    currentBillingCycle: stripeTypes.StripeBillingCycle | null,
+    newProduct: stripeTypes.StripeProduct,
+    newBillingCycle: stripeTypes.StripeBillingCycle,
   ): "upgrade" | "downgrade" | "same" | "custom" {
     if (
-      currentProduct === WorkspaceApiTypes.CUSTOM_PRODUCT ||
-      newProduct === WorkspaceApiTypes.CUSTOM_PRODUCT ||
+      currentProduct === stripeTypes.CUSTOM_PRODUCT ||
+      newProduct === stripeTypes.CUSTOM_PRODUCT ||
       currentBillingCycle === null
     ) {
       return "custom";
     }
 
     // Check if changing to a higher tier product
-    const isUpgradingProduct =
-      (currentProduct === WorkspaceApiTypes.BASIC_PRODUCT &&
-        [WorkspaceApiTypes.PRO_PRODUCT, WorkspaceApiTypes.PREMIUM_PRODUCT]
-          .includes(newProduct)) ||
-      (currentProduct === WorkspaceApiTypes.PRO_PRODUCT &&
-        newProduct === WorkspaceApiTypes.PREMIUM_PRODUCT);
+    const isUpgradingProduct = (currentProduct === stripeTypes.BASIC_PRODUCT &&
+      [stripeTypes.PRO_PRODUCT, stripeTypes.PREMIUM_PRODUCT]
+        .includes(newProduct)) ||
+      (currentProduct === stripeTypes.PRO_PRODUCT &&
+        newProduct === stripeTypes.PREMIUM_PRODUCT);
 
     // If products are different, determine if upgrade or downgrade
     if (currentProduct !== newProduct) {
@@ -174,8 +169,8 @@ export default function WorkspaceSubscription() {
     // If only billing cycle changed, yearly is an upgrade from monthly
     if (currentBillingCycle !== newBillingCycle) {
       const isUpgradingBilling =
-        currentBillingCycle === WorkspaceApiTypes.MONTHLY_BILLING_CYCLE &&
-        newBillingCycle === WorkspaceApiTypes.YEARLY_BILLING_CYCLE;
+        currentBillingCycle === stripeTypes.MONTHLY_BILLING_CYCLE &&
+        newBillingCycle === stripeTypes.YEARLY_BILLING_CYCLE;
 
       return isUpgradingBilling ? "upgrade" : "downgrade";
     }
@@ -228,7 +223,7 @@ export default function WorkspaceSubscription() {
                           Access disabled. Update your payment method
                         </Badge>
                       )}
-                    {context.workspace.role === MemberApiTypes.ADMIN_ROLE && (
+                    {context.workspace.role === memberTypes.ADMIN_ROLE && (
                       <Button
                         onClick={goToStripePortal}
                         disabled={stripePortalBusy}
@@ -313,7 +308,7 @@ export default function WorkspaceSubscription() {
 
       {/* Subscription Plans */}
       {subscription.product ===
-          WorkspaceApiTypes.CUSTOM_PRODUCT
+          stripeTypes.CUSTOM_PRODUCT
         ? (
           <Card>
             <CardHeader className="text-center">
@@ -347,16 +342,16 @@ export default function WorkspaceSubscription() {
                   value={billingCycle}
                   onValueChange={(value) =>
                     setBillingCycle(
-                      value as WorkspaceApiTypes.StripeBillingCycle,
+                      value as stripeTypes.StripeBillingCycle,
                     )}
                 >
                   <TabsList>
                     <TabsTrigger
-                      value={WorkspaceApiTypes.MONTHLY_BILLING_CYCLE}
+                      value={stripeTypes.MONTHLY_BILLING_CYCLE}
                     >
                       Monthly
                     </TabsTrigger>
-                    <TabsTrigger value={WorkspaceApiTypes.YEARLY_BILLING_CYCLE}>
+                    <TabsTrigger value={stripeTypes.YEARLY_BILLING_CYCLE}>
                       Yearly
                     </TabsTrigger>
                   </TabsList>
@@ -364,13 +359,13 @@ export default function WorkspaceSubscription() {
               </div>
 
               {billingCycle ===
-                  WorkspaceApiTypes.MONTHLY_BILLING_CYCLE
+                  stripeTypes.MONTHLY_BILLING_CYCLE
                 ? (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <SubscriptionCard
                       workspaceId={context.workspace.id}
                       currentSubscription={subscription}
-                      product={WorkspaceApiTypes.BASIC_PRODUCT}
+                      product={stripeTypes.BASIC_PRODUCT}
                       title="Basic"
                       description="Perfect for trying out the platform"
                       features={[
@@ -378,20 +373,20 @@ export default function WorkspaceSubscription() {
                         "2.00 USD per additional credit",
                       ]}
                       subscriptionPrice="Free"
-                      billingCycle={WorkspaceApiTypes
+                      billingCycle={stripeTypes
                         .MONTHLY_BILLING_CYCLE}
                       changeType={getChangeType(
                         subscription.product,
                         subscription.billingCycle,
-                        WorkspaceApiTypes.BASIC_PRODUCT,
-                        WorkspaceApiTypes.MONTHLY_BILLING_CYCLE,
+                        stripeTypes.BASIC_PRODUCT,
+                        stripeTypes.MONTHLY_BILLING_CYCLE,
                       )}
                       role={context.workspace.role}
                     />
                     <SubscriptionCard
                       workspaceId={context.workspace.id}
                       currentSubscription={subscription}
-                      product={WorkspaceApiTypes.PRO_PRODUCT}
+                      product={stripeTypes.PRO_PRODUCT}
                       title="Pro"
                       description="Great for small teams and growing businesses"
                       features={[
@@ -399,20 +394,20 @@ export default function WorkspaceSubscription() {
                         "1.00 USD per additional credit",
                       ]}
                       subscriptionPrice="20 USD/month"
-                      billingCycle={WorkspaceApiTypes
+                      billingCycle={stripeTypes
                         .MONTHLY_BILLING_CYCLE}
                       changeType={getChangeType(
                         subscription.product,
                         subscription.billingCycle,
-                        WorkspaceApiTypes.PRO_PRODUCT,
-                        WorkspaceApiTypes.MONTHLY_BILLING_CYCLE,
+                        stripeTypes.PRO_PRODUCT,
+                        stripeTypes.MONTHLY_BILLING_CYCLE,
                       )}
                       role={context.workspace.role}
                     />
                     <SubscriptionCard
                       workspaceId={context.workspace.id}
                       currentSubscription={subscription}
-                      product={WorkspaceApiTypes.PREMIUM_PRODUCT}
+                      product={stripeTypes.PREMIUM_PRODUCT}
                       title="Premium"
                       description="Perfect for medium teams with high volume needs"
                       features={[
@@ -420,33 +415,33 @@ export default function WorkspaceSubscription() {
                         "0.50 USD per additional credit",
                       ]}
                       subscriptionPrice="50 USD/month"
-                      billingCycle={WorkspaceApiTypes
+                      billingCycle={stripeTypes
                         .MONTHLY_BILLING_CYCLE}
                       changeType={getChangeType(
                         subscription.product,
                         subscription.billingCycle,
-                        WorkspaceApiTypes.PREMIUM_PRODUCT,
-                        WorkspaceApiTypes.MONTHLY_BILLING_CYCLE,
+                        stripeTypes.PREMIUM_PRODUCT,
+                        stripeTypes.MONTHLY_BILLING_CYCLE,
                       )}
                       role={context.workspace.role}
                     />
                     <SubscriptionCard
                       workspaceId={context.workspace.id}
                       currentSubscription={subscription}
-                      product={WorkspaceApiTypes.CUSTOM_PRODUCT}
+                      product={stripeTypes.CUSTOM_PRODUCT}
                       title="Custom pricing"
                       description="Everything tailored to your needs"
                       features={[
                         "Anything you need",
                       ]}
                       subscriptionPrice="Custom"
-                      billingCycle={WorkspaceApiTypes
+                      billingCycle={stripeTypes
                         .MONTHLY_BILLING_CYCLE}
                       changeType={getChangeType(
                         subscription.product,
                         subscription.billingCycle,
-                        WorkspaceApiTypes.CUSTOM_PRODUCT,
-                        WorkspaceApiTypes.MONTHLY_BILLING_CYCLE,
+                        stripeTypes.CUSTOM_PRODUCT,
+                        stripeTypes.MONTHLY_BILLING_CYCLE,
                       )}
                       role={context.workspace.role}
                     />
@@ -457,7 +452,7 @@ export default function WorkspaceSubscription() {
                     <SubscriptionCard
                       workspaceId={context.workspace.id}
                       currentSubscription={subscription}
-                      product={WorkspaceApiTypes.PRO_PRODUCT}
+                      product={stripeTypes.PRO_PRODUCT}
                       title="Pro"
                       description="Great for small teams and growing businesses"
                       features={[
@@ -466,20 +461,20 @@ export default function WorkspaceSubscription() {
                         "2 months free compared to monthly subscription",
                       ]}
                       subscriptionPrice="200 USD/year"
-                      billingCycle={WorkspaceApiTypes
+                      billingCycle={stripeTypes
                         .YEARLY_BILLING_CYCLE}
                       changeType={getChangeType(
                         subscription.product,
                         subscription.billingCycle,
-                        WorkspaceApiTypes.PRO_PRODUCT,
-                        WorkspaceApiTypes.YEARLY_BILLING_CYCLE,
+                        stripeTypes.PRO_PRODUCT,
+                        stripeTypes.YEARLY_BILLING_CYCLE,
                       )}
                       role={context.workspace.role}
                     />
                     <SubscriptionCard
                       workspaceId={context.workspace.id}
                       currentSubscription={subscription}
-                      product={WorkspaceApiTypes.PREMIUM_PRODUCT}
+                      product={stripeTypes.PREMIUM_PRODUCT}
                       title="Premium"
                       description="Perfect for medium teams with high volume needs"
                       features={[
@@ -488,33 +483,33 @@ export default function WorkspaceSubscription() {
                         "2 months free compared to monthly subscription",
                       ]}
                       subscriptionPrice="500 USD/year"
-                      billingCycle={WorkspaceApiTypes
+                      billingCycle={stripeTypes
                         .YEARLY_BILLING_CYCLE}
                       changeType={getChangeType(
                         subscription.product,
                         subscription.billingCycle,
-                        WorkspaceApiTypes.PREMIUM_PRODUCT,
-                        WorkspaceApiTypes.YEARLY_BILLING_CYCLE,
+                        stripeTypes.PREMIUM_PRODUCT,
+                        stripeTypes.YEARLY_BILLING_CYCLE,
                       )}
                       role={context.workspace.role}
                     />
                     <SubscriptionCard
                       workspaceId={context.workspace.id}
                       currentSubscription={subscription}
-                      product={WorkspaceApiTypes.CUSTOM_PRODUCT}
+                      product={stripeTypes.CUSTOM_PRODUCT}
                       title="Custom pricing"
                       description="Everything tailored to your needs"
                       features={[
                         "Anything you need",
                       ]}
                       subscriptionPrice="Custom"
-                      billingCycle={WorkspaceApiTypes
+                      billingCycle={stripeTypes
                         .YEARLY_BILLING_CYCLE}
                       changeType={getChangeType(
                         subscription.product,
                         subscription.billingCycle,
-                        WorkspaceApiTypes.CUSTOM_PRODUCT,
-                        WorkspaceApiTypes.YEARLY_BILLING_CYCLE,
+                        stripeTypes.CUSTOM_PRODUCT,
+                        stripeTypes.YEARLY_BILLING_CYCLE,
                       )}
                       role={context.workspace.role}
                     />
@@ -529,15 +524,15 @@ export default function WorkspaceSubscription() {
 
 function SubscriptionCard(props: {
   workspaceId: number;
-  currentSubscription: BillingApiTypes.SubscriptionDetails;
-  product: WorkspaceApiTypes.StripeProduct;
+  currentSubscription: billingApiTypes.SubscriptionDetails;
+  product: stripeTypes.StripeProduct;
   title: string;
   description: string;
   features: string[];
   subscriptionPrice: string;
-  billingCycle: WorkspaceApiTypes.StripeBillingCycle;
+  billingCycle: stripeTypes.StripeBillingCycle;
   changeType: "upgrade" | "downgrade" | "same" | "custom";
-  role: MemberApiTypes.MemberRole | null;
+  role: memberTypes.MemberRole | null;
 }) {
   return (
     <Card className="flex flex-col">
@@ -578,7 +573,7 @@ function SubscriptionCard(props: {
               </Button>
             </Link>
           )
-          : props.role === MemberApiTypes.MEMBER_ROLE
+          : props.role === memberTypes.MEMBER_ROLE
           ? (
             <Button className="w-full" disabled>
               Contact your workspace admin
@@ -600,8 +595,8 @@ function SubscriptionCard(props: {
 function ChangeSubscriptionDialog(props: {
   workspaceId: number;
   changeType: "upgrade" | "downgrade";
-  newProduct: WorkspaceApiTypes.StripeProduct;
-  newBillingCycle: WorkspaceApiTypes.StripeBillingCycle;
+  newProduct: stripeTypes.StripeProduct;
+  newBillingCycle: stripeTypes.StripeBillingCycle;
 }) {
   const coreApi = useCoreApi();
   const navigate = useNavigate();
@@ -612,7 +607,7 @@ function ChangeSubscriptionDialog(props: {
     setBusy(true);
 
     try {
-      const { url, method, body } = BillingApiTypes
+      const { url, method, body } = billingApiTypes
         .prepareCreatePortalSessionPaymentMethod({
           workspaceId: props.workspaceId,
           returnUrl: globalThis.location.href,
@@ -625,7 +620,7 @@ function ChangeSubscriptionDialog(props: {
       }
 
       const data = await response
-        .json() as BillingApiTypes.CreatePortalSessionResponse;
+        .json() as billingApiTypes.CreatePortalSessionResponse;
 
       globalThis.location.href = data.url;
     } catch (error) {
@@ -640,12 +635,12 @@ function ChangeSubscriptionDialog(props: {
     setBusy(true);
 
     try {
-      if (props.newProduct === WorkspaceApiTypes.CUSTOM_PRODUCT) {
+      if (props.newProduct === stripeTypes.CUSTOM_PRODUCT) {
         throw new Error("Custom product is not supported");
       }
 
       if (props.changeType === "upgrade") {
-        const { url, method, body } = BillingApiTypes
+        const { url, method, body } = billingApiTypes
           .prepareUpgradeSubscription({
             workspaceId: props.workspaceId,
             product: props.newProduct,
@@ -660,7 +655,7 @@ function ChangeSubscriptionDialog(props: {
 
         toast.success("Subscription upgraded successfully");
       } else {
-        const { url, method, body } = BillingApiTypes
+        const { url, method, body } = billingApiTypes
           .prepareDowngradeSubscription({
             workspaceId: props.workspaceId,
             product: props.newProduct,

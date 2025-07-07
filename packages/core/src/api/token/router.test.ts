@@ -4,7 +4,7 @@ import { db, destroyKyselyDb, initKyselyDb } from "../../db/database.ts";
 import { resetTables } from "../../testHelpers/db.ts";
 import { createTestUserAndToken } from "../../testHelpers/auth.ts";
 import { tokenNotFoundError } from "./service.ts";
-import { TokenApiTypes } from "../responseType.ts";
+import { tokenApiTypes } from "@stackcore/shared";
 
 // POST /tokens (create token)
 Deno.test("create token", async () => {
@@ -14,7 +14,7 @@ Deno.test("create token", async () => {
   try {
     const { userId, token } = await createTestUserAndToken();
 
-    const { url, method, body } = TokenApiTypes.prepareCreateToken({
+    const { url, method, body } = tokenApiTypes.prepareCreateToken({
       name: "My API Token",
     });
 
@@ -62,7 +62,7 @@ Deno.test("create token - empty name", async () => {
   try {
     const { token } = await createTestUserAndToken();
 
-    const { url, method, body } = TokenApiTypes.prepareCreateToken({
+    const { url, method, body } = tokenApiTypes.prepareCreateToken({
       name: "",
     });
 
@@ -93,7 +93,7 @@ Deno.test("create token - unauthorized", async () => {
   await resetTables();
 
   try {
-    const { url, method, body } = TokenApiTypes.prepareCreateToken({
+    const { url, method, body } = tokenApiTypes.prepareCreateToken({
       name: "My API Token",
     });
 
@@ -143,7 +143,7 @@ Deno.test("get tokens", async () => {
       createdTokens.push(createdToken);
     }
 
-    const { url, method } = TokenApiTypes.prepareGetTokens({
+    const { url, method } = tokenApiTypes.prepareGetTokens({
       page: 1,
       limit: 10,
     });
@@ -205,7 +205,7 @@ Deno.test("get tokens - pagination", async () => {
         .execute();
     }
 
-    const { url: url1, method: method1 } = TokenApiTypes.prepareGetTokens({
+    const { url: url1, method: method1 } = tokenApiTypes.prepareGetTokens({
       page: 1,
       limit: 10,
     });
@@ -229,7 +229,7 @@ Deno.test("get tokens - pagination", async () => {
     assertEquals(responseBody1.total, 15);
     assertEquals(responseBody1.results.length, 10);
 
-    const { url: url2, method: method2 } = TokenApiTypes.prepareGetTokens({
+    const { url: url2, method: method2 } = tokenApiTypes.prepareGetTokens({
       page: 2,
       limit: 10,
     });
@@ -265,7 +265,7 @@ Deno.test("get tokens - empty list", async () => {
   try {
     const { token } = await createTestUserAndToken();
 
-    const { url, method } = TokenApiTypes.prepareGetTokens({
+    const { url, method } = tokenApiTypes.prepareGetTokens({
       page: 1,
       limit: 10,
     });
@@ -300,7 +300,7 @@ Deno.test("get tokens - invalid parameters", async () => {
   try {
     const { token } = await createTestUserAndToken();
 
-    const { url, method } = TokenApiTypes.prepareGetTokens({
+    const { url, method } = tokenApiTypes.prepareGetTokens({
       page: -1,
       limit: -10,
     });
@@ -329,7 +329,7 @@ Deno.test("get tokens - unauthorized", async () => {
   await resetTables();
 
   try {
-    const { url, method } = TokenApiTypes.prepareGetTokens({
+    const { url, method } = tokenApiTypes.prepareGetTokens({
       page: 1,
       limit: 10,
     });
@@ -370,7 +370,7 @@ Deno.test("delete token", async () => {
       .returningAll()
       .executeTakeFirstOrThrow();
 
-    const { url, method } = TokenApiTypes.prepareDeleteToken(createdToken.id);
+    const { url, method } = tokenApiTypes.prepareDeleteToken(createdToken.id);
 
     const response = await api.handle(
       new Request(
@@ -410,7 +410,7 @@ Deno.test("delete token - non-existent token", async () => {
   try {
     const { token } = await createTestUserAndToken();
 
-    const { url, method } = TokenApiTypes.prepareDeleteToken(999999);
+    const { url, method } = tokenApiTypes.prepareDeleteToken(999999);
 
     const response = await api.handle(
       new Request(
@@ -441,7 +441,7 @@ Deno.test("delete token - invalid token ID format", async () => {
   try {
     const { token } = await createTestUserAndToken();
 
-    const { url, method } = TokenApiTypes.prepareDeleteToken(-1);
+    const { url, method } = tokenApiTypes.prepareDeleteToken(-1);
 
     const response = await api.handle(
       new Request(
@@ -483,7 +483,7 @@ Deno.test("delete token - token belongs to different user", async () => {
     // Create second user
     const { token: user2Token } = await createTestUserAndToken();
 
-    const { url, method } = TokenApiTypes.prepareDeleteToken(createdToken.id);
+    const { url, method } = tokenApiTypes.prepareDeleteToken(createdToken.id);
 
     // User 2 tries to delete User 1's token
     const response = await api.handle(
@@ -522,7 +522,7 @@ Deno.test("delete token - unauthorized", async () => {
   await resetTables();
 
   try {
-    const { url, method } = TokenApiTypes.prepareDeleteToken(1);
+    const { url, method } = tokenApiTypes.prepareDeleteToken(1);
 
     const response = await api.handle(
       new Request(
@@ -560,7 +560,7 @@ Deno.test("create token using API token authentication", async () => {
       .returning(["uuid"])
       .executeTakeFirstOrThrow();
 
-    const { url, method, body } = TokenApiTypes.prepareCreateToken({
+    const { url, method, body } = tokenApiTypes.prepareCreateToken({
       name: "Another Token",
     });
 
@@ -603,7 +603,7 @@ Deno.test("API token authentication with invalid token", async () => {
   await resetTables();
 
   try {
-    const { url, method, body } = TokenApiTypes.prepareCreateToken({
+    const { url, method, body } = tokenApiTypes.prepareCreateToken({
       name: "Test Token",
     });
 
@@ -649,7 +649,7 @@ Deno.test("JWT takes precedence over API token", async () => {
       .returning(["uuid"])
       .executeTakeFirstOrThrow();
 
-    const { url, method, body } = TokenApiTypes.prepareCreateToken({
+    const { url, method, body } = tokenApiTypes.prepareCreateToken({
       name: "Test Token",
     });
 

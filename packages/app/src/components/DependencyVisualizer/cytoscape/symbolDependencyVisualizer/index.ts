@@ -1,13 +1,7 @@
 import {
-  type AuditManifest,
-  type DependencyManifest,
-  type Metric,
-  symbolTypeClass,
-  symbolTypeEnum,
-  symbolTypeFunction,
-  symbolTypeStruct,
-  symbolTypeVariable,
-} from "@stackcore/core/manifest";
+  type auditManifestTypes,
+  dependencyManifestTypes,
+} from "@stackcore/shared";
 import type {
   Collection,
   Core,
@@ -69,11 +63,11 @@ export class SymbolDependencyVisualizer {
     symbolId: string,
     dependencyDepth: number,
     dependentDepth: number,
-    dependencyManifest: DependencyManifest,
-    auditManifest: AuditManifest,
+    dependencyManifest: dependencyManifestTypes.DependencyManifest,
+    auditManifest: auditManifestTypes.AuditManifest,
     options?: {
       theme?: "light" | "dark";
-      defaultMetric?: Metric | undefined;
+      defaultMetric?: dependencyManifestTypes.Metric | undefined;
       onAfterNodeClick?: () => void;
       onAfterNodeRightClick?: (data: {
         position: { x: number; y: number };
@@ -205,19 +199,33 @@ export class SymbolDependencyVisualizer {
       if (!showExternal && data.isExternal) {
         return true;
       }
-      if (!showVariables && data.symbolType === symbolTypeVariable) {
+      if (
+        !showVariables &&
+        data.symbolType === dependencyManifestTypes.symbolTypeVariable
+      ) {
         return true;
       }
-      if (!showFunctions && data.symbolType === symbolTypeFunction) {
+      if (
+        !showFunctions &&
+        data.symbolType === dependencyManifestTypes.symbolTypeFunction
+      ) {
         return true;
       }
-      if (!showClasses && data.symbolType === symbolTypeClass) {
+      if (
+        !showClasses &&
+        data.symbolType === dependencyManifestTypes.symbolTypeClass
+      ) {
         return true;
       }
-      if (!showStructs && data.symbolType === symbolTypeStruct) {
+      if (
+        !showStructs &&
+        data.symbolType === dependencyManifestTypes.symbolTypeStruct
+      ) {
         return true;
       }
-      if (!showEnums && data.symbolType === symbolTypeEnum) {
+      if (
+        !showEnums && data.symbolType === dependencyManifestTypes.symbolTypeEnum
+      ) {
         return true;
       }
       return false;

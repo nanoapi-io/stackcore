@@ -1,0 +1,7 @@
+{
+  "name": "@stackcore/shared",
+  "exports": "./src/index.ts",
+  "imports": {
+    "zod": "npm:zod@^3.25.73"
+  }
+}

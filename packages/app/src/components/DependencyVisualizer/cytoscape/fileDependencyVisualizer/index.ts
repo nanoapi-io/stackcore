@@ -1,16 +1,7 @@
 import {
-  type AuditManifest,
-  type DependencyManifest,
-  type Metric,
-  symbolTypeClass,
-  symbolTypeDelegate,
-  symbolTypeEnum,
-  symbolTypeFunction,
-  symbolTypeInterface,
-  symbolTypeRecord,
-  symbolTypeStruct,
-  symbolTypeVariable,
-} from "@stackcore/core/manifest";
+  type auditManifestTypes,
+  dependencyManifestTypes,
+} from "@stackcore/shared";
 import type {
   Collection,
   Core,
@@ -53,7 +44,7 @@ export class FileDependencyVisualizer {
   private layout = mainLayout;
   private fileId: string;
   /** Current metric used for node coloring */
-  private targetMetric: Metric | undefined;
+  private targetMetric: dependencyManifestTypes.Metric | undefined;
   /** Currently selected node in the graph */
   private selectedNodeId: string | undefined;
   /** Callback functions triggered by graph interactions */
@@ -70,11 +61,11 @@ export class FileDependencyVisualizer {
   constructor(
     container: HTMLElement,
     fileId: string,
-    dependencyManifest: DependencyManifest,
-    auditManifest: AuditManifest,
+    dependencyManifest: dependencyManifestTypes.DependencyManifest,
+    auditManifest: auditManifestTypes.AuditManifest,
     options?: {
       theme?: "light" | "dark";
-      defaultMetric?: Metric | undefined;
+      defaultMetric?: dependencyManifestTypes.Metric | undefined;
       onAfterNodeClick?: () => void;
       onAfterNodeRightClick?: (data: {
         position: { x: number; y: number };
@@ -185,7 +176,7 @@ export class FileDependencyVisualizer {
    *
    * @param metric - The new metric to use for node coloring
    */
-  public setTargetMetric(metric: Metric | undefined) {
+  public setTargetMetric(metric: dependencyManifestTypes.Metric | undefined) {
     this.targetMetric = metric;
 
     const stylesheet = getCytoscapeStylesheet(
@@ -218,14 +209,14 @@ export class FileDependencyVisualizer {
       }
 
       const symbolTypeFilters = {
-        [symbolTypeVariable]: showVariables,
-        [symbolTypeFunction]: showFunctions,
-        [symbolTypeClass]: showClasses,
-        [symbolTypeStruct]: showStructs,
-        [symbolTypeEnum]: showEnums,
-        [symbolTypeInterface]: showInterfaces,
-        [symbolTypeRecord]: showRecords,
-        [symbolTypeDelegate]: showDelegates,
+        [dependencyManifestTypes.symbolTypeVariable]: showVariables,
+        [dependencyManifestTypes.symbolTypeFunction]: showFunctions,
+        [dependencyManifestTypes.symbolTypeClass]: showClasses,
+        [dependencyManifestTypes.symbolTypeStruct]: showStructs,
+        [dependencyManifestTypes.symbolTypeEnum]: showEnums,
+        [dependencyManifestTypes.symbolTypeInterface]: showInterfaces,
+        [dependencyManifestTypes.symbolTypeRecord]: showRecords,
+        [dependencyManifestTypes.symbolTypeDelegate]: showDelegates,
       };
       for (const [symbolType, show] of Object.entries(symbolTypeFilters)) {
         if (!show && data.symbolType === symbolType) {
